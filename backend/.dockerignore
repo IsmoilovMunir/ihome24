@@ -1,0 +1,8 @@
+target/
+.mvn/wrapper/
+.idea/
+*.iml
+*.log
+.DS_Store
+.env
+.env.local

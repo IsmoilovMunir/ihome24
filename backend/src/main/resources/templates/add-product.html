@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Добавление товара - iHome24</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 28px;
+        }
+
+        .logout-btn {
+            background: #f44336;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: #d32f2f;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            outline: none;
+            font-family: inherit;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #4caf50;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border-left: 4px solid #f44336;
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Добавление товара</h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <a th:href="@{/api/admin/categories}" style="background: #667eea; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-size: 14px; transition: background 0.3s;">Категории</a>
+                <form th:action="@{/api/auth/logout}" method="post" style="display: inline;">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+                    <button type="submit" class="logout-btn">Выйти</button>
+                </form>
+            </div>
+        </div>
+
+        <div th:if="${success}" class="success-message">
+            Товар успешно добавлен!
+        </div>
+
+        <div th:if="${error}" class="error-message" th:text="${error}">
+        </div>
+
+        <form id="productForm" th:action="@{/api/admin/products}" method="post" enctype="application/x-www-form-urlencoded">
+            <div class="form-group">
+                <label for="name">Название товара *</label>
+                <input type="text" id="name" name="name" required 
+                       placeholder="Введите название товара" th:value="${product?.name}">
+            </div>
+
+            <div class="form-group">
+                <label for="description">Описание</label>
+                <textarea id="description" name="description" 
+                          placeholder="Введите описание товара" th:text="${product?.description}"></textarea>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="price">Цена *</label>
+                    <input type="number" id="price" name="price" step="0.01" min="0.01" required 
+                           placeholder="0.00" th:value="${product?.price}">
+                </div>
+
+                <div class="form-group">
+                    <label for="oldPrice">Старая цена</label>
+                    <input type="number" id="oldPrice" name="oldPrice" step="0.01" min="0.01" 
+                           placeholder="0.00" th:value="${product?.oldPrice}">
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <label for="sku">Артикул (SKU)</label>
+                    <input type="text" id="sku" name="sku" 
+                           placeholder="PRODUCT-001" th:value="${product?.sku}">
+                </div>
+
+                <div class="form-group">
+                    <label for="stockQuantity">Количество на складе</label>
+                    <input type="number" id="stockQuantity" name="stockQuantity" min="0" value="0" 
+                           th:value="${product?.stockQuantity}">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="imageUrl">URL изображения</label>
+                <input type="text" id="imageUrl" name="imageUrl" 
+                       placeholder="https://example.com/image.jpg" th:value="${product?.imageUrl}">
+            </div>
+
+            <div class="form-group">
+                <label for="categoryId">Категория</label>
+                <select id="categoryId" name="categoryId" style="width: 100%; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 16px; font-family: inherit;">
+                    <option value="">-- Выберите категорию --</option>
+                    <option th:each="category : ${categories}" 
+                            th:value="${category.id}" 
+                            th:text="${category.name}">
+                    </option>
+                </select>
+                <small style="color: #666; font-size: 12px; margin-top: 5px; display: block;">
+                    <a th:href="@{/api/admin/categories}" style="color: #667eea; text-decoration: none;">Добавить новую категорию</a>
+                </small>
+            </div>
+
+            <div class="row">
+            <div class="row">
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="isActive" name="isActive" checked value="true">
+                        <label for="isActive" style="margin: 0; font-weight: normal;">Товар активен</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="isFeatured" name="isFeatured" value="true">
+                        <label for="isFeatured" style="margin: 0; font-weight: normal;">Рекомендуемый товар</label>
+                    </div>
+                </div>
+            </div>
+            </div>
+
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
+
+            <button type="submit" class="btn-submit">Добавить товар</button>
+        </form>
+    </div>
+
+    <script>
+        // Получение CSRF токена из мета-тега или скрытого поля формы
+        function getCsrfToken() {
+            const metaToken = document.querySelector('meta[name="_csrf"]');
+            if (metaToken) {
+                return metaToken.getAttribute('content');
+            }
+            const csrfInput = document.querySelector('input[name="_csrf"]');
+            return csrfInput ? csrfInput.value : '';
+        }
+        
+        // Получение имени заголовка CSRF
+        function getCsrfHeaderName() {
+            const metaHeader = document.querySelector('meta[name="_csrf_header"]');
+            return metaHeader ? metaHeader.getAttribute('content') : 'X-CSRF-TOKEN';
+        }
+
+        // Обработка формы через AJAX
+        document.getElementById('productForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = {};
+            formData.forEach((value, key) => {
+                if (key === '_csrf') return;
+                if (key === 'isActive' || key === 'isFeatured') {
+                    data[key] = formData.has(key) && formData.get(key) === 'true';
+                } else if (value && value.trim() !== '') {
+                    if (key === 'price' || key === 'oldPrice') {
+                        data[key] = value ? parseFloat(value) : null;
+                    } else if (key === 'stockQuantity') {
+                        data[key] = value ? parseInt(value) : 0;
+                    } else if (key === 'categoryId') {
+                        data[key] = value ? parseInt(value) : null;
+                    } else {
+                        data[key] = value;
+                    }
+                }
+            });
+
+            if (!data.isActive) data.isActive = true;
+            if (!data.isFeatured) data.isFeatured = false;
+            if (!data.stockQuantity) data.stockQuantity = 0;
+
+            const csrfToken = getCsrfToken();
+            const csrfHeaderName = getCsrfHeaderName();
+            
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (csrfToken && csrfHeaderName) {
+                headers[csrfHeaderName] = csrfToken;
+            }
+
+            fetch('/api/admin/products', {
+                method: 'POST',
+                headers: headers,
+                credentials: 'include',
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else if (response.status === 403) {
+                    throw new Error('Доступ запрещен. Проверьте авторизацию.');
+                } else {
+                    return response.json().then(err => {
+                        throw new Error(err.message || 'Ошибка при добавлении товара');
+                    });
+                }
+            })
+            .then(data => {
+                if (data.id) {
+                    window.location.href = '/api/admin/products?success=true';
+                } else {
+                    throw new Error(data.message || 'Ошибка при добавлении товара');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const oldError = document.querySelector('.error-message');
+                if (oldError) oldError.remove();
+                
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = error.message || 'Ошибка при добавлении товара';
+                document.querySelector('.container').insertBefore(errorDiv, document.getElementById('productForm'));
+                window.scrollTo(0, 0);
+            });
+        });
+    </script>
+</body>
+</html>

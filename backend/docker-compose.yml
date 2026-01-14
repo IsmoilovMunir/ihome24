@@ -1,0 +1,12 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:15
+    container_name: ihome24-postgres
+    environment:
+      POSTGRES_DB: ihome24
+      POSTGRES_USER: ihome24
+      POSTGRES_PASSWORD: ihome242026
+    ports:
+      - "5434:5432"
