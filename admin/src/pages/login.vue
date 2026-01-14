@@ -132,10 +132,10 @@ const onSubmit = () => {
       >
         <VCardText>
           <h4 class="text-h4 mb-1">
-            Welcome to <span class="text-capitalize"> {{ themeConfig.app.title }} </span>! 👋🏻
+            Добро пожаловать в <span class="text-capitalize"> {{ themeConfig.app.title }} </span>! 👋🏻
           </h4>
           <p class="mb-0">
-            Please sign-in to your account and start the adventure
+            Пожалуйста, войдите в свой аккаунт и начните приключение
           </p>
         </VCardText>
         <VCardText>
@@ -144,10 +144,10 @@ const onSubmit = () => {
             variant="tonal"
           >
             <p class="text-sm mb-2">
-              Admin Email: <strong>admin@demo.com</strong> / Pass: <strong>admin</strong>
+              Email администратора: <strong>admin@demo.com</strong> / Пароль: <strong>admin</strong>
             </p>
             <p class="text-sm mb-0">
-              Client Email: <strong>client@demo.com</strong> / Pass: <strong>client</strong>
+              Email клиента: <strong>client@demo.com</strong> / Пароль: <strong>client</strong>
             </p>
           </VAlert>
         </VCardText>
@@ -174,7 +174,7 @@ const onSubmit = () => {
               <VCol cols="12">
                 <AppTextField
                   v-model="credentials.password"
-                  label="Password"
+                  label="Пароль"
                   placeholder="············"
                   :rules="[requiredValidator]"
                   :type="isPasswordVisible ? 'text' : 'password'"
@@ -187,13 +187,13 @@ const onSubmit = () => {
                 <div class="d-flex align-center flex-wrap justify-space-between my-6">
                   <VCheckbox
                     v-model="rememberMe"
-                    label="Remember me"
+                    label="Запомнить меня"
                   />
                   <RouterLink
                     class="text-primary ms-2 mb-1"
                     :to="{ name: 'forgot-password' }"
                   >
-                    Forgot Password?
+                    Забыли пароль?
                   </RouterLink>
                 </div>
 
@@ -201,7 +201,7 @@ const onSubmit = () => {
                   block
                   type="submit"
                 >
-                  Login
+                  Войти
                 </VBtn>
               </VCol>
 
@@ -210,12 +210,12 @@ const onSubmit = () => {
                 cols="12"
                 class="text-center"
               >
-                <span>New on our platform?</span>
+                <span>Впервые на нашей платформе?</span>
                 <RouterLink
                   class="text-primary ms-1"
                   :to="{ name: 'register' }"
                 >
-                  Create an account
+                  Создать аккаунт
                 </RouterLink>
               </VCol>
               <VCol
@@ -223,7 +223,7 @@ const onSubmit = () => {
                 class="d-flex align-center"
               >
                 <VDivider />
-                <span class="mx-4">or</span>
+                <span class="mx-4">или</span>
                 <VDivider />
               </VCol>
 

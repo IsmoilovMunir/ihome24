@@ -83,10 +83,10 @@ const isPasswordVisible = ref(false)
       >
         <VCardText>
           <h4 class="text-h4 mb-1">
-            Adventure starts here 🚀
+            Приключение начинается здесь 🚀
           </h4>
           <p class="mb-0">
-            Make your app management easy and fun!
+            Сделайте управление приложением легким и увлекательным!
           </p>
         </VCardText>
 
@@ -99,7 +99,7 @@ const isPasswordVisible = ref(false)
                   v-model="form.username"
                   :rules="[requiredValidator]"
                   autofocus
-                  label="Username"
+                  label="Имя пользователя"
                   placeholder="Johndoe"
                 />
               </VCol>
@@ -120,7 +120,7 @@ const isPasswordVisible = ref(false)
                 <AppTextField
                   v-model="form.password"
                   :rules="[requiredValidator]"
-                  label="Password"
+                  label="Пароль"
                   placeholder="············"
                   :type="isPasswordVisible ? 'text' : 'password'"
                   autocomplete="password"
@@ -138,11 +138,11 @@ const isPasswordVisible = ref(false)
                     for="privacy-policy"
                     style="opacity: 1;"
                   >
-                    <span class="me-1 text-high-emphasis">I agree to</span>
+                    <span class="me-1 text-high-emphasis">Я согласен с</span>
                     <a
                       href="javascript:void(0)"
                       class="text-primary"
-                    >privacy policy & terms</a>
+                    >политикой конфиденциальности и условиями</a>
                   </VLabel>
                 </div>
 
@@ -150,7 +150,7 @@ const isPasswordVisible = ref(false)
                   block
                   type="submit"
                 >
-                  Sign up
+                  Зарегистрироваться
                 </VBtn>
               </VCol>
 
@@ -159,12 +159,12 @@ const isPasswordVisible = ref(false)
                 cols="12"
                 class="text-center text-base"
               >
-                <span class="d-inline-block">Already have an account?</span>
+                <span class="d-inline-block">Уже есть аккаунт?</span>
                 <RouterLink
                   class="text-primary ms-1 d-inline-block"
                   :to="{ name: 'login' }"
                 >
-                  Sign in instead
+                  Войти вместо этого
                 </RouterLink>
               </VCol>
 
@@ -173,7 +173,7 @@ const isPasswordVisible = ref(false)
                 class="d-flex align-center"
               >
                 <VDivider />
-                <span class="mx-4">or</span>
+                <span class="mx-4">или</span>
                 <VDivider />
               </VCol>
 

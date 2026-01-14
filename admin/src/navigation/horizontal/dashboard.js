@@ -1,10 +1,10 @@
 export default [
   {
-    title: 'Dashboards',
+    title: 'Панели управления',
     icon: { icon: 'tabler-smart-home' },
     children: [
       {
-        title: 'Ecommerce',
+        title: 'Электронная коммерция',
         to: 'dashboards-ecommerce',
         icon: { icon: 'tabler-shopping-cart' },
       },

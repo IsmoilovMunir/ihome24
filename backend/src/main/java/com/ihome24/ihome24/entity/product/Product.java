@@ -1,6 +1,9 @@
 package com.ihome24.ihome24.entity.product;
 
 import com.ihome24.ihome24.entity.category.Category;
+import com.ihome24.ihome24.entity.collection.Collection;
+import com.ihome24.ihome24.entity.supplier.Supplier;
+import com.ihome24.ihome24.entity.tag.Tag;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +12,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "products")
@@ -51,9 +56,48 @@ public class Product {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column
+    private String barcode;
+
+    @Column(name = "tax_enabled")
+    @Builder.Default
+    private Boolean taxEnabled = false;
+
+    @Column
+    @Builder.Default
+    private String status = "draft";
+
+    @Column(name = "discounted_price", precision = 10, scale = 2)
+    private BigDecimal discountedPrice;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "supplier_id")
+    private Supplier supplier;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "collection_id")
+    private Collection collection;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "product_tags",
+            joinColumns = @JoinColumn(name = "product_id"),
+            inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    @Builder.Default
+    private List<Tag> tags = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ProductVariant> variants = new ArrayList<>();
+
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ProductImage> images = new ArrayList<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

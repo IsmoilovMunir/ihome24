@@ -15,6 +15,10 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsBySku(String sku);
 
+    Optional<Product> findByBarcode(String barcode);
+
+    boolean existsByBarcode(String barcode);
+
     @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category ORDER BY p.createdAt DESC")
     List<Product> findAllWithCategory();
 }

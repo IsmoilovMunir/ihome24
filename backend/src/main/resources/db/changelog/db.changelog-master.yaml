@@ -11,3 +11,17 @@ databaseChangeLog:
       file: db/changelog/changeset/products_V002__add_category_id.sql
   - include:
       file: db/changelog/changeset/categories_V002__create_if_not_exists.sql
+  - include:
+      file: db/changelog/changeset/suppliers_V001__initial.sql
+  - include:
+      file: db/changelog/changeset/collections_V001__initial.sql
+  - include:
+      file: db/changelog/changeset/tags_V001__initial.sql
+  - include:
+      file: db/changelog/changeset/product_variants_V001__initial.sql
+  - include:
+      file: db/changelog/changeset/product_images_V001__initial.sql
+  - include:
+      file: db/changelog/changeset/product_tags_V001__initial.sql
+  - include:
+      file: db/changelog/changeset/products_V003__extend_fields.sql

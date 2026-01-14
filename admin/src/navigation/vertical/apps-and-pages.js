@@ -1,7 +1,7 @@
 export default [
-  { heading: 'Apps & Pages' },
+  { heading: 'Приложения и страницы' },
   {
-    title: 'Ecommerce',
+    title: 'Электронная коммерция',
     icon: { icon: 'tabler-shopping-cart' },
     children: [
       {
@@ -109,84 +109,84 @@ export default [
     ],
   },
   {
-    title: 'Pages',
+    title: 'Страницы',
     icon: { icon: 'tabler-file' },
     children: [
-      { title: 'User Profile', to: { name: 'pages-user-profile-tab', params: { tab: 'profile' } } },
-      { title: 'Account Settings', to: { name: 'pages-account-settings-tab', params: { tab: 'account' } } },
-      { title: 'Pricing', to: 'pages-pricing' },
+      { title: 'Профиль пользователя', to: { name: 'pages-user-profile-tab', params: { tab: 'profile' } } },
+      { title: 'Настройки аккаунта', to: { name: 'pages-account-settings-tab', params: { tab: 'account' } } },
+      { title: 'Цены', to: 'pages-pricing' },
       { title: 'FAQ', to: 'pages-faq' },
       {
-        title: 'Miscellaneous',
+        title: 'Разное',
         children: [
-          { title: 'Coming Soon', to: 'pages-misc-coming-soon', target: '_blank' },
-          { title: 'Under Maintenance', to: 'pages-misc-under-maintenance', target: '_blank' },
-          { title: 'Page Not Found - 404', to: { path: '/pages/misc/not-found' }, target: '_blank' },
-          { title: 'Not Authorized - 401', to: { path: '/pages/misc/not-authorized' }, target: '_blank' },
+          { title: 'Скоро', to: 'pages-misc-coming-soon', target: '_blank' },
+          { title: 'На обслуживании', to: 'pages-misc-under-maintenance', target: '_blank' },
+          { title: 'Страница не найдена - 404', to: { path: '/pages/misc/not-found' }, target: '_blank' },
+          { title: 'Не авторизован - 401', to: { path: '/pages/misc/not-authorized' }, target: '_blank' },
         ],
       },
     ],
   },
   {
-    title: 'Authentication',
+    title: 'Аутентификация',
     icon: { icon: 'tabler-shield-lock' },
     children: [
       {
-        title: 'Login',
+        title: 'Вход',
         children: [
-          { title: 'Login v1', to: 'pages-authentication-login-v1', target: '_blank' },
-          { title: 'Login v2', to: 'pages-authentication-login-v2', target: '_blank' },
+          { title: 'Вход v1', to: 'pages-authentication-login-v1', target: '_blank' },
+          { title: 'Вход v2', to: 'pages-authentication-login-v2', target: '_blank' },
         ],
       },
       {
-        title: 'Register',
+        title: 'Регистрация',
         children: [
-          { title: 'Register v1', to: 'pages-authentication-register-v1', target: '_blank' },
-          { title: 'Register v2', to: 'pages-authentication-register-v2', target: '_blank' },
-          { title: 'Register Multi-Steps', to: 'pages-authentication-register-multi-steps', target: '_blank' },
+          { title: 'Регистрация v1', to: 'pages-authentication-register-v1', target: '_blank' },
+          { title: 'Регистрация v2', to: 'pages-authentication-register-v2', target: '_blank' },
+          { title: 'Многошаговая регистрация', to: 'pages-authentication-register-multi-steps', target: '_blank' },
         ],
       },
       {
-        title: 'Verify Email',
+        title: 'Подтверждение email',
         children: [
-          { title: 'Verify Email v1', to: 'pages-authentication-verify-email-v1', target: '_blank' },
-          { title: 'Verify Email v2', to: 'pages-authentication-verify-email-v2', target: '_blank' },
+          { title: 'Подтверждение email v1', to: 'pages-authentication-verify-email-v1', target: '_blank' },
+          { title: 'Подтверждение email v2', to: 'pages-authentication-verify-email-v2', target: '_blank' },
         ],
       },
       {
-        title: 'Forgot Password',
+        title: 'Забыли пароль',
         children: [
-          { title: 'Forgot Password v1', to: 'pages-authentication-forgot-password-v1', target: '_blank' },
-          { title: 'Forgot Password v2', to: 'pages-authentication-forgot-password-v2', target: '_blank' },
+          { title: 'Забыли пароль v1', to: 'pages-authentication-forgot-password-v1', target: '_blank' },
+          { title: 'Забыли пароль v2', to: 'pages-authentication-forgot-password-v2', target: '_blank' },
         ],
       },
       {
-        title: 'Reset Password',
+        title: 'Сброс пароля',
         children: [
-          { title: 'Reset Password v1', to: 'pages-authentication-reset-password-v1', target: '_blank' },
-          { title: 'Reset Password v2', to: 'pages-authentication-reset-password-v2', target: '_blank' },
+          { title: 'Сброс пароля v1', to: 'pages-authentication-reset-password-v1', target: '_blank' },
+          { title: 'Сброс пароля v2', to: 'pages-authentication-reset-password-v2', target: '_blank' },
         ],
       },
       {
-        title: 'Two Steps',
+        title: 'Два шага',
         children: [
-          { title: 'Two Steps v1', to: 'pages-authentication-two-steps-v1', target: '_blank' },
-          { title: 'Two Steps v2', to: 'pages-authentication-two-steps-v2', target: '_blank' },
+          { title: 'Два шага v1', to: 'pages-authentication-two-steps-v1', target: '_blank' },
+          { title: 'Два шага v2', to: 'pages-authentication-two-steps-v2', target: '_blank' },
         ],
       },
     ],
   },
   {
-    title: 'Wizard Examples',
+    title: 'Примеры мастера',
     icon: { icon: 'tabler-dots' },
     children: [
-      { title: 'Checkout', to: { name: 'wizard-examples-checkout' } },
-      { title: 'Property Listing', to: { name: 'wizard-examples-property-listing' } },
-      { title: 'Create Deal', to: { name: 'wizard-examples-create-deal' } },
+      { title: 'Оформление заказа', to: { name: 'wizard-examples-checkout' } },
+      { title: 'Список недвижимости', to: { name: 'wizard-examples-property-listing' } },
+      { title: 'Создать сделку', to: { name: 'wizard-examples-create-deal' } },
     ],
   },
   {
-    title: 'Dialog Examples',
+    title: 'Примеры диалогов',
     icon: { icon: 'tabler-square' },
     to: 'pages-dialog-examples',
   },

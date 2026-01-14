@@ -1,4 +1,7 @@
 <script setup>
+import { ref, computed, watch, onMounted } from 'vue'
+import { $api } from '@/utils/api'
+
 const widgetData = ref([
   {
     title: 'Продажи в магазине',
@@ -87,32 +90,8 @@ const status = ref([
   },
 ])
 
-const categories = ref([
-  {
-    title: 'Accessories',
-    value: 'Accessories',
-  },
-  {
-    title: 'Home Decor',
-    value: 'Home Decor',
-  },
-  {
-    title: 'Electronics',
-    value: 'Electronics',
-  },
-  {
-    title: 'Shoes',
-    value: 'Shoes',
-  },
-  {
-    title: 'Office',
-    value: 'Office',
-  },
-  {
-    title: 'Games',
-    value: 'Games',
-  },
-])
+const categories = ref([])
+const isLoading = ref(false)
 
 const stockStatus = ref([
   {
@@ -137,86 +116,113 @@ const updateOptions = options => {
 }
 
 const resolveCategory = category => {
-  if (category === 'Accessories')
-    return {
-      color: 'error',
-      icon: 'tabler-device-watch',
-    }
-  if (category === 'Home Decor')
-    return {
-      color: 'info',
-      icon: 'tabler-home',
-    }
-  if (category === 'Electronics')
-    return {
-      color: 'primary',
-      icon: 'tabler-device-imac',
-    }
-  if (category === 'Shoes')
-    return {
-      color: 'success',
-      icon: 'tabler-shoe',
-    }
-  if (category === 'Office')
-    return {
-      color: 'warning',
-      icon: 'tabler-briefcase',
-    }
-  if (category === 'Games')
-    return {
-      color: 'primary',
-      icon: 'tabler-device-gamepad-2',
-    }
+  // Универсальная функция для определения цвета и иконки категории
+  if (!category) return { color: 'default', icon: 'tabler-category' }
+  
+  const categoryName = category.name || category
+  const lowerName = categoryName.toLowerCase()
+  
+  if (lowerName.includes('accessories') || lowerName.includes('аксессуар'))
+    return { color: 'error', icon: 'tabler-device-watch' }
+  if (lowerName.includes('home') || lowerName.includes('дом'))
+    return { color: 'info', icon: 'tabler-home' }
+  if (lowerName.includes('electronic') || lowerName.includes('электро'))
+    return { color: 'primary', icon: 'tabler-device-imac' }
+  if (lowerName.includes('shoe') || lowerName.includes('обувь'))
+    return { color: 'success', icon: 'tabler-shoe' }
+  if (lowerName.includes('office') || lowerName.includes('офис'))
+    return { color: 'warning', icon: 'tabler-briefcase' }
+  if (lowerName.includes('game') || lowerName.includes('игр'))
+    return { color: 'primary', icon: 'tabler-device-gamepad-2' }
+  
+  return { color: 'default', icon: 'tabler-category' }
 }
 
 const resolveStatus = statusMsg => {
-  if (statusMsg === 'Scheduled')
-    return {
-      text: 'Запланировано',
-      color: 'warning',
-    }
-  if (statusMsg === 'Published')
-    return {
-      text: 'Опубликовано',
-      color: 'success',
-    }
-  if (statusMsg === 'Inactive')
-    return {
-      text: 'Неактивно',
-      color: 'error',
-    }
+  if (!statusMsg) return { text: 'Неизвестно', color: 'default' }
+  
+  const status = statusMsg.toLowerCase()
+  if (status === 'scheduled' || status === 'запланировано')
+    return { text: 'Запланировано', color: 'warning' }
+  if (status === 'published' || status === 'опубликовано')
+    return { text: 'Опубликовано', color: 'success' }
+  if (status === 'inactive' || status === 'неактивно' || status === 'draft' || status === 'черновик')
+    return { text: 'Неактивно', color: 'error' }
+  
+  return { text: statusMsg, color: 'default' }
 }
 
-const {
-  data: productsData,
-  execute: fetchProducts,
-} = await useApi(createUrl('/apps/ecommerce/products', {
-  query: {
-    q: searchQuery,
-    stock: selectedStock,
-    category: selectedCategory,
-    status: selectedStatus,
-    page,
-    itemsPerPage,
-    sortBy,
-    orderBy,
-  },
-}))
+const products = ref([])
+const totalProduct = ref(0)
 
-const products = computed(() => productsData.value.products)
-const totalProduct = computed(() => productsData.value.total)
+// Загрузка категорий для фильтра
+const loadCategories = async () => {
+  try {
+    const response = await $api('/admin/categories', { method: 'GET' })
+    categories.value = response.map(cat => ({
+      title: cat.name,
+      value: cat.id,
+    }))
+  } catch (error) {
+    console.error('Ошибка при загрузке категорий:', error)
+  }
+}
+
+// Загрузка товаров
+const fetchProducts = async () => {
+  try {
+    isLoading.value = true
+    const response = await $api('/admin/products', { method: 'GET' })
+    products.value = response.map(product => ({
+      id: product.id,
+      productName: product.name,
+      productBrand: product.brand || '',
+      category: product.category ? product.category.name : '',
+      categoryObj: product.category,
+      stock: product.isActive || false,
+      sku: product.sku || '',
+      price: product.price ? `₽${product.price}` : '₽0',
+      qty: product.stockQuantity || 0,
+      status: product.status || 'draft',
+      image: product.imageUrl || null,
+    }))
+    totalProduct.value = products.value.length
+  } catch (error) {
+    console.error('Ошибка при загрузке товаров:', error)
+    products.value = []
+    totalProduct.value = 0
+  } finally {
+    isLoading.value = false
+  }
+}
 
 const deleteProduct = async id => {
-  await $api(`apps/ecommerce/products/${ id }`, { method: 'DELETE' })
+  try {
+    await $api(`/admin/products/${id}`, { method: 'DELETE' })
+    
+    // Delete from selectedRows
+    const index = selectedRows.value.findIndex(row => row === id)
+    if (index !== -1)
+      selectedRows.value.splice(index, 1)
 
-  // Delete from selectedRows
-  const index = selectedRows.value.findIndex(row => row === id)
-  if (index !== -1)
-    selectedRows.value.splice(index, 1)
-
-  // Refetch products
-  fetchProducts()
+    // Refetch products
+    await fetchProducts()
+  } catch (error) {
+    console.error('Ошибка при удалении товара:', error)
+    alert('Ошибка при удалении товара: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
+  }
 }
+
+// Загружаем данные при монтировании
+onMounted(() => {
+  loadCategories()
+  fetchProducts()
+})
+
+// Реактивная загрузка при изменении фильтров
+watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
+  fetchProducts()
+})
 </script>
 
 <template>
@@ -386,7 +392,7 @@ const deleteProduct = async id => {
       <VDivider class="mt-4" />
 
       <!-- 👉 Datatable  -->
-      <VDataTableServer
+      <VDataTable
         v-model:items-per-page="itemsPerPage"
         v-model:model-value="selectedRows"
         v-model:page="page"
@@ -395,7 +401,7 @@ const deleteProduct = async id => {
         :items="products"
         :items-length="totalProduct"
         class="text-no-wrap"
-        @update:options="updateOptions"
+        :loading="isLoading"
       >
         <!-- product  -->
         <template #item.product="{ item }">
@@ -447,7 +453,7 @@ const deleteProduct = async id => {
 
         <!-- Actions -->
         <template #item.actions="{ item }">
-          <IconBtn>
+          <IconBtn @click="$router.push(`/apps/ecommerce/product/add?id=${item.id}`)">
             <VIcon icon="tabler-edit" />
           </IconBtn>
 
@@ -489,7 +495,7 @@ const deleteProduct = async id => {
             :total-items="totalProduct"
           />
         </template>
-      </VDataTableServer>
+      </VDataTable>
     </VCard>
   </div>
 </template>

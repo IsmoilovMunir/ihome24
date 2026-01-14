@@ -1,131 +1,25 @@
 <script setup>
 import ECommerceAddCategoryDrawer from '@/views/apps/ecommerce/ECommerceAddCategoryDrawer.vue'
-import product1 from '@images/ecommerce-images/product-1.png'
-import product10 from '@images/ecommerce-images/product-10.png'
-import product11 from '@images/ecommerce-images/product-11.png'
-import product12 from '@images/ecommerce-images/product-12.png'
-import product14 from '@images/ecommerce-images/product-14.png'
-import product17 from '@images/ecommerce-images/product-17.png'
-import product19 from '@images/ecommerce-images/product-19.png'
-import product2 from '@images/ecommerce-images/product-2.png'
-import product25 from '@images/ecommerce-images/product-25.png'
-import product28 from '@images/ecommerce-images/product-28.png'
-import product9 from '@images/ecommerce-images/product-9.png'
+import { $api } from '@/utils/api'
 
-const categoryData = ref([
-  {
-    id: 1,
-    categoryTitle: 'Смартфоны',
-    description: 'Выберите из широкого ассортимента смартфонов онлайн по лучшим ценам.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product1,
-  },
-  {
-    id: 2,
-    categoryTitle: 'Одежда, обувь и украшения',
-    description: 'Мода для широкого выбора одежды, обуви, украшений и часов.',
-    totalProduct: 4689,
-    totalEarning: 45627,
-    image: product9,
-  },
-  {
-    id: 3,
-    categoryTitle: 'Дом и кухня',
-    description: 'Просмотрите широкий ассортимент товаров для дома и кухни.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product10,
-  },
-  {
-    id: 4,
-    categoryTitle: 'Красота и личная гигиена',
-    description: 'Изучите товары для красоты и личной гигиены, покупайте косметику и т.д.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product19,
-  },
-  {
-    id: 5,
-    categoryTitle: 'Books',
-    description: 'Over 25 million titles across categories such as business  and etc.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product25,
-  },
-  {
-    id: 6,
-    categoryTitle: 'Games',
-    description: 'Every month, get exclusive in-game loot, free games, a free subscription.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product12,
-  },
-  {
-    id: 7,
-    categoryTitle: 'Baby Products',
-    description: 'Buy baby products across different categories from top brands.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product14,
-  },
-  {
-    id: 8,
-    categoryTitle: 'Grocery',
-    description: 'Shop grocery Items through at best prices in India.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product28,
-  },
-  {
-    id: 9,
-    categoryTitle: 'Computer Accessories',
-    description: 'Enhance your computing experience with our range of computer accessories.',
-    totalProduct: 9876,
-    totalEarning: 65421,
-    image: product17,
-  },
-  {
-    id: 10,
-    categoryTitle: 'Fitness Tracker',
-    description: 'Monitor your health and fitness goals with our range of advanced fitness trackers.',
-    totalProduct: 1987,
-    totalEarning: 32067,
-    image: product10,
-  },
-  {
-    id: 11,
-    categoryTitle: 'Smart Home Devices',
-    description: 'Transform your home into a smart home with our innovative smart home devices.',
-    totalProduct: 2345,
-    totalEarning: 87654,
-    image: product11,
-  },
-  {
-    id: 12,
-    categoryTitle: 'Audio Speakers',
-    description: 'Immerse yourself in rich audio quality with our wide range of speakers.',
-    totalProduct: 5678,
-    totalEarning: 32145,
-    image: product2,
-  },
-])
+const categoryData = ref([])
+const isLoading = ref(false)
 
 const headers = [
   {
-    title: 'Categories',
+    title: 'Категории',
     key: 'categoryTitle',
   },
   {
-    title: 'Total Products',
+    title: 'Всего товаров',
     key: 'totalProduct',
   },
   {
-    title: 'Total Earning',
+    title: 'Общий доход',
     key: 'totalEarning',
   },
   {
-    title: 'Actions',
+    title: 'Действия',
     key: 'actions',
     sortable: false,
   },
@@ -135,6 +29,50 @@ const itemsPerPage = ref(10)
 const page = ref(1)
 const searchQuery = ref('')
 const isAddProductDrawerOpen = ref(false)
+const editingCategoryId = ref(null)
+
+// Загрузка категорий из API
+const loadCategories = async () => {
+  try {
+    isLoading.value = true
+    const response = await $api('/admin/categories', {
+      method: 'GET',
+    })
+    
+    // Преобразуем данные из API в формат для таблицы
+    categoryData.value = response.map(cat => ({
+      id: cat.id,
+      categoryTitle: cat.name,
+      description: cat.description || '',
+      totalProduct: 0, // Можно добавить подсчет товаров позже
+      totalEarning: 0, // Можно добавить подсчет доходов позже
+      image: cat.imageUrl || '/src/assets/images/placeholder.png',
+      isActive: cat.isActive,
+    }))
+  } catch (error) {
+    console.error('Ошибка при загрузке категорий:', error)
+    alert('Ошибка при загрузке категорий: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
+  } finally {
+    isLoading.value = false
+  }
+}
+
+// Обработчик добавления новой категории
+const handleCategoryAdded = () => {
+  loadCategories() // Перезагружаем список категорий
+  editingCategoryId.value = null // Сбрасываем ID редактируемой категории
+}
+
+// Функция редактирования категории
+const editCategory = (item) => {
+  editingCategoryId.value = item.id
+  isAddProductDrawerOpen.value = true
+}
+
+// Загружаем категории при монтировании компонента
+onMounted(() => {
+  loadCategories()
+})
 </script>
 
 <template>
@@ -144,7 +82,7 @@ const isAddProductDrawerOpen = ref(false)
         <div class="d-flex justify-sm-space-between flex-wrap gap-y-4 gap-x-6 justify-start">
           <AppTextField
             v-model="searchQuery"
-            placeholder="Search Category"
+            placeholder="Поиск категории"
             style="max-inline-size: 280px; min-inline-size: 280px;"
           />
 
@@ -158,7 +96,7 @@ const isAddProductDrawerOpen = ref(false)
               prepend-icon="tabler-plus"
               @click="isAddProductDrawerOpen = !isAddProductDrawerOpen"
             >
-              Add Category
+              Добавить категорию
             </VBtn>
           </div>
         </div>
@@ -172,13 +110,14 @@ const isAddProductDrawerOpen = ref(false)
           v-model:page="page"
           :headers="headers"
           :items="categoryData"
-          item-value="categoryTitle"
+          :loading="isLoading"
+          item-value="id"
           :search="searchQuery"
           show-select
           class="text-no-wrap"
         >
-          <template #item.actions>
-            <IconBtn>
+          <template #item.actions="{ item }">
+            <IconBtn @click="editCategory(item)">
               <VIcon
                 icon="tabler-edit"
                 size="22"
@@ -217,7 +156,7 @@ const isAddProductDrawerOpen = ref(false)
           </template>
           <template #item.totalEarning="{ item }">
             <div class="text-body-1 text-end pe-4">
-              {{ (item.totalEarning).toLocaleString("en-IN", { style: "currency", currency: 'USD' }) }}
+              {{ (item.totalEarning).toLocaleString("ru-RU", { style: "currency", currency: 'RUB' }) }}
             </div>
           </template>
           <template #item.totalProduct="{ item }">
@@ -237,7 +176,18 @@ const isAddProductDrawerOpen = ref(false)
       </div>
     </VCard>
 
-    <ECommerceAddCategoryDrawer v-model:is-drawer-open="isAddProductDrawerOpen" />
+    <ECommerceAddCategoryDrawer 
+      v-model:is-drawer-open="isAddProductDrawerOpen"
+      :category-id="editingCategoryId"
+      @category-added="handleCategoryAdded"
+      @update:is-drawer-open="(val) => { 
+        isAddProductDrawerOpen = val
+        // Сбрасываем ID редактируемой категории только после закрытия drawer
+        if (!val) {
+          editingCategoryId = null
+        }
+      }"
+    />
   </div>
 </template>
 

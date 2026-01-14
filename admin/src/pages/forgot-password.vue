@@ -71,10 +71,10 @@ definePage({
       >
         <VCardText>
           <h4 class="text-h4 mb-1">
-            Forgot Password? 🔒
+            Забыли пароль? 🔒
           </h4>
           <p class="mb-0">
-            Enter your email and we'll send you instructions to reset your password
+            Введите ваш email и мы отправим вам инструкции для сброса пароля
           </p>
         </VCardText>
 
@@ -98,7 +98,7 @@ definePage({
                   block
                   type="submit"
                 >
-                  Send Reset Link
+                  Отправить ссылку для сброса
                 </VBtn>
               </VCol>
 
@@ -113,7 +113,7 @@ definePage({
                     size="20"
                     class="me-1 flip-in-rtl"
                   />
-                  <span>Back to login</span>
+                  <span>Вернуться к входу</span>
                 </RouterLink>
               </VCol>
             </VRow>
