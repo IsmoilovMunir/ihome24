@@ -176,18 +176,4 @@ export default [
       },
     ],
   },
-  {
-    title: 'Примеры мастера',
-    icon: { icon: 'tabler-dots' },
-    children: [
-      { title: 'Оформление заказа', to: { name: 'wizard-examples-checkout' } },
-      { title: 'Список недвижимости', to: { name: 'wizard-examples-property-listing' } },
-      { title: 'Создать сделку', to: { name: 'wizard-examples-create-deal' } },
-    ],
-  },
-  {
-    title: 'Примеры диалогов',
-    icon: { icon: 'tabler-square' },
-    to: 'pages-dialog-examples',
-  },
 ]

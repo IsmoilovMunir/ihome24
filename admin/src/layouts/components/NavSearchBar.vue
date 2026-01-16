@@ -39,11 +39,6 @@ const suggestionGroups = [
           params: { tab: 'account' },
         },
       },
-      {
-        icon: 'tabler-copy',
-        title: 'Примеры диалогов',
-        url: { name: 'pages-dialog-examples' },
-      },
     ],
   },
 ]

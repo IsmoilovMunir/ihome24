@@ -98,7 +98,7 @@ const editor = useEditor({
   extensions: [
     StarterKit,
     Image,
-    Placeholder.configure({ placeholder: 'Enter a category description...' }),
+    Placeholder.configure({ placeholder: 'Введите описание категории...' }),
     Underline,
     Link.configure({ openOnClick: false }),
   ],
@@ -291,18 +291,18 @@ const handleSubmit = async () => {
               <VCol cols="12">
                 <AppTextField
                   v-model="categoryTitle"
-                  label="Title"
+                  label="Название"
                   :rules="[requiredValidator]"
-                  placeholder="Fashion"
+                  placeholder="Мода"
                 />
               </VCol>
 
               <VCol cols="12">
                 <AppTextField
                   v-model="categorySlug"
-                  label="Slug"
+                  label="URL-адрес"
                   :rules="[requiredValidator]"
-                  placeholder="Trends fashion"
+                  placeholder="moda"
                 />
               </VCol>
 
@@ -337,11 +337,11 @@ const handleSubmit = async () => {
                   prepend-icon=""
                   :rules="props.categoryId ? [] : [requiredValidator]"
                   clearable
-                  :label="currentImageUrl ? 'Change Image (optional)' : 'Upload Image'"
+                  :label="currentImageUrl ? 'Изменить изображение (необязательно)' : 'Загрузить изображение'"
                 >
                   <template #append>
                     <VBtn variant="tonal">
-                      Choose
+                      Выбрать
                     </VBtn>
                   </template>
                 </VFileInput>
@@ -352,7 +352,7 @@ const handleSubmit = async () => {
                   class="mt-4"
                 >
                   <div class="text-body-2 text-medium-emphasis mb-2">
-                    New Image Preview:
+                    Предпросмотр нового изображения:
                   </div>
                   <VAvatar
                     size="120"
@@ -442,9 +442,13 @@ const handleSubmit = async () => {
                 <AppSelect
                   v-model="parentStatus"
                   :rules="[requiredValidator]"
-                  placeholder="Select Category Status"
-                  label="Select Category Status"
-                  :items="['Published', 'Inactive', 'Scheduled']"
+                  placeholder="Выберите статус категории"
+                  label="Статус категории"
+                  :items="[
+                    { title: 'Опубликовано', value: 'Published' },
+                    { title: 'Неактивно', value: 'Inactive' },
+                    { title: 'Запланировано', value: 'Scheduled' }
+                  ]"
                 />
               </VCol>
 
@@ -455,14 +459,14 @@ const handleSubmit = async () => {
                     color="primary"
                     class="me-4"
                   >
-                    {{ props.categoryId ? 'Update' : 'Add' }}
+                    {{ props.categoryId ? 'Обновить' : 'Добавить' }}
                   </VBtn>
                   <VBtn
                     color="error"
                     variant="tonal"
                     @click="closeForm"
                   >
-                    Discard
+                    Отменить
                   </VBtn>
                 </div>
               </VCol>

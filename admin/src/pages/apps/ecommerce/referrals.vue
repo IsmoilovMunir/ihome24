@@ -49,17 +49,17 @@ const widgetData = [
 const stepsData = [
   {
     icon: rocketIcon,
-    desc: 'Create & validate your referral link and get',
+    desc: 'Создайте и подтвердите вашу реферальную ссылку и получите',
     value: '$50',
   },
   {
     icon: paperIcon,
-    desc: 'For every new signup you get',
+    desc: 'За каждую новую регистрацию вы получаете',
     value: '10%',
   },
   {
     icon: userInfoIcon,
-    desc: 'Get other friends to generate link and get',
+    desc: 'Привлеките других друзей для создания ссылки и получите',
     value: '$100',
   },
 ]
@@ -73,23 +73,23 @@ const orderBy = ref()
 // Data Table Headers
 const headers = [
   {
-    title: 'Users',
+    title: 'Пользователи',
     key: 'users',
   },
   {
-    title: 'Referred ID',
+    title: 'Реферальный ID',
     key: 'referred-id',
   },
   {
-    title: 'Status',
+    title: 'Статус',
     key: 'status',
   },
   {
-    title: 'Value',
+    title: 'Значение',
     key: 'value',
   },
   {
-    title: 'Earnings',
+    title: 'Заработок',
     key: 'earning',
   },
 ]
@@ -121,19 +121,19 @@ const referrals = computed(() => referralData.value.referrals)
 const totalReferrals = computed(() => referralData.value.total)
 
 const resolveStatus = status => {
-  if (status === 'Rejected')
+  if (status === 'Rejected' || status === 'Отклонено')
     return {
-      text: 'Rejected',
+      text: 'Отклонено',
       color: 'error',
     }
-  if (status === 'Unpaid')
+  if (status === 'Unpaid' || status === 'Неоплачено')
     return {
-      text: 'Unpaid',
+      text: 'Неоплачено',
       color: 'warning',
     }
-  if (status === 'Paid')
+  if (status === 'Paid' || status === 'Оплачено')
     return {
-      text: 'Paid',
+      text: 'Оплачено',
       color: 'success',
     }
 }
@@ -182,10 +182,10 @@ const resolveStatus = status => {
         <VCard>
           <VCardItem>
             <VCardTitle class="mb-1">
-              How to use
+              Как использовать
             </VCardTitle>
             <VCardSubtitle>
-              Integrate your referral code in 3 easy steps.
+              Интегрируйте ваш реферальный код в 3 простых шага.
             </VCardSubtitle>
           </VCardItem>
           <VCardText>
@@ -220,26 +220,26 @@ const resolveStatus = status => {
           <VCardText>
             <div class="mb-5">
               <h5 class="text-h5 mb-5">
-                Invite your friends
+                Пригласите ваших друзей
               </h5>
               <div class="d-flex align-center flex-wrap gap-4 flex-wrap">
                 <AppTextField
                   label="Enter friend’s email address and invite them"
-                  placeholder="Email Address"
+                  placeholder="Email адрес"
                 />
                 <VBtn class="align-self-end">
-                  Submit
+                  Отправить
                 </VBtn>
               </div>
             </div>
 
             <div>
               <h5 class="text-h5 mb-5">
-                Share the referral link
+                Поделитесь реферальной ссылкой
               </h5>
               <div class="d-flex gap-4 align-center flex-wrap">
                 <AppTextField
-                  label="Share referral link in social media"
+                  label="Поделитесь реферальной ссылкой в социальных сетях"
                   placeholder="pixinvent.com/?ref=6478"
                 />
                 <div class="d-flex align-self-end gap-x-2">
@@ -278,7 +278,7 @@ const resolveStatus = status => {
           <VCardText>
             <div class="d-flex justify-space-between align-center flex-wrap gap-4">
               <h5 class="text-h5">
-                Referred Users
+                Приглашенные пользователи
               </h5>
               <div class="d-flex flex-wrap gap-4">
                 <div class="d-flex gap-4 align-center flex-wrap">
@@ -292,7 +292,7 @@ const resolveStatus = status => {
                     color="default"
                     variant="tonal"
                   >
-                    Export
+                    Экспорт
                   </VBtn>
                 </div>
               </div>

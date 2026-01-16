@@ -45,7 +45,7 @@ export default [
   // },
   // {
   //   title: 'Documentation',
-  //   href: 'https://demos.pixinvent.com/vuexy-vuejs-admin-template/documentation/',
+  //   href: 'https://demos.pixinvent.com/ihome-vuejs-admin-template/documentation/',
   //   icon: { icon: 'tabler-file-text' },
   //   target: '_blank',
   // },

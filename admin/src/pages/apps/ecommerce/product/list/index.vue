@@ -1,30 +1,30 @@
 <script setup>
 const widgetData = ref([
   {
-    title: 'In-Store Sales',
+    title: 'Продажи в магазине',
     value: '$5,345',
     icon: 'tabler-smart-home',
-    desc: '5k orders',
+    desc: '5к заказов',
     change: 5.7,
   },
   {
-    title: 'Website Sales',
+    title: 'Продажи на сайте',
     value: '$674,347',
     icon: 'tabler-device-laptop',
-    desc: '21k orders',
+    desc: '21к заказов',
     change: 12.4,
   },
   {
-    title: 'Discount',
+    title: 'Скидки',
     value: '$14,235',
     icon: 'tabler-gift',
-    desc: '6k orders',
+    desc: '6к заказов',
   },
   {
-    title: 'Affiliate',
+    title: 'Партнерская программа',
     value: '$8,345',
     icon: 'tabler-wallet',
-    desc: '150 orders',
+    desc: '150 заказов',
     change: -3.5,
   },
 ])
@@ -74,15 +74,15 @@ const selectedRows = ref([])
 
 const status = ref([
   {
-    title: 'Scheduled',
+    title: 'Запланировано',
     value: 'Scheduled',
   },
   {
-    title: 'Publish',
+    title: 'Опубликовано',
     value: 'Published',
   },
   {
-    title: 'Inactive',
+    title: 'Неактивно',
     value: 'Inactive',
   },
 ])
@@ -116,11 +116,11 @@ const categories = ref([
 
 const stockStatus = ref([
   {
-    title: 'In Stock',
+    title: 'В наличии',
     value: true,
   },
   {
-    title: 'Out of Stock',
+    title: 'Нет в наличии',
     value: false,
   },
 ])
@@ -172,17 +172,17 @@ const resolveCategory = category => {
 const resolveStatus = statusMsg => {
   if (statusMsg === 'Scheduled')
     return {
-      text: 'Scheduled',
+      text: 'Запланировано',
       color: 'warning',
     }
   if (statusMsg === 'Published')
     return {
-      text: 'Publish',
+      text: 'Опубликовано',
       color: 'success',
     }
   if (statusMsg === 'Inactive')
     return {
-      text: 'Inactive',
+      text: 'Неактивно',
       color: 'error',
     }
 }
@@ -336,7 +336,7 @@ const deleteProduct = async id => {
 
     <!-- 👉 products -->
     <VCard
-      title="Filters"
+      title="Фильтры"
       class="mb-6"
     >
       <VCardText>
@@ -392,7 +392,7 @@ const deleteProduct = async id => {
           <!-- 👉 Search  -->
           <AppTextField
             v-model="searchQuery"
-            placeholder="Search Product"
+            placeholder="Поиск товара"
             style="inline-size: 200px;"
             class="me-3"
           />
@@ -410,7 +410,7 @@ const deleteProduct = async id => {
             color="secondary"
             prepend-icon="tabler-upload"
           >
-            Export
+            Экспорт
           </VBtn>
 
           <VBtn
@@ -418,7 +418,7 @@ const deleteProduct = async id => {
             prepend-icon="tabler-plus"
             @click="$router.push('/apps/ecommerce/product/add')"
           >
-            Add Product
+            Добавить товар
           </VBtn>
         </div>
       </div>
@@ -499,7 +499,7 @@ const deleteProduct = async id => {
                   value="download"
                   prepend-icon="tabler-download"
                 >
-                  Download
+                  Скачать
                 </VListItem>
 
                 <VListItem
@@ -507,14 +507,14 @@ const deleteProduct = async id => {
                   prepend-icon="tabler-trash"
                   @click="deleteProduct(item.id)"
                 >
-                  Delete
+                  Удалить
                 </VListItem>
 
                 <VListItem
                   value="duplicate"
                   prepend-icon="tabler-copy"
                 >
-                  Duplicate
+                  Дублировать
                 </VListItem>
               </VList>
             </VMenu>

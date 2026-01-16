@@ -32,7 +32,7 @@ const brandLogo5 = useGenerateImageVariant(logo5light, logo5dark)
 // Customer Review Data
 const reviewData = [
   {
-    desc: 'I\'ve never used a theme as versatile and flexible as Vuexy. It\'s my go to for building dashboard sites on almost any project.',
+    desc: 'I\'ve never used a theme as versatile and flexible as ihome. It\'s my go to for building dashboard sites on almost any project.',
     img: logo1,
     rating: 5,
     name: 'Eugenia Moore',
@@ -64,7 +64,7 @@ const reviewData = [
     avatar: avatar4,
   },
   {
-    desc: 'Vuexy is awesome, and I particularly enjoy knowing that if I get stuck on something, there is always a helpful community to assist me.',
+    desc: 'ihome is awesome, and I particularly enjoy knowing that if I get stuck on something, there is always a helpful community to assist me.',
     img: logo3,
     rating: 5,
     name: 'Tommy haffman',
@@ -72,7 +72,7 @@ const reviewData = [
     avatar: avatar5,
   },
   {
-    desc: 'I\'ve never used a theme as versatile and flexible as Vuexy. It\'s my go to for building dashboard sites on almost any project.',
+    desc: 'I\'ve never used a theme as versatile and flexible as ihome. It\'s my go to for building dashboard sites on almost any project.',
     img: logo1,
     rating: 5,
     name: 'Eugenia Moore',
@@ -80,7 +80,7 @@ const reviewData = [
     avatar: avatar1,
   },
   {
-    desc: 'Vuexy is awesome, and I particularly enjoy knowing that if I get stuck on something, there is always a helpful community to assist me.',
+    desc: 'ihome is awesome, and I particularly enjoy knowing that if I get stuck on something, there is always a helpful community to assist me.',
     img: logo2,
     rating: 5,
     name: 'Tommy haffman',

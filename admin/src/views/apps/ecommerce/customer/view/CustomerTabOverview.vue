@@ -17,15 +17,15 @@ import CustomerOrderTable from './CustomerOrderTable.vue'
             rounded
           />
           <h5 class="text-h5">
-            Account Balance
+            Баланс счета
           </h5>
           <div>
             <h5 class="text-h5 text-primary mb-1">
               $7480
-              <span class="text-body-1 d-inline-block">Credit Left</span>
+              <span class="text-body-1 d-inline-block">Остаток кредита</span>
             </h5>
             <p class="mb-0">
-              Account balance for next purchase
+              Баланс счета для следующей покупки
             </p>
           </div>
         </VCardText>
@@ -77,15 +77,15 @@ import CustomerOrderTable from './CustomerOrderTable.vue'
             rounded
           />
           <h5 class="text-h5">
-            Wishlist
+            Список желаний
           </h5>
           <div>
             <h5 class="text-h5 text-warning mb-1">
               15
-              <span class="text-body-1 d-inline-block">Items in wishlist</span>
+              <span class="text-body-1 d-inline-block">Товаров в списке желаний</span>
             </h5>
             <p class="mb-0">
-              Receive notification when items go on sale
+              Получать уведомления, когда товары поступят в продажу
             </p>
           </div>
         </VCardText>
@@ -105,15 +105,15 @@ import CustomerOrderTable from './CustomerOrderTable.vue'
             rounded
           />
           <h5 class="text-h5">
-            Coupons
+            Купоны
           </h5>
           <div>
             <h5 class="text-h5 text-info mb-1">
               21
-              <span class="text-body-1 d-inline-block">Coupons you win</span>
+              <span class="text-body-1 d-inline-block">Выигранных купонов</span>
             </h5>
             <p class="mb-0">
-              Use coupon on next purchase
+              Использовать купон при следующей покупке
             </p>
           </div>
         </VCardText>

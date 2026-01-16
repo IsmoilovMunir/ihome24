@@ -19,7 +19,7 @@ export const db = {
       currentPlan: 'enterprise',
       status: 'inactive',
       avatar: avatar1,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 2,
@@ -33,7 +33,7 @@ export const db = {
       currentPlan: 'team',
       status: 'pending',
       avatar: avatar2,
-      billing: 'Auto debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 3,
@@ -47,7 +47,7 @@ export const db = {
       currentPlan: 'enterprise',
       status: 'active',
       avatar: avatar3,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 4,
@@ -61,7 +61,7 @@ export const db = {
       currentPlan: 'team',
       status: 'inactive',
       avatar: '',
-      billing: 'Auto debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 5,
@@ -75,7 +75,7 @@ export const db = {
       currentPlan: 'enterprise',
       status: 'pending',
       avatar: avatar5,
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 6,
@@ -89,7 +89,7 @@ export const db = {
       currentPlan: 'company',
       status: 'active',
       avatar: '',
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 7,
@@ -103,7 +103,7 @@ export const db = {
       currentPlan: 'company',
       status: 'pending',
       avatar: avatar1,
-      billing: 'Manual-PayPal',
+      billing: 'Ручная оплата - PayPal',
     },
     {
       id: 8,
@@ -117,7 +117,7 @@ export const db = {
       currentPlan: 'enterprise',
       status: 'pending',
       avatar: '',
-      billing: 'Auto debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 9,
@@ -131,7 +131,7 @@ export const db = {
       currentPlan: 'team',
       status: 'pending',
       avatar: avatar1,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 10,
@@ -145,7 +145,7 @@ export const db = {
       currentPlan: 'company',
       status: 'inactive',
       avatar: avatar3,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 11,
@@ -159,7 +159,7 @@ export const db = {
       currentPlan: 'team',
       status: 'inactive',
       avatar: '',
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 12,
@@ -173,7 +173,7 @@ export const db = {
       currentPlan: 'team',
       status: 'pending',
       avatar: avatar3,
-      billing: 'Manual-PayPal',
+      billing: 'Ручная оплата - PayPal',
     },
     {
       id: 13,
@@ -187,7 +187,7 @@ export const db = {
       currentPlan: 'basic',
       status: 'inactive',
       avatar: avatar6,
-      billing: 'Manual-PayPal',
+      billing: 'Ручная оплата - PayPal',
     },
     {
       id: 14,
@@ -201,7 +201,7 @@ export const db = {
       currentPlan: 'team',
       status: 'active',
       avatar: '',
-      billing: 'Manual-PayPal',
+      billing: 'Ручная оплата - PayPal',
     },
     {
       id: 15,
@@ -215,7 +215,7 @@ export const db = {
       currentPlan: 'enterprise',
       status: 'active',
       avatar: avatar3,
-      billing: 'Manual-PayPal',
+      billing: 'Ручная оплата - PayPal',
     },
     {
       id: 16,
@@ -229,7 +229,7 @@ export const db = {
       currentPlan: 'company',
       status: 'active',
       avatar: avatar4,
-      billing: 'Manual-PayPal',
+      billing: 'Ручная оплата - PayPal',
     },
     {
       id: 17,
@@ -243,7 +243,7 @@ export const db = {
       currentPlan: 'basic',
       status: 'active',
       avatar: avatar1,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 18,
@@ -257,7 +257,7 @@ export const db = {
       currentPlan: 'team',
       status: 'active',
       avatar: avatar3,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 19,
@@ -271,7 +271,7 @@ export const db = {
       currentPlan: 'enterprise',
       status: 'active',
       avatar: '',
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 20,
@@ -285,7 +285,7 @@ export const db = {
       currentPlan: 'team',
       status: 'inactive',
       avatar: avatar5,
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 21,
@@ -299,7 +299,7 @@ export const db = {
       currentPlan: 'team',
       status: 'active',
       avatar: avatar1,
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 22,
@@ -313,7 +313,7 @@ export const db = {
       currentPlan: 'company',
       status: 'inactive',
       avatar: avatar6,
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 23,
@@ -327,7 +327,7 @@ export const db = {
       currentPlan: 'basic',
       status: 'pending',
       avatar: avatar2,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 24,
@@ -341,7 +341,7 @@ export const db = {
       currentPlan: 'team',
       status: 'pending',
       avatar: '',
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 25,
@@ -355,7 +355,7 @@ export const db = {
       currentPlan: 'enterprise',
       status: 'pending',
       avatar: '',
-      billing: 'Auto Debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 26,
@@ -369,7 +369,7 @@ export const db = {
       currentPlan: 'basic',
       status: 'inactive',
       avatar: avatar6,
-      billing: 'Auto Debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 27,
@@ -383,7 +383,7 @@ export const db = {
       currentPlan: 'enterprise',
       status: 'active',
       avatar: '',
-      billing: 'Auto Debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 28,
@@ -397,7 +397,7 @@ export const db = {
       currentPlan: 'team',
       status: 'active',
       avatar: '',
-      billing: 'Auto Debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 29,
@@ -411,7 +411,7 @@ export const db = {
       currentPlan: 'team',
       status: 'active',
       avatar: avatar1,
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 30,
@@ -425,7 +425,7 @@ export const db = {
       currentPlan: 'team',
       status: 'pending',
       avatar: avatar5,
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 31,
@@ -439,7 +439,7 @@ export const db = {
       currentPlan: 'basic',
       status: 'pending',
       avatar: avatar2,
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 32,
@@ -453,7 +453,7 @@ export const db = {
       currentPlan: 'basic',
       status: 'pending',
       avatar: avatar6,
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 33,
@@ -467,7 +467,7 @@ export const db = {
       currentPlan: 'basic',
       status: 'active',
       avatar: '',
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 34,
@@ -481,7 +481,7 @@ export const db = {
       currentPlan: 'company',
       status: 'active',
       avatar: avatar3,
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 35,
@@ -495,7 +495,7 @@ export const db = {
       currentPlan: 'company',
       status: 'pending',
       avatar: avatar2,
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
     {
       id: 36,
@@ -509,7 +509,7 @@ export const db = {
       currentPlan: 'team',
       status: 'inactive',
       avatar: '',
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 37,
@@ -523,7 +523,7 @@ export const db = {
       currentPlan: 'company',
       status: 'inactive',
       avatar: avatar1,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 38,
@@ -537,7 +537,7 @@ export const db = {
       currentPlan: 'enterprise',
       status: 'inactive',
       avatar: avatar2,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 39,
@@ -551,7 +551,7 @@ export const db = {
       currentPlan: 'team',
       status: 'pending',
       avatar: '',
-      billing: 'Auto Debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 40,
@@ -565,7 +565,7 @@ export const db = {
       currentPlan: 'company',
       status: 'active',
       avatar: avatar1,
-      billing: 'Auto Debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 41,
@@ -579,7 +579,7 @@ export const db = {
       currentPlan: 'team',
       status: 'pending',
       avatar: avatar5,
-      billing: 'Auto Debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 42,
@@ -593,7 +593,7 @@ export const db = {
       currentPlan: 'team',
       status: 'inactive',
       avatar: avatar1,
-      billing: 'Auto Debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 43,
@@ -607,7 +607,7 @@ export const db = {
       currentPlan: 'basic',
       status: 'inactive',
       avatar: avatar2,
-      billing: 'Auto Debit',
+      billing: 'Автоматическое списание',
     },
     {
       id: 44,
@@ -621,7 +621,7 @@ export const db = {
       currentPlan: 'team',
       status: 'active',
       avatar: avatar1,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 45,
@@ -635,7 +635,7 @@ export const db = {
       currentPlan: 'team',
       status: 'pending',
       avatar: avatar5,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 46,
@@ -649,7 +649,7 @@ export const db = {
       currentPlan: 'enterprise',
       status: 'pending',
       avatar: avatar4,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 47,
@@ -663,7 +663,7 @@ export const db = {
       currentPlan: 'basic',
       status: 'active',
       avatar: avatar6,
-      billing: 'Manual-Credit Card',
+      billing: 'Ручная оплата - Банковская карта',
     },
     {
       id: 48,
@@ -677,7 +677,7 @@ export const db = {
       currentPlan: 'basic',
       status: 'pending',
       avatar: avatar3,
-      billing: 'Manual-PayPal',
+      billing: 'Ручная оплата - PayPal',
     },
     {
       id: 49,
@@ -691,7 +691,7 @@ export const db = {
       currentPlan: 'team',
       status: 'inactive',
       avatar: avatar2,
-      billing: 'Manual-PayPal',
+      billing: 'Ручная оплата - PayPal',
     },
     {
       id: 50,
@@ -705,7 +705,7 @@ export const db = {
       currentPlan: 'company',
       status: 'active',
       avatar: avatar1,
-      billing: 'Manual-Cash',
+      billing: 'Ручная оплата - Наличные',
     },
   ],
 }

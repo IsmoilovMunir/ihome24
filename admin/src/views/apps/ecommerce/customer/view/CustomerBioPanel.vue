@@ -62,7 +62,7 @@ const customerData = {
             {{ props.customerData.customer }}
           </h5>
           <div class="text-body-1">
-            Customer ID #{{ props.customerData.customerId }}
+            ID клиента #{{ props.customerData.customerId }}
           </div>
 
           <div class="d-flex justify-space-evenly gap-x-5 mt-6">
@@ -80,7 +80,7 @@ const customerData = {
                   {{ props.customerData.order }}
                 </h5>
                 <div class="text-body-1">
-                  Order
+                  Заказов
                 </div>
               </div>
             </div>
@@ -98,7 +98,7 @@ const customerData = {
                   ${{ props.customerData.totalSpent }}
                 </h5>
                 <div class="text-body-1">
-                  Spent
+                  Потрачено
                 </div>
               </div>
             </div>
@@ -116,7 +116,7 @@ const customerData = {
           <VList class="card-list mt-2">
             <VListItem>
               <h6 class="text-h6">
-                Username:
+                Имя пользователя:
                 <span class="text-body-1 d-inline-block">
                   {{ props.customerData.customer }}
                 </span>
@@ -125,7 +125,7 @@ const customerData = {
 
             <VListItem>
               <h6 class="text-h6">
-                Billing Email:
+                Email для оплаты:
                 <span class="text-body-1 d-inline-block">
                   {{ props.customerData.email }}
                 </span>
@@ -135,7 +135,7 @@ const customerData = {
             <VListItem>
               <div class="d-flex gap-x-2 align-center">
                 <h6 class="text-h6">
-                  Status:
+                  Статус:
                 </h6>
                 <VChip
                   label
@@ -149,7 +149,7 @@ const customerData = {
 
             <VListItem>
               <h6 class="text-h6">
-                Contact:
+                Контакт:
                 <span class="text-body-1 d-inline-block">
                   {{ props.customerData.contact }}
                 </span>
@@ -158,7 +158,7 @@ const customerData = {
 
             <VListItem>
               <h6 class="text-h6">
-                Country:
+                Страна:
                 <span class="text-body-1 d-inline-block">
                   {{ props.customerData.country }}
                 </span>
@@ -189,10 +189,10 @@ const customerData = {
           <div class="d-flex align-center">
             <div>
               <h5 class="text-h5 text-white mb-4">
-                Upgrade to premium
+                Обновить до премиум
               </h5>
               <p class="mb-6 text-wrap">
-                Upgrade customer to premium membership to access pro features.
+                Обновите клиента до премиум-членства для доступа к профессиональным функциям.
               </p>
             </div>
             <div>
@@ -209,7 +209,7 @@ const customerData = {
             block
             @click="isUpgradePlanDialogVisible = !isUpgradePlanDialogVisible"
           >
-            Upgrade to Premium
+            Обновить до премиум
           </VBtn>
         </VCardText>
       </VCard>

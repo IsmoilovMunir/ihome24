@@ -19,10 +19,6 @@ const pagesList = [
     isNew: true,
   },
   {
-    name: 'Checkout',
-    to: { name: 'front-pages-checkout' },
-  },
-  {
     name: 'Help Center',
     to: { name: 'front-pages-help-center' },
   },
@@ -35,23 +31,23 @@ const pagesList = [
 const demoList = [
   {
     title: 'Vertical Layout',
-    to: 'https://demos.pixinvent.com/vuexy-vuejs-admin-template/demo-1/dashboards/analytics',
+    to: 'https://demos.pixinvent.com/ihome-vuejs-admin-template/demo-1/dashboards/analytics',
   },
   {
     title: 'Horizontal Layout',
-    to: 'https://demos.pixinvent.com/vuexy-vuejs-admin-template/demo-5/dashboards/analytics',
+    to: 'https://demos.pixinvent.com/ihome-vuejs-admin-template/demo-5/dashboards/analytics',
   },
   {
     title: 'Bordered Layout',
-    to: 'https://demos.pixinvent.com/vuexy-vuejs-admin-template/demo-2/dashboards/analytics',
+    to: 'https://demos.pixinvent.com/ihome-vuejs-admin-template/demo-2/dashboards/analytics',
   },
   {
     title: 'Semi Dark Layout',
-    to: 'https://demos.pixinvent.com/vuexy-vuejs-admin-template/demo-3/dashboards/analytics',
+    to: 'https://demos.pixinvent.com/ihome-vuejs-admin-template/demo-3/dashboards/analytics',
   },
   {
     title: 'Dark Layout',
-    to: 'https://demos.pixinvent.com/vuexy-vuejs-admin-template/demo-4/dashboards/analytics',
+    to: 'https://demos.pixinvent.com/ihome-vuejs-admin-template/demo-4/dashboards/analytics',
   },
 ]
 </script>

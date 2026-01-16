@@ -52,7 +52,7 @@ const isAddCustomerDrawerOpen = ref(false)
           variant="tonal"
           color="error"
         >
-          Delete Customer
+          Удалить клиента
         </VBtn>
       </div>
     </div>
@@ -112,7 +112,7 @@ const isAddCustomerDrawerOpen = ref(false)
         type="error"
         variant="tonal"
       >
-        Invoice with ID  {{ route.params.id }} not found!
+        Клиент с ID {{ route.params.id }} не найден!
       </VAlert>
     </div>
     <ECommerceAddCustomerDrawer v-model:is-drawer-open="isAddCustomerDrawerOpen" />

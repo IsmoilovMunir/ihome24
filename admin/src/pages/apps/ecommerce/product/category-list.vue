@@ -25,19 +25,19 @@ const categoryData = computed(() => {
 
 const headers = [
   {
-    title: 'Categories',
+    title: 'Категории',
     key: 'categoryTitle',
   },
   {
-    title: 'Total Products',
+    title: 'Всего товаров',
     key: 'totalProduct',
   },
   {
-    title: 'Total Earning',
+    title: 'Общий доход',
     key: 'totalEarning',
   },
   {
-    title: 'Actions',
+    title: 'Действия',
     key: 'actions',
     sortable: false,
   },
@@ -71,7 +71,7 @@ const openAddDrawer = () => {
         <div class="d-flex justify-sm-space-between flex-wrap gap-y-4 gap-x-6 justify-start">
           <AppTextField
             v-model="searchQuery"
-            placeholder="Search Category"
+            placeholder="Поиск категории"
             style="max-inline-size: 280px; min-inline-size: 280px;"
           />
 
@@ -85,7 +85,7 @@ const openAddDrawer = () => {
               prepend-icon="tabler-plus"
               @click="openAddDrawer"
             >
-              Add Category
+              Добавить категорию
             </VBtn>
           </div>
         </div>

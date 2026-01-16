@@ -112,14 +112,14 @@ const paymentData = [
     <VCardText>
       <div class="d-flex justify-space-between mb-6 flex-wrap align-center gap-y-4 gap-x-6">
         <h5 class="text-h5">
-          Address Book
+          Адресная книга
         </h5>
         <VBtn
           variant="tonal"
           size="small"
           @click="isNewEditAddressDialogVisible = !isNewEditAddressDialogVisible"
         >
-          Add new Address
+          Добавить новый адрес
         </VBtn>
       </div>
       <template
@@ -146,7 +146,7 @@ const paymentData = [
                     label
                     size="small"
                   >
-                    Default Address
+                    Адрес по умолчанию
                   </VChip>
                 </div>
                 <div class="text-body-1">
@@ -201,14 +201,14 @@ const paymentData = [
     <VCardText>
       <div class="d-flex justify-space-between mb-6 flex-wrap align-center gap-y-4 gap-x-6">
         <h5 class="text-h5">
-          Payment Methods
+          Способы оплаты
         </h5>
         <VBtn
           variant="tonal"
           size="small"
           @click="isNewCardAddDialogVisible = !isNewCardAddDialogVisible"
         >
-          Add Payment Methods
+          Добавить способ оплаты
         </VBtn>
       </div>
       <template
@@ -240,7 +240,7 @@ const paymentData = [
                     label
                     size="small"
                   >
-                    Default Method
+                    Способ по умолчанию
                   </VChip>
                 </div>
                 <div class="text-body-1">
@@ -279,31 +279,31 @@ const paymentData = [
                   >
                     <VTable>
                       <tr>
-                        <td>Name </td>
+                        <td>Имя </td>
                         <td class="font-weight-medium text-high-emphasis">
                           Violet Mendoza
                         </td>
                       </tr>
                       <tr>
-                        <td>Number </td>
+                        <td>Номер </td>
                         <td class="font-weight-medium text-high-emphasis">
                           **** 4487
                         </td>
                       </tr>
                       <tr>
-                        <td>Expires </td>
+                        <td>Истекает </td>
                         <td class="font-weight-medium text-high-emphasis">
                           08/2028
                         </td>
                       </tr>
                       <tr>
-                        <td>Type </td>
+                        <td>Тип </td>
                         <td class="font-weight-medium text-high-emphasis">
                           Master Card
                         </td>
                       </tr>
                       <tr>
-                        <td>Issuer </td>
+                        <td>Эмитент </td>
                         <td class="font-weight-medium text-high-emphasis">
                           VICBANK
                         </td>
@@ -322,13 +322,13 @@ const paymentData = [
                   >
                     <VTable>
                       <tr>
-                        <td>Billing </td>
+                        <td>Оплата </td>
                         <td class="font-weight-medium text-high-emphasis">
                           United Kingdom
                         </td>
                       </tr>
                       <tr>
-                        <td>Number</td>
+                        <td>Номер</td>
                         <td class="font-weight-medium text-high-emphasis">
                           +7634 983 637
                         </td>
@@ -340,7 +340,7 @@ const paymentData = [
                         </td>
                       </tr>
                       <tr>
-                        <td>Origin</td>
+                        <td>Происхождение</td>
                         <td class="d-flex">
                           <div class="me-2 font-weight-medium text-high-emphasis">
                             United States
@@ -353,10 +353,10 @@ const paymentData = [
                         </td>
                       </tr>
                       <tr>
-                        <td>CVC Check</td>
+                        <td>Проверка CVC</td>
                         <td class="d-flex">
                           <div class="me-2 font-weight-medium text-high-emphasis">
-                            Passed
+                            Пройдено
                           </div>
                           <VAvatar
                             variant="tonal"

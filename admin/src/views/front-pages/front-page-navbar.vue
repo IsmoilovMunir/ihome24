@@ -24,99 +24,95 @@ const isMegaMenuOpen = ref(false)
 
 const menuItems = [
   {
-    listTitle: 'Page',
+    listTitle: 'Страницы',
     listIcon: 'tabler-layout-grid',
     navItems: [
       {
-        name: 'Pricing',
+        name: 'Цены',
         to: { name: 'front-pages-pricing' },
       },
       {
-        name: 'Payment',
+        name: 'Оплата',
         to: { name: 'front-pages-payment' },
       },
       {
-        name: 'Checkout',
-        to: { name: 'front-pages-checkout' },
-      },
-      {
-        name: 'Help Center',
+        name: 'Центр помощи',
         to: { name: 'front-pages-help-center' },
       },
     ],
   },
   {
-    listTitle: 'Auth Demo',
+    listTitle: 'Демо аутентификации',
     listIcon: 'tabler-lock-open',
     navItems: [
       {
-        name: 'Login (Basic)',
+        name: 'Вход (Базовый)',
         to: { name: 'pages-authentication-login-v1' },
       },
       {
-        name: 'Login (Cover)',
+        name: 'Вход (Обложка)',
         to: { name: 'pages-authentication-login-v2' },
       },
       {
-        name: 'Register (Basic)',
+        name: 'Регистрация (Базовый)',
         to: { name: 'pages-authentication-register-v1' },
       },
       {
-        name: 'Register (Cover)',
+        name: 'Регистрация (Обложка)',
         to: { name: 'pages-authentication-register-v2' },
       },
       {
-        name: 'Register (Multi-steps)',
+        name: 'Регистрация (Многошаговая)',
         to: { name: 'pages-authentication-register-multi-steps' },
       },
       {
-        name: 'Forgot Password (Basic)',
+        name: 'Забыли пароль (Базовый)',
         to: { name: 'pages-authentication-forgot-password-v1' },
       },
       {
-        name: 'Forgot Password (Cover)',
+        name: 'Забыли пароль (Обложка)',
         to: { name: 'pages-authentication-forgot-password-v2' },
       },
       {
-        name: 'Reset Password (Basic)',
+        name: 'Сброс пароля (Базовый)',
         to: { name: 'pages-authentication-reset-password-v1' },
       },
       {
-        name: 'Reset Password (cover  )',
+        name: 'Сброс пароля (Обложка)',
         to: { name: 'pages-authentication-reset-password-v2' },
       },
     ],
   },
   {
-    listTitle: 'Other',
+    listTitle: 'Прочее',
     listIcon: 'tabler-photo',
     navItems: [
       {
-        name: 'Under Maintenance',
+        name: 'На обслуживании',
         to: { name: 'pages-misc-under-maintenance' },
       },
       {
-        name: 'Coming Soon',
+        name: 'Скоро',
         to: { name: 'pages-misc-coming-soon' },
       },
       {
-        name: 'Not Authorized',
+        name: 'Не авторизован',
         to: { path: '/not-authorized' },
       },
       {
-        name: 'Verify Email (Basic)',
+        name: 'Подтверждение email (Базовый)',
         to: { name: 'pages-authentication-verify-email-v1' },
       },
       {
-        name: 'Verify Email (Cover)',
+        name: 'Подтверждение email (Обложка)',
         to: { name: 'pages-authentication-verify-email-v2' },
       },
       {
-        name: 'Two Steps (Basic)',
+        name: 'Два шага (Базовый)',
         to: { name: 'pages-authentication-two-steps-v1' },
       },
       {
-        name: 'Two Steps (Cover)',
+        name: 'Два шага (Обложка)',
         to: { name: 'pages-authentication-two-steps-v2' },
       },
     ],
@@ -384,7 +380,7 @@ const isPageActive = computed(() => menuItems.some(item => item.navItems.some(li
             prepend-icon="tabler-shopping-cart"
             variant="elevated"
             color="primary"
-            href="https://1.envato.market/vuexy_admin"
+            href="https://1.envato.market/ihome_admin"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -397,7 +393,7 @@ const isPageActive = computed(() => menuItems.some(item => item.navItems.some(li
             icon
             variant="elevated"
             color="primary"
-            href="https://1.envato.market/vuexy_admin"
+            href="https://1.envato.market/ihome_admin"
             target="_blank"
             rel="noopener noreferrer"
           >

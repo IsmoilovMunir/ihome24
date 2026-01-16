@@ -1,6 +1,20 @@
-<svg width="35" height="24" viewBox="0 0 34 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path fill-rule="evenodd" clip-rule="evenodd" d="M0.00183571 0.3125V7.59485C0.00183571 7.59485 -0.141502 9.88783 2.10473 11.8288L14.5469 23.6837L21.0172 23.6005L19.9794 10.8126L17.5261 7.93369L9.81536 0.3125H0.00183571Z" fill="currentColor"/>
-<path opacity="0.06" fill-rule="evenodd" clip-rule="evenodd" d="M8.17969 17.7762L13.3027 3.75173L17.589 8.02192L8.17969 17.7762Z" fill="#161616"/>
-<path opacity="0.06" fill-rule="evenodd" clip-rule="evenodd" d="M8.58203 17.2248L14.8129 5.24231L17.6211 8.05247L8.58203 17.2248Z" fill="#161616"/>
-<path fill-rule="evenodd" clip-rule="evenodd" d="M8.25781 17.6914L25.1339 0.3125H33.9991V7.62657C33.9991 7.62657 33.8144 10.0645 32.5743 11.3686L21.0179 23.6875H14.5487L8.25781 17.6914Z" fill="currentColor"/>
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Creator: CorelDRAW -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="10.256mm" height="10.3263mm" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 5.18 5.22"
+ xmlns:xlink="http://www.w3.org/1999/xlink"
+ xmlns:xodm="http://www.corel.com/coreldraw/odm/2003">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .fil0 {fill:#7367F0}
+   ]]>
+  </style>
+ </defs>
+ <g id="Слой_x0020_1">
+  <metadata id="CorelCorpID_0Corel-Layer"/>
+  <path class="fil0" d="M0.42 0l0.17 0 4.59 0 0 2.26 -0.97 -0.71c-0.39,-0.29 -0.25,-0.29 -0.64,0.01l-2 1.51c-0.27,0.2 -0.28,0.21 -0.28,0.57l0 1.59 -1.29 0 0 -4.48 0 -0.21c0,-0.35 0.02,-0.54 0.42,-0.54z"/>
+  <path class="fil0" d="M3.85 5.03l-1.1 0c0.01,-0.11 0.05,-0.21 0.11,-0.31 0.06,-0.1 0.18,-0.21 0.36,-0.34 0.11,-0.08 0.18,-0.14 0.21,-0.18 0.03,-0.04 0.04,-0.08 0.04,-0.12 0,-0.04 -0.01,-0.07 -0.04,-0.1 -0.03,-0.03 -0.07,-0.04 -0.11,-0.04 -0.05,0 -0.08,0.01 -0.11,0.04 -0.03,0.03 -0.05,0.08 -0.06,0.16l-0.37 -0.03c0.01,-0.1 0.04,-0.18 0.08,-0.24 0.04,-0.06 0.09,-0.1 0.16,-0.13 0.07,-0.03 0.17,-0.05 0.29,-0.05 0.13,0 0.23,0.01 0.3,0.04 0.07,0.03 0.13,0.07 0.17,0.13 0.04,0.06 0.06,0.13 0.06,0.2 0,0.08 -0.02,0.16 -0.07,0.23 -0.05,0.07 -0.13,0.15 -0.26,0.24 -0.07,0.05 -0.12,0.09 -0.15,0.11 -0.02,0.02 -0.05,0.05 -0.09,0.08l0.57 0 0 0.3zm0.78 -0.25l-0.67 0 0 -0.3 0.67 -0.79 0.32 0 0 0.81 0.16 0 0 0.28 -0.16 0 0 0.25 -0.32 0 0 -0.25zm0 -0.28l0 -0.41 -0.35 0.41 0.35 0zm0.55 -0.92l0 1.64 -2.59 0 0.01 -1.66 0.99 -0.72c0.34,-0.25 0.25,-0.29 0.58,-0.04l1.02 0.78z"/>
+ </g>
 </svg>
