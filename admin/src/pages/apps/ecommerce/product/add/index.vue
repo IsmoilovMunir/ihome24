@@ -148,17 +148,23 @@ const loadProductData = async () => {
     
     // Заполняем форму данными продукта
     productSku.value = response.sku || ''
-    productBrand.value = response.brand || ''
+    productBrand.value = '' // Brand не хранится в ProductResponse, оставляем пустым
     productTitle.value = response.name || ''
     categoryId.value = response.category?.id || null
     parentCategoryId.value = response.category?.parentId || null
     
+    // Описание - в ProductResponse это просто строка
     if (response.description) {
-      descriptionShort.value = response.description.short || ''
-      descriptionFull.value = response.description.full || ''
-      benefits.value = response.description.benefits || ['']
+      descriptionFull.value = response.description
+      descriptionShort.value = response.description.substring(0, 200) // Первые 200 символов как краткое описание
+      benefits.value = ['']
+    } else {
+      descriptionShort.value = ''
+      descriptionFull.value = ''
+      benefits.value = ['']
     }
     
+    // Загружаем характеристики из ответа
     if (response.characteristics && response.characteristics.length > 0) {
       characteristics.value = response.characteristics.map(c => ({
         key: c.key || '',
@@ -166,62 +172,74 @@ const loadProductData = async () => {
         value: c.value || '',
         filterable: c.filterable !== undefined ? c.filterable : true
       }))
+    } else {
+      // Если характеристик нет, оставляем одну пустую
+      characteristics.value = [{ key: '', name: '', value: '', filterable: true }]
     }
     
-    if (response.media) {
-      mainImage.value = response.media.mainImage || ''
-      galleryImages.value = response.media.gallery && response.media.gallery.length > 0 
-        ? response.media.gallery 
-        : ['']
-      videoUrl.value = response.media.video || ''
+    // Медиа - загружаем изображения из галереи
+    if (response.images && response.images.length > 0) {
+      // Сортируем изображения по sortOrder
+      const sortedImages = [...response.images].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+      mainImage.value = sortedImages[0]?.imageUrl || response.imageUrl || ''
+      galleryImages.value = sortedImages.map(img => img.imageUrl).filter(url => url)
+      // Если галерея пустая, добавляем главное изображение
+      if (galleryImages.value.length === 0 && response.imageUrl) {
+        galleryImages.value = [response.imageUrl]
+      }
+    } else if (response.imageUrl) {
+      mainImage.value = response.imageUrl
+      galleryImages.value = [response.imageUrl]
+    } else {
+      mainImage.value = ''
+      galleryImages.value = ['']
     }
+    videoUrl.value = ''
     
-    if (response.variants && response.variants.length > 0) {
-      variants.value = response.variants.map(v => ({
-        variantId: v.variantId || '',
-        sku: v.sku || '',
-        attributes: v.attributes || { color: '', size: '' },
-        price: {
-          base: v.price?.base?.toString() || '',
-          sale: v.price?.sale?.toString() || '',
-          currency: v.price?.currency || 'RUB',
-          vat: v.price?.vat || 20
+    // Варианты - создаем один вариант на основе данных товара
+    variants.value = [{
+      variantId: '',
+      sku: response.sku || '',
+      attributes: { color: '', size: '' },
+      price: {
+        base: response.price ? response.price.toString() : '',
+        sale: response.oldPrice ? response.oldPrice.toString() : '',
+        currency: 'RUB',
+        vat: 20
+      },
+      stock: {
+        quantity: response.stockQuantity || 0
+      },
+      barcodes: {
+        skuBarcode: '',
+        ean13: ''
+      },
+      logistics: {
+        weightKg: '',
+        dimensionsCm: {
+          length: '',
+          width: '',
+          height: ''
         },
-        stock: {
-          quantity: v.stock?.quantity || 0
-        },
-        barcodes: {
-          skuBarcode: v.barcodes?.skuBarcode || '',
-          ean13: v.barcodes?.ean13 || ''
-        },
-        logistics: {
-          weightKg: v.logistics?.weightKg?.toString() || '',
-          dimensionsCm: {
-            length: v.logistics?.dimensionsCm?.length?.toString() || '',
-            width: v.logistics?.dimensionsCm?.width?.toString() || '',
-            height: v.logistics?.dimensionsCm?.height?.toString() || ''
-          },
-          delivery: {
-            methods: v.logistics?.delivery?.methods || [],
-            deliveryDays: v.logistics?.delivery?.deliveryDays || ''
-          }
+        delivery: {
+          methods: [],
+          deliveryDays: ''
         }
-      }))
-    }
+      }
+    }]
     
-    if (response.returns) {
-      returnsAllowed.value = response.returns.allowed !== undefined ? response.returns.allowed : true
-      returnsDays.value = response.returns.days || 14
-      returnsConditions.value = response.returns.conditions || ''
-    }
+    // Возвраты - пока нет в ProductResponse, используем значения по умолчанию
+    returnsAllowed.value = true
+    returnsDays.value = 14
+    returnsConditions.value = ''
     
-    if (response.seo) {
-      seoSlug.value = response.seo.slug || ''
-      seoMetaTitle.value = response.seo.metaTitle || ''
-      seoMetaDescription.value = response.seo.metaDescription || ''
-    }
+    // SEO - пока нет в ProductResponse, оставляем пустым
+    seoSlug.value = ''
+    seoMetaTitle.value = ''
+    seoMetaDescription.value = ''
     
-    status.value = response.status || 'draft'
+    // Статус - определяем на основе isActive
+    status.value = response.isActive ? 'published' : 'draft'
     
     console.log('Форма заполнена данными продукта')
   } catch (error) {
@@ -235,12 +253,13 @@ const loadProductData = async () => {
   }
 }
 
-// Watch на изменение route.query.id для загрузки данных при редактировании
-watch(() => route.query.id, async (newId) => {
-  if (newId) {
-    const id = parseInt(newId)
-    if (id && id !== productId.value) {
-      productId.value = id
+// Watch на изменение route.params.id или route.query.id для загрузки данных при редактировании
+watch([() => route.params.id, () => route.query.id], async ([paramId, queryId]) => {
+  const id = paramId || queryId
+  if (id) {
+    const parsedId = parseInt(id)
+    if (parsedId && parsedId !== productId.value) {
+      productId.value = parsedId
       isEditMode.value = true
       await loadProductData()
     }
@@ -254,9 +273,10 @@ watch(() => route.query.id, async (newId) => {
 onMounted(async () => {
   await loadCategories()
   
-  // Проверяем, есть ли ID продукта в query параметрах
-  if (route.query.id) {
-    productId.value = parseInt(route.query.id)
+  // Проверяем, есть ли ID продукта в параметрах пути или query параметрах
+  const id = route.params.id || route.query.id
+  if (id) {
+    productId.value = parseInt(id)
     isEditMode.value = true
     await loadProductData()
   }

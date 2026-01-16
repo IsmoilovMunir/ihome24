@@ -12,17 +12,17 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping(value = "/api/admin/products", produces = "application/json")
+@RequestMapping("/api/admin/products")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "*")
 public class AdminProductRestController {
 
     private final ProductService productService;
 
-    @PostMapping(consumes = "application/json")
+    @PostMapping(consumes = "application/json", produces = "application/json")
     public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody ProductRequest request) {
-        ProductResponse product = productService.createProduct(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(product);
+        ProductResponse response = productService.createProduct(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
     @GetMapping
@@ -37,10 +37,15 @@ public class AdminProductRestController {
         return ResponseEntity.ok(product);
     }
 
-    @PutMapping(value = "/{id}", consumes = "application/json")
-    public ResponseEntity<ProductResponse> updateProduct(@PathVariable Long id,
-                                                       @Valid @RequestBody ProductRequest request) {
+    @PutMapping(value = "/{id}", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<ProductResponse> updateProduct(@PathVariable Long id, @Valid @RequestBody ProductRequest request) {
         ProductResponse response = productService.updateProduct(id, request);
         return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.noContent().build();
     }
 }

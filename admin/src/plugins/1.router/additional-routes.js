@@ -58,4 +58,12 @@ export const routes = [
     name: 'apps-ecommerce-dashboard',
     component: () => import('@/pages/dashboards/ecommerce.vue'),
   },
+  {
+    path: '/apps/ecommerce/product/edit/:id',
+    name: 'apps-ecommerce-product-edit',
+    component: () => import('@/pages/apps/ecommerce/product/add/index.vue'),
+    meta: {
+      navActiveLink: 'apps-ecommerce-product',
+    },
+  },
 ]

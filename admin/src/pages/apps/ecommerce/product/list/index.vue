@@ -1,48 +1,45 @@
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { $api } from '@/utils/api'
-
 const widgetData = ref([
   {
-    title: 'Продажи в магазине',
+    title: 'In-Store Sales',
     value: '$5,345',
     icon: 'tabler-smart-home',
-    desc: '5k заказов',
+    desc: '5k orders',
     change: 5.7,
   },
   {
-    title: 'Продажи на сайте',
+    title: 'Website Sales',
     value: '$674,347',
     icon: 'tabler-device-laptop',
-    desc: '21k заказов',
+    desc: '21k orders',
     change: 12.4,
   },
   {
-    title: 'Скидка',
+    title: 'Discount',
     value: '$14,235',
     icon: 'tabler-gift',
-    desc: '6k заказов',
+    desc: '6k orders',
   },
   {
-    title: 'Партнёрская программа',
+    title: 'Affiliate',
     value: '$8,345',
     icon: 'tabler-wallet',
-    desc: '150 заказов',
+    desc: '150 orders',
     change: -3.5,
   },
 ])
 
 const headers = [
   {
-    title: 'Товар',
+    title: 'Product',
     key: 'product',
   },
   {
-    title: 'Категория',
+    title: 'Category',
     key: 'category',
   },
   {
-    title: 'Склад',
+    title: 'Stock',
     key: 'stock',
     sortable: false,
   },
@@ -51,19 +48,19 @@ const headers = [
     key: 'sku',
   },
   {
-    title: 'Цена',
+    title: 'Price',
     key: 'price',
   },
   {
-    title: 'Кол-во',
+    title: 'QTY',
     key: 'qty',
   },
   {
-    title: 'Статус',
+    title: 'Status',
     key: 'status',
   },
   {
-    title: 'Действия',
+    title: 'Actions',
     key: 'actions',
     sortable: false,
   },
@@ -77,29 +74,53 @@ const selectedRows = ref([])
 
 const status = ref([
   {
-    title: 'Запланировано',
+    title: 'Scheduled',
     value: 'Scheduled',
   },
   {
-    title: 'Опубликовано',
+    title: 'Publish',
     value: 'Published',
   },
   {
-    title: 'Неактивно',
+    title: 'Inactive',
     value: 'Inactive',
   },
 ])
 
-const categories = ref([])
-const isLoading = ref(false)
+const categories = ref([
+  {
+    title: 'Accessories',
+    value: 'Accessories',
+  },
+  {
+    title: 'Home Decor',
+    value: 'Home Decor',
+  },
+  {
+    title: 'Electronics',
+    value: 'Electronics',
+  },
+  {
+    title: 'Shoes',
+    value: 'Shoes',
+  },
+  {
+    title: 'Office',
+    value: 'Office',
+  },
+  {
+    title: 'Games',
+    value: 'Games',
+  },
+])
 
 const stockStatus = ref([
   {
-    title: 'В наличии',
+    title: 'In Stock',
     value: true,
   },
   {
-    title: 'Нет в наличии',
+    title: 'Out of Stock',
     value: false,
   },
 ])
@@ -116,113 +137,126 @@ const updateOptions = options => {
 }
 
 const resolveCategory = category => {
-  // Универсальная функция для определения цвета и иконки категории
-  if (!category) return { color: 'default', icon: 'tabler-category' }
-  
-  const categoryName = category.name || category
-  const lowerName = categoryName.toLowerCase()
-  
-  if (lowerName.includes('accessories') || lowerName.includes('аксессуар'))
-    return { color: 'error', icon: 'tabler-device-watch' }
-  if (lowerName.includes('home') || lowerName.includes('дом'))
-    return { color: 'info', icon: 'tabler-home' }
-  if (lowerName.includes('electronic') || lowerName.includes('электро'))
-    return { color: 'primary', icon: 'tabler-device-imac' }
-  if (lowerName.includes('shoe') || lowerName.includes('обувь'))
-    return { color: 'success', icon: 'tabler-shoe' }
-  if (lowerName.includes('office') || lowerName.includes('офис'))
-    return { color: 'warning', icon: 'tabler-briefcase' }
-  if (lowerName.includes('game') || lowerName.includes('игр'))
-    return { color: 'primary', icon: 'tabler-device-gamepad-2' }
-  
-  return { color: 'default', icon: 'tabler-category' }
+  if (category === 'Accessories')
+    return {
+      color: 'error',
+      icon: 'tabler-device-watch',
+    }
+  if (category === 'Home Decor')
+    return {
+      color: 'info',
+      icon: 'tabler-home',
+    }
+  if (category === 'Electronics')
+    return {
+      color: 'primary',
+      icon: 'tabler-device-imac',
+    }
+  if (category === 'Shoes')
+    return {
+      color: 'success',
+      icon: 'tabler-shoe',
+    }
+  if (category === 'Office')
+    return {
+      color: 'warning',
+      icon: 'tabler-briefcase',
+    }
+  if (category === 'Games')
+    return {
+      color: 'primary',
+      icon: 'tabler-device-gamepad-2',
+    }
 }
 
 const resolveStatus = statusMsg => {
-  if (!statusMsg) return { text: 'Неизвестно', color: 'default' }
-  
-  const status = statusMsg.toLowerCase()
-  if (status === 'scheduled' || status === 'запланировано')
-    return { text: 'Запланировано', color: 'warning' }
-  if (status === 'published' || status === 'опубликовано')
-    return { text: 'Опубликовано', color: 'success' }
-  if (status === 'inactive' || status === 'неактивно' || status === 'draft' || status === 'черновик')
-    return { text: 'Неактивно', color: 'error' }
-  
-  return { text: statusMsg, color: 'default' }
+  if (statusMsg === 'Scheduled')
+    return {
+      text: 'Scheduled',
+      color: 'warning',
+    }
+  if (statusMsg === 'Published')
+    return {
+      text: 'Publish',
+      color: 'success',
+    }
+  if (statusMsg === 'Inactive')
+    return {
+      text: 'Inactive',
+      color: 'error',
+    }
 }
 
-const products = ref([])
-const totalProduct = ref(0)
+const {
+  data: productsData,
+  execute: fetchProducts,
+} = await useApi(createUrl('/admin/products', {
+  query: {
+    q: searchQuery,
+    stock: selectedStock,
+    category: selectedCategory,
+    status: selectedStatus,
+    page,
+    itemsPerPage,
+    sortBy,
+    orderBy,
+  },
+}))
 
-// Загрузка категорий для фильтра
-const loadCategories = async () => {
-  try {
-    const response = await $api('/admin/categories', { method: 'GET' })
-    categories.value = response.map(cat => ({
-      title: cat.name,
-      value: cat.id,
-    }))
-  } catch (error) {
-    console.error('Ошибка при загрузке категорий:', error)
+// Преобразуем данные от бэкенда в формат, ожидаемый фронтендом
+const products = computed(() => {
+  if (!productsData.value || !Array.isArray(productsData.value)) {
+    return []
   }
-}
-
-// Загрузка товаров
-const fetchProducts = async () => {
-  try {
-    isLoading.value = true
-    const response = await $api('/admin/products', { method: 'GET' })
-    products.value = response.map(product => ({
+  
+  return productsData.value.map(product => {
+    // Форматируем цену (BigDecimal -> строка с 2 знаками после запятой)
+    let priceFormatted = '$0'
+    if (product.price) {
+      const priceValue = typeof product.price === 'number' 
+        ? product.price 
+        : parseFloat(product.price)
+      priceFormatted = `$${priceValue.toFixed(2)}`
+    }
+    
+    return {
       id: product.id,
-      productName: product.name,
-      productBrand: product.brand || '',
-      category: product.category ? product.category.name : '',
-      categoryObj: product.category,
-      stock: product.isActive || false,
+      productName: product.name || '',
+      productBrand: product.description || '',
+      category: product.category?.name || 'Uncategorized',
+      stock: (product.stockQuantity || 0) > 0,
       sku: product.sku || '',
-      price: product.price ? `₽${product.price}` : '₽0',
+      price: priceFormatted,
       qty: product.stockQuantity || 0,
-      status: product.status || 'draft',
-      image: product.imageUrl || null,
-    }))
-    totalProduct.value = products.value.length
-  } catch (error) {
-    console.error('Ошибка при загрузке товаров:', error)
-    products.value = []
-    totalProduct.value = 0
-  } finally {
-    isLoading.value = false
+      status: product.isActive ? 'Published' : 'Inactive',
+      image: product.imageUrl || '',
+    }
+  })
+})
+
+const totalProduct = computed(() => {
+  if (!productsData.value || !Array.isArray(productsData.value)) {
+    return 0
   }
-}
+  return productsData.value.length
+})
 
 const deleteProduct = async id => {
   try {
-    await $api(`/admin/products/${id}`, { method: 'DELETE' })
-    
+    await $api(`admin/products/${ id }`, { method: 'DELETE' })
+
     // Delete from selectedRows
     const index = selectedRows.value.findIndex(row => row === id)
     if (index !== -1)
       selectedRows.value.splice(index, 1)
 
     // Refetch products
-    await fetchProducts()
+    fetchProducts()
   } catch (error) {
     console.error('Ошибка при удалении товара:', error)
-    alert('Ошибка при удалении товара: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
+    // Можно добавить уведомление об ошибке
   }
 }
-
-// Загружаем данные при монтировании
-onMounted(() => {
-  loadCategories()
-  fetchProducts()
-})
-
-// Реактивная загрузка при изменении фильтров
-watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
-  fetchProducts()
-})
 </script>
 
 <template>
@@ -302,7 +336,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
 
     <!-- 👉 products -->
     <VCard
-      title="Фильтры"
+      title="Filters"
       class="mb-6"
     >
       <VCardText>
@@ -314,7 +348,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
           >
             <AppSelect
               v-model="selectedStatus"
-              placeholder="Статус"
+              placeholder="Status"
               :items="status"
               clearable
               clear-icon="tabler-x"
@@ -328,7 +362,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
           >
             <AppSelect
               v-model="selectedCategory"
-              placeholder="Категория"
+              placeholder="Category"
               :items="categories"
               clearable
               clear-icon="tabler-x"
@@ -342,7 +376,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
           >
             <AppSelect
               v-model="selectedStock"
-              placeholder="Склад"
+              placeholder="Stock"
               :items="stockStatus"
               clearable
               clear-icon="tabler-x"
@@ -358,7 +392,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
           <!-- 👉 Search  -->
           <AppTextField
             v-model="searchQuery"
-            placeholder="Поиск товара"
+            placeholder="Search Product"
             style="inline-size: 200px;"
             class="me-3"
           />
@@ -376,7 +410,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
             color="secondary"
             prepend-icon="tabler-upload"
           >
-            Экспорт
+            Export
           </VBtn>
 
           <VBtn
@@ -384,7 +418,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
             prepend-icon="tabler-plus"
             @click="$router.push('/apps/ecommerce/product/add')"
           >
-            Добавить товар
+            Add Product
           </VBtn>
         </div>
       </div>
@@ -392,7 +426,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
       <VDivider class="mt-4" />
 
       <!-- 👉 Datatable  -->
-      <VDataTable
+      <VDataTableServer
         v-model:items-per-page="itemsPerPage"
         v-model:model-value="selectedRows"
         v-model:page="page"
@@ -401,7 +435,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
         :items="products"
         :items-length="totalProduct"
         class="text-no-wrap"
-        :loading="isLoading"
+        @update:options="updateOptions"
       >
         <!-- product  -->
         <template #item.product="{ item }">
@@ -453,7 +487,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
 
         <!-- Actions -->
         <template #item.actions="{ item }">
-          <IconBtn @click="$router.push(`/apps/ecommerce/product/add?id=${item.id}`)">
+          <IconBtn @click="$router.push(`/apps/ecommerce/product/edit/${item.id}`)">
             <VIcon icon="tabler-edit" />
           </IconBtn>
 
@@ -465,7 +499,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
                   value="download"
                   prepend-icon="tabler-download"
                 >
-                  Скачать
+                  Download
                 </VListItem>
 
                 <VListItem
@@ -473,14 +507,14 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
                   prepend-icon="tabler-trash"
                   @click="deleteProduct(item.id)"
                 >
-                  Удалить
+                  Delete
                 </VListItem>
 
                 <VListItem
                   value="duplicate"
                   prepend-icon="tabler-copy"
                 >
-                  Дублировать
+                  Duplicate
                 </VListItem>
               </VList>
             </VMenu>
@@ -495,7 +529,7 @@ watch([searchQuery, selectedStatus, selectedCategory, selectedStock], () => {
             :total-items="totalProduct"
           />
         </template>
-      </VDataTable>
+      </VDataTableServer>
     </VCard>
   </div>
 </template>

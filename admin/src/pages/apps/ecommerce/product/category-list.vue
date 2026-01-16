@@ -1,25 +1,43 @@
 <script setup>
 import ECommerceAddCategoryDrawer from '@/views/apps/ecommerce/ECommerceAddCategoryDrawer.vue'
-import { $api } from '@/utils/api'
 
-const categoryData = ref([])
-const isLoading = ref(false)
+// Получаем данные категорий с бэкенда
+const {
+  data: categoriesData,
+  execute: fetchCategories,
+} = await useApi(createUrl('/admin/categories'))
+
+// Преобразуем данные от бэкенда в формат, ожидаемый фронтендом
+const categoryData = computed(() => {
+  if (!categoriesData.value || !Array.isArray(categoriesData.value)) {
+    return []
+  }
+  
+  return categoriesData.value.map(category => ({
+    id: category.id,
+    categoryTitle: category.name || '',
+    description: category.description || '',
+    totalProduct: 0, // TODO: Добавить подсчет продуктов по категории
+    totalEarning: 0, // TODO: Добавить подсчет доходов по категории
+    image: category.imageUrl || '',
+  }))
+})
 
 const headers = [
   {
-    title: 'Категории',
+    title: 'Categories',
     key: 'categoryTitle',
   },
   {
-    title: 'Всего товаров',
+    title: 'Total Products',
     key: 'totalProduct',
   },
   {
-    title: 'Общий доход',
+    title: 'Total Earning',
     key: 'totalEarning',
   },
   {
-    title: 'Действия',
+    title: 'Actions',
     key: 'actions',
     sortable: false,
   },
@@ -31,48 +49,19 @@ const searchQuery = ref('')
 const isAddProductDrawerOpen = ref(false)
 const editingCategoryId = ref(null)
 
-// Загрузка категорий из API
-const loadCategories = async () => {
-  try {
-    isLoading.value = true
-    const response = await $api('/admin/categories', {
-      method: 'GET',
-    })
-    
-    // Преобразуем данные из API в формат для таблицы
-    categoryData.value = response.map(cat => ({
-      id: cat.id,
-      categoryTitle: cat.name,
-      description: cat.description || '',
-      totalProduct: 0, // Можно добавить подсчет товаров позже
-      totalEarning: 0, // Можно добавить подсчет доходов позже
-      image: cat.imageUrl || '/src/assets/images/placeholder.png',
-      isActive: cat.isActive,
-    }))
-  } catch (error) {
-    console.error('Ошибка при загрузке категорий:', error)
-    alert('Ошибка при загрузке категорий: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
-  } finally {
-    isLoading.value = false
-  }
-}
-
-// Обработчик добавления новой категории
-const handleCategoryAdded = () => {
-  loadCategories() // Перезагружаем список категорий
-  editingCategoryId.value = null // Сбрасываем ID редактируемой категории
-}
-
-// Функция редактирования категории
-const editCategory = (item) => {
-  editingCategoryId.value = item.id
+const openEditDrawer = (categoryId) => {
+  editingCategoryId.value = categoryId
   isAddProductDrawerOpen.value = true
 }
 
-// Загружаем категории при монтировании компонента
-onMounted(() => {
-  loadCategories()
-})
+const closeDrawer = () => {
+  editingCategoryId.value = null
+}
+
+const openAddDrawer = () => {
+  editingCategoryId.value = null
+  isAddProductDrawerOpen.value = true
+}
 </script>
 
 <template>
@@ -82,7 +71,7 @@ onMounted(() => {
         <div class="d-flex justify-sm-space-between flex-wrap gap-y-4 gap-x-6 justify-start">
           <AppTextField
             v-model="searchQuery"
-            placeholder="Поиск категории"
+            placeholder="Search Category"
             style="max-inline-size: 280px; min-inline-size: 280px;"
           />
 
@@ -94,9 +83,9 @@ onMounted(() => {
             />
             <VBtn
               prepend-icon="tabler-plus"
-              @click="isAddProductDrawerOpen = !isAddProductDrawerOpen"
+              @click="openAddDrawer"
             >
-              Добавить категорию
+              Add Category
             </VBtn>
           </div>
         </div>
@@ -110,14 +99,13 @@ onMounted(() => {
           v-model:page="page"
           :headers="headers"
           :items="categoryData"
-          :loading="isLoading"
-          item-value="id"
+          item-value="categoryTitle"
           :search="searchQuery"
           show-select
           class="text-no-wrap"
         >
           <template #item.actions="{ item }">
-            <IconBtn @click="editCategory(item)">
+            <IconBtn @click="openEditDrawer(item.id)">
               <VIcon
                 icon="tabler-edit"
                 size="22"
@@ -156,7 +144,7 @@ onMounted(() => {
           </template>
           <template #item.totalEarning="{ item }">
             <div class="text-body-1 text-end pe-4">
-              {{ (item.totalEarning).toLocaleString("ru-RU", { style: "currency", currency: 'RUB' }) }}
+              {{ (item.totalEarning).toLocaleString("en-IN", { style: "currency", currency: 'USD' }) }}
             </div>
           </template>
           <template #item.totalProduct="{ item }">
@@ -179,14 +167,8 @@ onMounted(() => {
     <ECommerceAddCategoryDrawer 
       v-model:is-drawer-open="isAddProductDrawerOpen"
       :category-id="editingCategoryId"
-      @category-added="handleCategoryAdded"
-      @update:is-drawer-open="(val) => { 
-        isAddProductDrawerOpen = val
-        // Сбрасываем ID редактируемой категории только после закрытия drawer
-        if (!val) {
-          editingCategoryId = null
-        }
-      }"
+      @category-created="fetchCategories"
+      @drawer-closed="closeDrawer"
     />
   </div>
 </template>

@@ -70,6 +70,9 @@ public class Product {
     @Column(name = "discounted_price", precision = 10, scale = 2)
     private BigDecimal discountedPrice;
 
+    @Column(name = "characteristics", columnDefinition = "TEXT")
+    private String characteristicsJson; // JSON строка для хранения характеристик
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;

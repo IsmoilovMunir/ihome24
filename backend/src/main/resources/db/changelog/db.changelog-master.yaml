@@ -25,3 +25,5 @@ databaseChangeLog:
       file: db/changelog/changeset/product_tags_V001__initial.sql
   - include:
       file: db/changelog/changeset/products_V003__extend_fields.sql
+  - include:
+      file: db/changelog/changeset/company_settings_V001__initial.sql

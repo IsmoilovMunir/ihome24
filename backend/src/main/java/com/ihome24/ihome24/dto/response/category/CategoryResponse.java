@@ -20,6 +20,7 @@ public class CategoryResponse {
     private String imageUrl;
     private Boolean isActive;
     private Integer sortOrder;
+    private Long parentId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
