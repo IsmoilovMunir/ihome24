@@ -17,23 +17,23 @@ import xamarin from '@images/icons/project-icons/xamarin.png'
 
 const projectTableHeaders = [
   {
-    title: 'PROJECT',
+    title: 'ПРОЕКТ',
     key: 'project',
   },
   {
-    title: 'LEADER',
+    title: 'ЛИДЕР',
     key: 'leader',
   },
   {
-    title: 'Team',
+    title: 'Команда',
     key: 'team',
   },
   {
-    title: 'PROGRESS',
+    title: 'ПРОГРЕСС',
     key: 'progress',
   },
   {
-    title: 'Action',
+    title: 'Действие',
     key: 'Action',
     sortable: false,
   },
@@ -146,12 +146,12 @@ const options = ref({
   <VCard>
     <VCardText class="d-flex justify-space-between align-center flex-wrap gap-4">
       <h5 class="text-h5">
-        Project List
+        Список проектов
       </h5>
       <div style="inline-size: 272px;">
         <AppTextField
           v-model="search"
-          placeholder="Search Project"
+          placeholder="Поиск проекта"
         />
       </div>
     </VCardText>

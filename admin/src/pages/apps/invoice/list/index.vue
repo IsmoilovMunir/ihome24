@@ -16,23 +16,23 @@ const updateOptions = options => {
 
 const widgetData = ref([
   {
-    title: 'Clients',
+    title: 'Клиенты',
     value: 24,
     icon: 'tabler-user',
   },
   {
-    title: 'Invoices',
+    title: 'Счета',
     value: 165,
     icon: 'tabler-file-invoice',
   },
   {
-    title: 'Paid',
-    value: '$2.46k',
+    title: 'Оплачено',
+    value: '₽2.46к',
     icon: 'tabler-checks',
   },
   {
-    title: 'Unpaid',
-    value: '$876',
+    title: 'Не оплачено',
+    value: '₽876',
     icon: 'tabler-circle-off',
   },
 ])
@@ -44,28 +44,28 @@ const headers = [
     key: 'id',
   },
   {
-    title: 'Status',
+    title: 'Статус',
     key: 'status',
     sortable: false,
   },
   {
-    title: 'Client',
+    title: 'Клиент',
     key: 'client',
   },
   {
-    title: 'Total',
+    title: 'Итого',
     key: 'total',
   },
   {
-    title: 'Issued Date',
+    title: 'Дата выдачи',
     key: 'date',
   },
   {
-    title: 'Balance',
+    title: 'Баланс',
     key: 'balance',
   },
   {
-    title: 'Actions',
+    title: 'Действия',
     key: 'actions',
     sortable: false,
   },
@@ -92,12 +92,12 @@ const totalInvoices = computed(() => invoiceData.value.totalInvoices)
 const resolveInvoiceBalanceVariant = (balance, total) => {
   if (balance === total)
     return {
-      status: 'Unpaid',
+      status: 'Не оплачено',
       chip: { color: 'error' },
     }
   if (balance === 0)
     return {
-      status: 'Paid',
+      status: 'Оплачено',
       chip: { color: 'success' },
     }
   

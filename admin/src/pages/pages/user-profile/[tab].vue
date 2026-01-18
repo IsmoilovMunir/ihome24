@@ -22,22 +22,22 @@ const activeTab = computed({
 // tabs
 const tabs = [
   {
-    title: 'Profile',
+    title: 'Профиль',
     icon: 'tabler-user-check',
     tab: 'profile',
   },
   {
-    title: 'Team',
+    title: 'Команда',
     icon: 'tabler-users',
     tab: 'teams',
   },
   {
-    title: 'Projects',
+    title: 'Проекты',
     icon: 'tabler-layout-grid',
     tab: 'projects',
   },
   {
-    title: 'Connections',
+    title: 'Связи',
     icon: 'tabler-link',
     tab: 'connections',
   },

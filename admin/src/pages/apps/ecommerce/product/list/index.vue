@@ -31,36 +31,36 @@ const widgetData = ref([
 
 const headers = [
   {
-    title: 'Product',
+    title: 'Товар',
     key: 'product',
   },
   {
-    title: 'Category',
+    title: 'Категория',
     key: 'category',
   },
   {
-    title: 'Stock',
+    title: 'Наличие',
     key: 'stock',
     sortable: false,
   },
   {
-    title: 'SKU',
+    title: 'Артикул',
     key: 'sku',
   },
   {
-    title: 'Price',
+    title: 'Цена',
     key: 'price',
   },
   {
-    title: 'QTY',
+    title: 'Количество',
     key: 'qty',
   },
   {
-    title: 'Status',
+    title: 'Статус',
     key: 'status',
   },
   {
-    title: 'Actions',
+    title: 'Действия',
     key: 'actions',
     sortable: false,
   },
@@ -89,27 +89,27 @@ const status = ref([
 
 const categories = ref([
   {
-    title: 'Accessories',
+    title: 'Аксессуары',
     value: 'Accessories',
   },
   {
-    title: 'Home Decor',
+    title: 'Декор для дома',
     value: 'Home Decor',
   },
   {
-    title: 'Electronics',
+    title: 'Электроника',
     value: 'Electronics',
   },
   {
-    title: 'Shoes',
+    title: 'Обувь',
     value: 'Shoes',
   },
   {
-    title: 'Office',
+    title: 'Офис',
     value: 'Office',
   },
   {
-    title: 'Games',
+    title: 'Игры',
     value: 'Games',
   },
 ])
@@ -281,7 +281,7 @@ const deleteProduct = async id => {
           >
             <AppSelect
               v-model="selectedStatus"
-              placeholder="Status"
+              placeholder="Статус"
               :items="status"
               clearable
               clear-icon="tabler-x"
@@ -295,7 +295,7 @@ const deleteProduct = async id => {
           >
             <AppSelect
               v-model="selectedCategory"
-              placeholder="Category"
+              placeholder="Категория"
               :items="categories"
               clearable
               clear-icon="tabler-x"
@@ -309,7 +309,7 @@ const deleteProduct = async id => {
           >
             <AppSelect
               v-model="selectedStock"
-              placeholder="Stock"
+              placeholder="Наличие"
               :items="stockStatus"
               clearable
               clear-icon="tabler-x"

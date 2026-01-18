@@ -16,7 +16,7 @@ import pdf from '@images/icons/project-icons/pdf.png'
         />
       </template>
 
-      <VCardTitle>Activity Timeline</VCardTitle>
+      <VCardTitle>Хронология активности</VCardTitle>
     </VCardItem>
 
     <VCardText>
@@ -35,14 +35,14 @@ import pdf from '@images/icons/project-icons/pdf.png'
           <!-- 👉 Header -->
           <div class="d-flex justify-space-between align-center gap-2 flex-wrap mb-2">
             <span class="app-timeline-title">
-              12 Invoices have been paid
+              12 счетов оплачено
             </span>
-            <span class="app-timeline-meta">12 min ago</span>
+            <span class="app-timeline-meta">12 мин назад</span>
           </div>
 
           <!-- 👉 Content -->
           <div class="app-timeline-text mt-1">
-            Invoices have been paid to the company
+            Счета были оплачены компании
           </div>
 
           <div class="d-inline-flex align-center timeline-chip mt-2">
@@ -53,7 +53,7 @@ import pdf from '@images/icons/project-icons/pdf.png'
               alt="img"
             >
             <span class="app-timeline-text font-weight-medium">
-              invoice.pdf
+              счет.pdf
             </span>
           </div>
         </VTimelineItem>
@@ -67,13 +67,13 @@ import pdf from '@images/icons/project-icons/pdf.png'
           <!-- 👉 Header -->
           <div class="d-flex justify-space-between align-center flex-wrap mb-2">
             <div class="app-timeline-title">
-              Client Meeting
+              Встреча с клиентом
             </div>
-            <span class="app-timeline-meta">45 min ago</span>
+            <span class="app-timeline-meta">45 мин назад</span>
           </div>
 
           <div class="app-timeline-text mt-1">
-            Project meeting with john @10:15am
+            Встреча по проекту с Джоном @10:15
           </div>
 
           <!-- 👉 Person -->
@@ -87,9 +87,9 @@ import pdf from '@images/icons/project-icons/pdf.png'
               />
               <div class="d-flex flex-column">
                 <p class="text-sm font-weight-medium text-medium-emphasis mb-0">
-                  Lester McCarthy (Client)
+                  Лестер Маккарти (Клиент)
                 </p>
-                <span class="text-sm">CEO of Pixinvent</span>
+                <span class="text-sm">Генеральный директор Pixinvent</span>
               </div>
             </div>
           </div>
@@ -104,14 +104,14 @@ import pdf from '@images/icons/project-icons/pdf.png'
           <!-- 👉 Header -->
           <div class="d-flex justify-space-between align-center flex-wrap mb-2">
             <span class="app-timeline-title">
-              Create a new project for client
+              Создан новый проект для клиента
             </span>
-            <span class="app-timeline-meta">2 Day Ago</span>
+            <span class="app-timeline-meta">2 дня назад</span>
           </div>
 
           <!-- 👉 Content -->
           <p class="app-timeline-text mt-1 mb-2">
-            6 team members in a project
+            6 участников команды в проекте
           </p>
 
           <div class="v-avatar-group demo-avatar-group">

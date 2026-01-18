@@ -267,6 +267,94 @@ public class AuthRestController {
     }
 
     /**
+     * Endpoint для получения текущего пользователя
+     */
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "User not authenticated"));
+        }
+
+        String username = authentication.getName();
+        User user = userRepository.findByUsernameWithRoleAndPermissions(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("id", user.getId());
+        userData.put("username", user.getUsername());
+        userData.put("email", user.getEmail());
+        userData.put("fullName", user.getFullName());
+        userData.put("avatar", user.getAvatar());
+        userData.put("company", user.getCompany());
+        userData.put("country", user.getCountry());
+        userData.put("contact", user.getContact());
+        userData.put("currentPlan", user.getCurrentPlan());
+        userData.put("billing", user.getBilling());
+        userData.put("role", user.getRole() != null ? user.getRole().getName() : null);
+        userData.put("status", user.getStatus() != null ? user.getStatus().name() : "ACTIVE");
+        userData.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
+        userData.put("updatedAt", user.getUpdatedAt() != null ? user.getUpdatedAt().toString() : null);
+
+        return ResponseEntity.ok(userData);
+    }
+
+    /**
+     * Endpoint для обновления текущего пользователя
+     */
+    @PutMapping("/me")
+    public ResponseEntity<?> updateCurrentUser(@RequestBody Map<String, Object> request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "User not authenticated"));
+        }
+
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Обновляем поля пользователя
+        if (request.containsKey("fullName")) {
+            user.setFullName((String) request.get("fullName"));
+        }
+        if (request.containsKey("email")) {
+            user.setEmail((String) request.get("email"));
+        }
+        if (request.containsKey("company")) {
+            user.setCompany((String) request.get("company"));
+        }
+        if (request.containsKey("country")) {
+            user.setCountry((String) request.get("country"));
+        }
+        if (request.containsKey("contact")) {
+            user.setContact((String) request.get("contact"));
+        }
+        if (request.containsKey("avatar")) {
+            user.setAvatar((String) request.get("avatar"));
+        }
+
+        user = userRepository.save(user);
+
+        Map<String, Object> userData = new HashMap<>();
+        userData.put("id", user.getId());
+        userData.put("username", user.getUsername());
+        userData.put("email", user.getEmail());
+        userData.put("fullName", user.getFullName());
+        userData.put("avatar", user.getAvatar());
+        userData.put("company", user.getCompany());
+        userData.put("country", user.getCountry());
+        userData.put("contact", user.getContact());
+        userData.put("currentPlan", user.getCurrentPlan());
+        userData.put("billing", user.getBilling());
+        userData.put("role", user.getRole() != null ? user.getRole().getName() : null);
+        userData.put("status", user.getStatus() != null ? user.getStatus().name() : "ACTIVE");
+
+        return ResponseEntity.ok(userData);
+    }
+
+    /**
      * Endpoint для проверки существующих пользователей (только для отладки)
      */
     @GetMapping("/check-users")
