@@ -87,32 +87,32 @@ const recentDevices = [
     icon: 'tabler-brand-windows',
     color: 'info',
     device: 'HP Spectre 360',
-    location: 'Switzerland',
-    activity: '10, July 2021 20:07',
+    location: 'Россия',
+    activity: '10, July 2026 20:07',
   },
   {
     browser: 'Chrome on Android',
     icon: 'tabler-brand-android',
     color: 'success',
     device: 'Oneplus 9 Pro',
-    location: 'Dubai',
-    activity: '14, July 2021 15:15',
+    location: 'Россия',
+    activity: '14, July 2026 15:15',
   },
   {
     browser: 'Chrome on macOS',
     icon: 'tabler-brand-apple',
     color: 'secondary',
     device: 'Apple iMac',
-    location: 'India',
-    activity: '16, July 2021 16:17',
+    location: 'Россия',
+    activity: '16, July 2026 16:17',
   },
   {
     browser: 'Chrome on iPhone',
     icon: 'tabler-device-mobile',
     color: 'error',
     device: 'iPhone 12x',
-    location: 'Australia',
-    activity: '13, July 2021 10:10',
+    location: 'Россия',
+    activity: '13, July 2026 10:10',
   },
 ]
 </script>
@@ -203,8 +203,8 @@ const recentDevices = [
     <VCol cols="12">
       <!-- 👉 Two step verification -->
       <VCard
-        title="Two-steps verification"
-        subtitle="Keep your account secure with authentication step."
+        title="Двухфакторная аутентификация"
+        subtitle="Обеспечьте безопасность аккаунта с помощью дополнительного шага аутентификации."
       >
         <VCardText>
           <div class="text-h6 mb-1">
@@ -228,10 +228,10 @@ const recentDevices = [
           </AppTextField>
 
           <p class="mb-0 mt-4">
-            Two-factor authentication adds an additional layer of security to your account by requiring more than just a password to log in. <a
+            Двухфакторная аутентификация добавляет дополнительный уровень безопасности к вашему аккаунту, требуя больше, чем просто пароль для входа. <a
               href="javascript:void(0)"
               class="text-decoration-none"
-            >Learn more</a>.
+            >Узнать больше</a>.
           </p>
         </VCardText>
       </VCard>
@@ -240,7 +240,7 @@ const recentDevices = [
     <VCol cols="12">
       <!-- 👉 Recent devices -->
 
-      <VCard title="Recent devices">
+      <VCard title="Недавние устройства">
         <VDivider />
         <VDataTable
           :items="recentDevices"

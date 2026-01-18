@@ -1,46 +1,41 @@
 <script setup>
-import auFlag from '@images/icons/countries/au.png'
-import brFlag from '@images/icons/countries/br.png'
-import cnFlag from '@images/icons/countries/cn.png'
-import frFlag from '@images/icons/countries/fr.png'
-import inFlag from '@images/icons/countries/in.png'
 import usFlag from '@images/icons/countries/us.png'
 
 const salesByCountries = [
   {
     avatarImg: usFlag,
     stats: '$8,567k',
-    subtitle: 'United states',
+    subtitle: 'Россия',
     profitLoss: 25.8,
   },
   {
-    avatarImg: brFlag,
+    avatarImg: usFlag,
     stats: '$2,415k',
-    subtitle: 'Brazil',
+    subtitle: 'Россия',
     profitLoss: -6.2,
   },
   {
-    avatarImg: inFlag,
+    avatarImg: usFlag,
     stats: '$865k',
-    subtitle: 'India',
+    subtitle: 'Россия',
     profitLoss: 12.4,
   },
   {
-    avatarImg: auFlag,
+    avatarImg: usFlag,
     stats: '$745k',
-    subtitle: 'Australia',
+    subtitle: 'Россия',
     profitLoss: -11.9,
   },
   {
-    avatarImg: frFlag,
+    avatarImg: usFlag,
     stats: '$45',
-    subtitle: 'France',
+    subtitle: 'Россия',
     profitLoss: 16.2,
   },
   {
-    avatarImg: cnFlag,
+    avatarImg: usFlag,
     stats: '$12k',
-    subtitle: 'China',
+    subtitle: 'Россия',
     profitLoss: 14.8,
   },
 ]

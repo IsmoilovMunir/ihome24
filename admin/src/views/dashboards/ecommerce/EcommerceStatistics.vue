@@ -2,26 +2,26 @@
 const statistics = [
   {
     title: 'Продажи',
-    stats: '230k',
+    stats: '0',
     icon: 'tabler-chart-pie-2',
     color: 'primary',
   },
   {
     title: 'Клиенты',
-    stats: '8.549k',
+    stats: '0',
     icon: 'tabler-users',
     color: 'info',
   },
   {
     title: 'Товары',
-    stats: '1.423k',
+    stats: '0',
     icon: 'tabler-shopping-cart',
     color: 'error',
   },
   {
     title: 'Доход',
-    stats: '$9745',
-    icon: 'tabler-currency-dollar',
+    stats: '₽0',
+    icon: 'tabler-currency-ruble',
     color: 'success',
   },
 ]

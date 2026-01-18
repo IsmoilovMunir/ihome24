@@ -187,55 +187,6 @@ const deleteInvoice = async id => {
     <!-- 👉 Invoice Widgets -->
     <VCard class="mb-6">
       <VCardText class="px-3">
-        <VRow>
-          <template
-            v-for="(data, id) in widgetData"
-            :key="id"
-          >
-            <VCol
-              cols="12"
-              sm="6"
-              md="3"
-              class="px-6"
-            >
-              <div
-                class="d-flex justify-space-between align-center"
-                :class="$vuetify.display.xs
-                  ? id !== widgetData.length - 1 ? 'border-b pb-4' : ''
-                  : $vuetify.display.sm
-                    ? id < (widgetData.length / 2) ? 'border-b pb-4' : ''
-                    : ''"
-              >
-                <div class="d-flex flex-column">
-                  <h4 class="text-h4">
-                    {{ data.value }}
-                  </h4>
-                  <span class="text-body-1 text-capitalize">{{ data.title }}</span>
-                </div>
-
-                <VAvatar
-                  variant="tonal"
-                  rounded
-                  size="42"
-                >
-                  <VIcon
-                    :icon="data.icon"
-                    size="26"
-                    color="high-emphasis"
-                  />
-                </VAvatar>
-              </div>
-            </VCol>
-            <VDivider
-              v-if="$vuetify.display.mdAndUp ? id !== widgetData.length - 1
-                : $vuetify.display.smAndUp ? id % 2 === 0
-                  : false"
-              vertical
-              inset
-              length="60"
-            />
-          </template>
-        </VRow>
       </VCardText>
     </VCard>
 

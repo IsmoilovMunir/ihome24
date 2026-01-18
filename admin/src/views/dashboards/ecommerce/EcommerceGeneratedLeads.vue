@@ -9,10 +9,10 @@ const vuetifyTheme = useTheme()
 const display = useDisplay()
 
 const series = [
-  45,
-  58,
-  30,
-  50,
+  0,
+  0,
+  0,
+  0,
 ]
 
 const chartOptions = computed(() => {
@@ -93,7 +93,7 @@ const chartOptions = computed(() => {
               label: 'Всего',
               fontFamily: 'Public Sans',
               formatter() {
-                return '184'
+                return '0'
               },
             },
           },
@@ -139,7 +139,7 @@ const chartOptions = computed(() => {
 
         <div>
           <h3 class="text-h3">
-            4,350
+            0
           </h3>
           <div>
             <VIcon
@@ -147,7 +147,7 @@ const chartOptions = computed(() => {
               color="success"
               class="me-1"
             />
-            <span class="text-success font-weight-medium">15.8% </span>
+            <span class="text-success font-weight-medium">0% </span>
           </div>
         </div>
       </div>

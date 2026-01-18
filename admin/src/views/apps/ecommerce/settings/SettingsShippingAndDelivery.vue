@@ -4,17 +4,17 @@ import usflag from '@images/icons/countries/us.png'
 
 const domesticTableData = [
   {
-    rate: 'Weight',
-    condition: '5Kg-10Kg',
-    price: '$9',
+    rate: 'Вес',
+    condition: '5Кг-10Кг',
+    price: '900₽',
   },
   {
-    rate: 'VAT',
+    rate: 'НДС',
     condition: '12%',
-    price: '$25',
+    price: '2500₽',
   },
   {
-    rate: 'Duty',
+    rate: 'Пошлина',
     condition: '-',
     price: '-',
   },
@@ -22,19 +22,19 @@ const domesticTableData = [
 
 const InternationalTableData = [
   {
-    rate: 'Weight',
-    condition: '5Kg-10Kg',
-    price: '$9',
+    rate: 'Вес',
+    condition: '5Кг-10Кг',
+    price: '900₽',
   },
   {
-    rate: 'VAT',
+    rate: 'НДС',
     condition: '12%',
-    price: '$25',
+    price: '2500₽',
   },
   {
-    rate: 'Duty',
-    condition: 'Japan',
-    price: '$49',
+    rate: 'Пошлина',
+    condition: 'Россия',
+    price: '4900₽',
   },
 ]
 </script>
@@ -42,12 +42,12 @@ const InternationalTableData = [
 <template>
   <VCard class="mb-6">
     <VCardItem
-      title="Shipping Zone"
-      subtitle="Choose where you ship and how much you charge for shipping at checkout."
+      title="Зона доставки"
+      subtitle="Выберите, куда вы доставляете и сколько взимаете за доставку при оформлении заказа."
     >
       <template #append>
         <VBtn variant="text">
-          Create Zone
+          Создать зону
         </VBtn>
       </template>
     </VCardItem>
@@ -63,10 +63,10 @@ const InternationalTableData = [
 
           <div>
             <h6 class="text-h6">
-              Domestic
+              Внутренняя доставка
             </h6>
             <div class="text-body-2">
-              United state of America
+              Россия
             </div>
           </div>
 
@@ -85,10 +85,10 @@ const InternationalTableData = [
         <VTable class="mb-4 border rounded">
           <thead>
             <tr>
-              <th>RATE NAME</th>
-              <th>CONDITION</th>
-              <th>PRICE</th>
-              <th>ACTIONS</th>
+              <th>НАЗВАНИЕ ТАРИФА</th>
+              <th>УСЛОВИЕ</th>
+              <th>ЦЕНА</th>
+              <th>ДЕЙСТВИЯ</th>
             </tr>
           </thead>
           <tbody>
@@ -109,7 +109,7 @@ const InternationalTableData = [
         </VTable>
 
         <VBtn variant="tonal">
-          Add rate
+          Добавить тариф
         </VBtn>
       </div>
 
@@ -123,10 +123,10 @@ const InternationalTableData = [
 
           <div>
             <h6 class="text-h6">
-              International
+              Международная доставка
             </h6>
             <div class="text-body-2">
-              United state of America
+              Россия
             </div>
           </div>
 
@@ -144,10 +144,10 @@ const InternationalTableData = [
         <VTable class="mb-4 border rounded">
           <thead>
             <tr>
-              <th>RATE NAME</th>
-              <th>CONDITION</th>
-              <th>PRICE</th>
-              <th>ACTIONS</th>
+              <th>НАЗВАНИЕ ТАРИФА</th>
+              <th>УСЛОВИЕ</th>
+              <th>ЦЕНА</th>
+              <th>ДЕЙСТВИЯ</th>
             </tr>
           </thead>
           <tbody>
@@ -168,7 +168,7 @@ const InternationalTableData = [
         </VTable>
 
         <VBtn variant="tonal">
-          Add rate
+          Добавить тариф
         </VBtn>
       </div>
     </VCardText>
@@ -179,8 +179,8 @@ const InternationalTableData = [
       variant="tonal"
       color="secondary"
     >
-      Discard
+      Отменить
     </VBtn>
-    <VBtn>Save Changes</VBtn>
+    <VBtn>Сохранить изменения</VBtn>
   </div>
 </template>

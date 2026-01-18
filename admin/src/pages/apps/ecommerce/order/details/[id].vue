@@ -84,7 +84,7 @@ const userData = {
   company: 'Pixinvent',
   role: 'Web developer',
   username: 'T1940',
-  country: 'United States',
+  country: 'Россия',
   contact: '+1 (609) 972-22-22',
   email: orderData.value?.email,
   status: 'Active',
@@ -100,12 +100,12 @@ const currentBillingAddress = {
   fullName: orderData.value?.customer,
   firstName: orderData.value?.customer.split(' ')[0],
   lastName: orderData.value?.customer.split(' ')[1],
-  selectedCountry: 'USA',
+  selectedCountry: 'Россия',
   addressLine1: '45 Rocker Terrace',
   addressLine2: 'Latheronwheel',
   landmark: 'KW5 8NW, London',
   contact: '+1 (609) 972-22-22',
-  country: 'USA',
+  country: 'Россия',
   city: 'London',
   state: 'London',
   zipCode: 110001,
@@ -477,7 +477,7 @@ const orderDetail = [
 
           <VCardText>
             <div class="text-body-1">
-              45 Rocker Terrace <br> Latheronwheel <br> KW5 8NW, London <br> UK
+              Москва, ул. Тверская, д. 1 <br> Россия
             </div>
           </VCardText>
         </VCard>
@@ -497,7 +497,7 @@ const orderDetail = [
               </div>
             </div>
             <div>
-              45 Rocker Terrace <br> Latheronwheel <br> KW5 8NW, London <br> UK
+              Москва, ул. Тверская, д. 1 <br> Россия
             </div>
 
             <div class="mt-6">

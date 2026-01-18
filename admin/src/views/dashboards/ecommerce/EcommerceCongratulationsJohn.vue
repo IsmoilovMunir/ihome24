@@ -14,7 +14,7 @@ import congoImg from '@images/illustrations/congo-illustration.png'
             Лучший продавец месяца
           </p>
           <h4 class="text-h4 text-primary mb-1">
-            $48.9k
+            ₽0
           </h4>
           <VBtn>Просмотр продаж</VBtn>
         </VCardText>

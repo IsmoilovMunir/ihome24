@@ -6,13 +6,13 @@ const vuetifyTheme = useTheme()
 
 const series = [{
   data: [
-    40,
-    95,
-    60,
-    45,
-    90,
-    50,
-    75,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
   ],
 }]
 
@@ -86,25 +86,25 @@ const earningReports = [
     avatarIcon: 'tabler-chart-pie-2',
     avatarColor: 'primary',
     title: 'Чистая прибыль',
-    subtitle: '12.4k продаж',
-    earnings: '$1,619',
-    percentage: '18.6%',
+    subtitle: '0 продаж',
+    earnings: '₽0',
+    percentage: '0%',
   },
   {
-    avatarIcon: 'tabler-currency-dollar',
+    avatarIcon: 'tabler-currency-ruble',
     avatarColor: 'success',
     title: 'Общий доход',
     subtitle: 'Продажи, Партнерство',
-    earnings: '$3,571',
-    percentage: '39.6%',
+    earnings: '₽0',
+    percentage: '0%',
   },
   {
     avatarIcon: 'tabler-credit-card',
     avatarColor: 'secondary',
     title: 'Общие расходы',
     subtitle: 'Реклама, Маркетинг',
-    earnings: '$430',
-    percentage: '52.8%',
+    earnings: '₽0',
+    percentage: '0%',
   },
 ]
 

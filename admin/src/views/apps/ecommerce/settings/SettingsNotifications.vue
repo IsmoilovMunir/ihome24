@@ -1,17 +1,17 @@
 <script setup>
 const customerNotifications = ref([
   {
-    type: 'New customer sign up',
+    type: 'Новая регистрация клиента',
     email: true,
     app: true,
   },
   {
-    type: 'Customer account password reset',
+    type: 'Сброс пароля аккаунта клиента',
     email: true,
     app: true,
   },
   {
-    type: 'Customer account invite',
+    type: 'Приглашение в аккаунт клиента',
     email: false,
     app: false,
   },
@@ -19,17 +19,17 @@ const customerNotifications = ref([
 
 const shippingNotifications = ref([
   {
-    type: 'Picked up',
+    type: 'Забрано',
     email: true,
     app: true,
   },
   {
-    type: 'Shipping update ',
+    type: 'Обновление доставки',
     email: true,
     app: false,
   },
   {
-    type: 'Delivered',
+    type: 'Доставлено',
     email: false,
     app: true,
   },
@@ -37,27 +37,27 @@ const shippingNotifications = ref([
 
 const ordersNotification = ref([
   {
-    type: 'Order purchase',
+    type: 'Покупка заказа',
     email: true,
     app: true,
   },
   {
-    type: 'Order cancelled',
+    type: 'Заказ отменен',
     email: true,
     app: false,
   },
   {
-    type: 'Order refund request',
+    type: 'Запрос на возврат заказа',
     email: false,
     app: true,
   },
   {
-    type: 'Order confirmation',
+    type: 'Подтверждение заказа',
     email: true,
     app: false,
   },
   {
-    type: 'Payment error',
+    type: 'Ошибка платежа',
     email: true,
     app: false,
   },
@@ -68,19 +68,19 @@ const ordersNotification = ref([
   <VCard class="mb-4">
     <VCardText>
       <h5 class="text-h5 mb-2">
-        Customer
+        Клиенты
       </h5>
       <VTable class="text-no-wrap mb-6 border rounded">
         <thead>
           <tr>
             <th scope="col">
-              TYPE
+              ТИП
             </th>
             <th scope="col">
               EMAIL
             </th>
             <th scope="col">
-              APP
+              ПРИЛОЖЕНИЕ
             </th>
           </tr>
         </thead>
@@ -108,19 +108,19 @@ const ordersNotification = ref([
       </VTable>
 
       <h5 class="text-h5 mb-2">
-        Orders
+        Заказы
       </h5>
       <VTable class="text-no-wrap mb-6 border rounded">
         <thead>
           <tr>
             <th scope="col">
-              TYPE
+              ТИП
             </th>
             <th scope="col">
               EMAIL
             </th>
             <th scope="col">
-              APP
+              ПРИЛОЖЕНИЕ
             </th>
           </tr>
         </thead>
@@ -148,19 +148,19 @@ const ordersNotification = ref([
       </VTable>
 
       <h5 class="text-h5 mb-2">
-        Shipping
+        Доставка
       </h5>
       <VTable class="text-no-wrap mb-6 border rounded">
         <thead>
           <tr>
             <th scope="col">
-              TYPE
+              ТИП
             </th>
             <th scope="col">
               EMAIL
             </th>
             <th scope="col">
-              APP
+              ПРИЛОЖЕНИЕ
             </th>
           </tr>
         </thead>
@@ -194,8 +194,8 @@ const ordersNotification = ref([
       variant="tonal"
       color="secondary"
     >
-      Discard
+      Отменить
     </VBtn>
-    <VBtn>Save Changes</VBtn>
+    <VBtn>Сохранить изменения</VBtn>
   </div>
 </template>

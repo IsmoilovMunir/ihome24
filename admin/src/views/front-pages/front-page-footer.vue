@@ -218,7 +218,7 @@ const demoList = [
           <div class="text-body-1 text-white-variant text-wrap me-4">
             &copy;
 
-            {{ new Date().getFullYear() }}
+            2026
             <a
               href="https://pixinvent.com/"
               target="_blank"

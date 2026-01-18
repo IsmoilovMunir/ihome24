@@ -1,8 +1,9 @@
 import is from '@sindresorhus/is'
 import { destr } from 'destr'
 import { HttpResponse, http } from 'msw'
-import { database } from '@db/apps/invoice/db'
 import { paginateArray } from '@api-utils/paginateArray'
+
+const database = []
 
 export const handlerAppsInvoice = [
   // 👉 Client
@@ -119,10 +120,10 @@ export const handlerAppsInvoice = [
       invoice,
       paymentDetails: {
         totalDue: '$12,110.55',
-        bankName: 'American Bank',
-        country: 'United States',
+        bankName: 'Сбербанк России',
+        country: 'Россия',
         iban: 'ETD95476213874685',
-        swiftCode: 'BR91905',
+        swiftCode: 'SABRRUMM',
       },
     }
 

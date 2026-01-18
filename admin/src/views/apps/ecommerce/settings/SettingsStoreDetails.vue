@@ -1,6 +1,6 @@
 <template>
   <VCard
-    title="Profile"
+    title="Профиль"
     class="mb-6"
   >
     <VCardText>
@@ -10,8 +10,8 @@
           md="6"
         >
           <AppTextField
-            label="Store name"
-            placeholder="Pixinvent"
+            label="Название магазина"
+            placeholder="Мой магазин"
           />
         </VCol>
         <VCol
@@ -19,8 +19,8 @@
           md="6"
         >
           <AppTextField
-            label="Phone"
-            placeholder="+(123) 456-7890"
+            label="Телефон"
+            placeholder="+7 (999) 123-45-67"
           />
         </VCol>
         <VCol
@@ -28,8 +28,8 @@
           md="6"
         >
           <AppTextField
-            label="Store contact email"
-            placeholder="johndoe@email.com"
+            label="Email для связи магазина"
+            placeholder="info@magazin.ru"
           />
         </VCol>
         <VCol
@@ -37,8 +37,8 @@
           md="6"
         >
           <AppTextField
-            label="Sender email"
-            placeholder="johndoe@email.com"
+            label="Email отправителя"
+            placeholder="info@magazin.ru"
           />
         </VCol>
         <VCol>
@@ -48,8 +48,7 @@
             icon="tabler-bell"
           >
             <VAlertTitle class="mb-0">
-              Confirm that you have access to johndoe@gmail.com in sender email
-              settings.
+              Подтвердите, что у вас есть доступ к email отправителя в настройках.
             </VAlertTitle>
           </VAlert>
         </VCol>
@@ -58,7 +57,7 @@
   </VCard>
 
   <VCard
-    title="Billing Information"
+    title="Платежная информация"
     class="mb-6"
   >
     <VCardText>
@@ -68,8 +67,8 @@
           md="6"
         >
           <AppTextField
-            label="Legal business name"
-            placeholder="Pixinvent"
+            label="Юридическое название компании"
+            placeholder="ООО «Моя Компания»"
           />
         </VCol>
 
@@ -78,9 +77,9 @@
           md="6"
         >
           <AppSelect
-            label="Country/Region"
-            :items="['United States', 'Canada', 'UK']"
-            placeholder="Canada"
+            label="Страна/Регион"
+            :items="['Россия', 'Казахстан', 'Беларусь']"
+            placeholder="Россия"
           />
         </VCol>
 
@@ -89,8 +88,8 @@
           md="6"
         >
           <AppTextField
-            placeholder="126, New Street"
-            label="Address"
+            placeholder="г. Москва, ул. Примерная, д. 1"
+            label="Адрес"
           />
         </VCol>
 
@@ -99,8 +98,8 @@
           md="6"
         >
           <AppTextField
-            label="Apartment,suit, etc."
-            placeholder="Empire Heights"
+            label="Квартира, офис и т.д."
+            placeholder="Офис 101"
           />
         </VCol>
 
@@ -109,8 +108,8 @@
           md="4"
         >
           <AppTextField
-            label="City"
-            placeholder="New York"
+            label="Город"
+            placeholder="Москва"
           />
         </VCol>
 
@@ -119,8 +118,8 @@
           md="4"
         >
           <AppTextField
-            label="State"
-            placeholder="NY"
+            label="Область/Регион"
+            placeholder="Московская область"
           />
         </VCol>
 
@@ -129,8 +128,8 @@
           md="4"
         >
           <AppTextField
-            label="PIN Code"
-            placeholder="111011"
+            label="Почтовый индекс"
+            placeholder="101000"
           />
         </VCol>
       </VRow>
@@ -140,22 +139,22 @@
   <VCard class="mb-6">
     <template #title>
       <div class="v-card-title text-wrap">
-        Time zone and units of measurement
+        Часовой пояс и единицы измерения
       </div>
     </template>
 
     <template #subtitle>
       <div class="text-wrap">
-        Used to calculate product prices, shipping weights, and order times.
+        Используется для расчета цен товаров, веса доставки и времени заказов.
       </div>
     </template>
     <VCardText>
       <VRow>
         <VCol cols="12">
           <AppSelect
-            label="Time zone"
-            :items="['(UTC-12:00) International Date Line West', '(UTC-11:00) Coordinated Universal Time-11', '(UTC-09:00) Alaska', '(UTC-08:00) Baja California']"
-            placeholder="(UTC-12:00) International Date Line West"
+            label="Часовой пояс"
+            :items="['(UTC+03:00) Москва', '(UTC+05:00) Екатеринбург', '(UTC+07:00) Красноярск', '(UTC+10:00) Владивосток']"
+            placeholder="(UTC+03:00) Москва"
           />
         </VCol>
 
@@ -164,9 +163,9 @@
           md="6"
         >
           <AppSelect
-            label="Unit system"
-            :items="['Metric System', 'Imperial', 'International System']"
-            placeholder="Metric System"
+            label="Система единиц"
+            :items="['Метрическая система', 'Имперская', 'Международная система']"
+            placeholder="Метрическая система"
           />
         </VCol>
 
@@ -175,9 +174,9 @@
           md="6"
         >
           <AppSelect
-            label="Default weight unit"
-            placeholder="Kilogram"
-            :items="['Kilogram', 'Pounds', 'Gram']"
+            label="Единица веса по умолчанию"
+            placeholder="Килограмм"
+            :items="['Килограмм', 'Фунт', 'Грамм']"
           />
         </VCol>
       </VRow>
@@ -185,22 +184,22 @@
   </VCard>
 
   <VCard
-    title="Store currency"
-    subtitle="The currency your products are sold in."
+    title="Валюта магазина"
+    subtitle="Валюта, в которой продаются ваши товары."
     class="mb-6"
   >
     <VCardText>
       <AppSelect
-        label="Store currency"
-        :items="['USD', 'INR', 'Euro', 'Pound']"
-        placeholder="USD"
+        label="Валюта магазина"
+        :items="['RUB', 'USD', 'EUR', 'KZT']"
+        placeholder="RUB"
       />
     </VCardText>
   </VCard>
 
   <VCard
-    title="Order id format"
-    subtitle="Shown on the Orders page, customer pages, and customer order notifications to identify orders."
+    title="Формат ID заказа"
+    subtitle="Отображается на странице заказов, страницах клиентов и уведомлениях о заказах для идентификации заказов."
     class="mb-6"
   >
     <VCardText>
@@ -210,7 +209,7 @@
           md="6"
         >
           <AppTextField
-            label="Prefix"
+            label="Префикс"
             prefix="#"
           />
         </VCol>
@@ -220,14 +219,14 @@
           md="6"
         >
           <AppTextField
-            label="Suffix"
-            suffix="$"
+            label="Суффикс"
+            suffix="₽"
           />
         </VCol>
       </VRow>
 
       <div class="mt-2">
-        Your order ID will appear as #1001, #1002, #1003 ...
+        Ваш ID заказа будет отображаться как #1001, #1002, #1003 ...
       </div>
     </VCardText>
   </VCard>
@@ -237,8 +236,8 @@
       variant="tonal"
       color="secondary"
     >
-      Discard
+      Отменить
     </VBtn>
-    <VBtn>Save Changes</VBtn>
+    <VBtn>Сохранить изменения</VBtn>
   </div>
 </template>

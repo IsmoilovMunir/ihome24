@@ -16,12 +16,12 @@ const currentCardDetails = {
 const editBillingData = {
   firstName: 'Gertrude',
   lastName: 'Jennings',
-  selectedCountry: 'USA',
+  selectedCountry: 'Россия',
   addressLine1: '100 Water Plant Avenue',
   addressLine2: 'Building 1303 Wake Island',
   landmark: 'Near Wake Island',
   contact: '+1(609) 933-44-22',
-  country: 'USA',
+  country: 'Россия',
   state: 'Queensland',
   zipCode: 403114,
   city: 'Brisbane',
@@ -54,7 +54,7 @@ const addressData = [
     <br>
     Melbourne, VIC 3000,
     <br>
-    LondonUK`,
+    Москва, Россия`,
   },
   {
     title: 'Office',
@@ -65,9 +65,7 @@ const addressData = [
     <br>
     Latheronwheel,
     <br>
-    KW5 8NW, London,
-    <br>
-    UK`,
+    Москва, Россия`,
   },
   {
     title: 'Family',
@@ -78,7 +76,7 @@ const addressData = [
     <br>
     Melbourne, VIC 3000,
     <br>
-    LondonUK`,
+    Москва, Россия`,
   },
 ]
 
@@ -324,7 +322,7 @@ const paymentData = [
                       <tr>
                         <td>Оплата </td>
                         <td class="font-weight-medium text-high-emphasis">
-                          United Kingdom
+                          Россия
                         </td>
                       </tr>
                       <tr>
@@ -343,7 +341,7 @@ const paymentData = [
                         <td>Происхождение</td>
                         <td class="d-flex">
                           <div class="me-2 font-weight-medium text-high-emphasis">
-                            United States
+                            Россия
                           </div>
                           <img
                             :src="usFlag"

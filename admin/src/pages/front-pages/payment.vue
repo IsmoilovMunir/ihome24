@@ -33,7 +33,7 @@ const radioContent = [
 ]
 
 const selectedRadio = ref('credit card')
-const selectedCountry = ref('USA')
+const selectedCountry = ref('Россия')
 const isPricingPlanDialogVisible = ref(false)
 </script>
 

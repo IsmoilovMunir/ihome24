@@ -21,27 +21,27 @@ const updateOptions = options => {
 // Headers
 const headers = [
   {
-    title: 'User',
+    title: 'Пользователь',
     key: 'user',
   },
   {
-    title: 'Role',
+    title: 'Роль',
     key: 'role',
   },
   {
-    title: 'Plan',
+    title: 'План',
     key: 'plan',
   },
   {
-    title: 'Billing',
+    title: 'Оплата',
     key: 'billing',
   },
   {
-    title: 'Status',
+    title: 'Статус',
     key: 'status',
   },
   {
-    title: 'Actions',
+    title: 'Действия',
     key: 'actions',
     sortable: false,
   },
@@ -69,57 +69,57 @@ const totalUsers = computed(() => usersData.value.totalUsers)
 // 👉 search filters
 const roles = [
   {
-    title: 'Admin',
+    title: 'Администратор',
     value: 'admin',
   },
   {
-    title: 'Author',
+    title: 'Автор',
     value: 'author',
   },
   {
-    title: 'Editor',
+    title: 'Редактор',
     value: 'editor',
   },
   {
-    title: 'Maintainer',
+    title: 'Сопровождающий',
     value: 'maintainer',
   },
   {
-    title: 'Subscriber',
+    title: 'Подписчик',
     value: 'subscriber',
   },
 ]
 
 const plans = [
   {
-    title: 'Basic',
+    title: 'Базовый',
     value: 'basic',
   },
   {
-    title: 'Company',
+    title: 'Компания',
     value: 'company',
   },
   {
-    title: 'Enterprise',
+    title: 'Предприятие',
     value: 'enterprise',
   },
   {
-    title: 'Team',
+    title: 'Команда',
     value: 'team',
   },
 ]
 
 const status = [
   {
-    title: 'Pending',
+    title: 'Ожидает',
     value: 'pending',
   },
   {
-    title: 'Active',
+    title: 'Активен',
     value: 'active',
   },
   {
-    title: 'Inactive',
+    title: 'Неактивен',
     value: 'inactive',
   },
 ]
@@ -196,34 +196,34 @@ const deleteUser = async id => {
 
 const widgetData = ref([
   {
-    title: 'Session',
+    title: 'Сессии',
     value: '21,459',
     change: 29,
-    desc: 'Total Users',
+    desc: 'Всего пользователей',
     icon: 'tabler-users',
     iconColor: 'primary',
   },
   {
-    title: 'Paid Users',
+    title: 'Платные пользователи',
     value: '4,567',
     change: 18,
-    desc: 'Last Week Analytics',
+    desc: 'Аналитика за прошлую неделю',
     icon: 'tabler-user-plus',
     iconColor: 'error',
   },
   {
-    title: 'Active Users',
+    title: 'Активные пользователи',
     value: '19,860',
     change: -14,
-    desc: 'Last Week Analytics',
+    desc: 'Аналитика за прошлую неделю',
     icon: 'tabler-user-check',
     iconColor: 'success',
   },
   {
-    title: 'Pending Users',
+    title: 'Ожидающие пользователи',
     value: '237',
     change: 42,
-    desc: 'Last Week Analytics',
+    desc: 'Аналитика за прошлую неделю',
     icon: 'tabler-user-search',
     iconColor: 'warning',
   },
@@ -287,7 +287,7 @@ const widgetData = ref([
 
     <VCard class="mb-6">
       <VCardItem class="pb-4">
-        <VCardTitle>Filters</VCardTitle>
+        <VCardTitle>Фильтры</VCardTitle>
       </VCardItem>
 
       <VCardText>
@@ -299,7 +299,7 @@ const widgetData = ref([
           >
             <AppSelect
               v-model="selectedRole"
-              placeholder="Select Role"
+              placeholder="Выберите роль"
               :items="roles"
               clearable
               clear-icon="tabler-x"
@@ -312,7 +312,7 @@ const widgetData = ref([
           >
             <AppSelect
               v-model="selectedPlan"
-              placeholder="Select Plan"
+              placeholder="Выберите план"
               :items="plans"
               clearable
               clear-icon="tabler-x"
@@ -325,7 +325,7 @@ const widgetData = ref([
           >
             <AppSelect
               v-model="selectedStatus"
-              placeholder="Select Status"
+              placeholder="Выберите статус"
               :items="status"
               clearable
               clear-icon="tabler-x"
@@ -345,7 +345,7 @@ const widgetData = ref([
               { value: 25, title: '25' },
               { value: 50, title: '50' },
               { value: 100, title: '100' },
-              { value: -1, title: 'All' },
+              { value: -1, title: 'Все' },
             ]"
             style="inline-size: 6.25rem;"
             @update:model-value="itemsPerPage = parseInt($event, 10)"
@@ -358,7 +358,7 @@ const widgetData = ref([
           <div style="inline-size: 15.625rem;">
             <AppTextField
               v-model="searchQuery"
-              placeholder="Search User"
+              placeholder="Поиск пользователя"
             />
           </div>
 
@@ -368,7 +368,7 @@ const widgetData = ref([
             color="secondary"
             prepend-icon="tabler-upload"
           >
-            Export
+            Экспорт
           </VBtn>
 
           <!-- 👉 Add user button -->
@@ -376,7 +376,7 @@ const widgetData = ref([
             prepend-icon="tabler-plus"
             @click="isAddNewUserDrawerVisible = true"
           >
-            Add New User
+            Добавить пользователя
           </VBtn>
         </div>
       </VCardText>
@@ -483,21 +483,21 @@ const widgetData = ref([
                     <VIcon icon="tabler-eye" />
                   </template>
 
-                  <VListItemTitle>View</VListItemTitle>
+                  <VListItemTitle>Просмотр</VListItemTitle>
                 </VListItem>
 
                 <VListItem link>
                   <template #prepend>
                     <VIcon icon="tabler-pencil" />
                   </template>
-                  <VListItemTitle>Edit</VListItemTitle>
+                  <VListItemTitle>Редактировать</VListItemTitle>
                 </VListItem>
 
                 <VListItem @click="deleteUser(item.id)">
                   <template #prepend>
                     <VIcon icon="tabler-trash" />
                   </template>
-                  <VListItemTitle>Delete</VListItemTitle>
+                  <VListItemTitle>Удалить</VListItemTitle>
                 </VListItem>
               </VList>
             </VMenu>

@@ -1,62 +1,5 @@
 <script setup>
-const transitions = [
-  {
-    avatarIcon: 'tabler-wallet',
-    avatarColor: 'primary',
-    title: 'Кошелек',
-    subtitle: 'Starbucks',
-    stats: '-$75',
-    profit: false,
-  },
-  {
-    avatarIcon: 'tabler-building-bank',
-    avatarColor: 'success',
-    title: 'Банковский перевод',
-    subtitle: 'Пополнение счета',
-    stats: '+$480',
-    profit: true,
-  },
-  {
-    avatarIcon: 'tabler-brand-paypal',
-    avatarColor: 'error',
-    title: 'PayPal',
-    subtitle: 'Оплата клиента',
-    stats: '+$268',
-    profit: true,
-  },
-  {
-    avatarIcon: 'tabler-credit-card',
-    avatarColor: 'secondary',
-    title: 'Master Card',
-    subtitle: 'Заказан iPhone 13',
-    stats: '-$699',
-    profit: false,
-  },
-  {
-    avatarIcon: 'tabler-currency-dollar',
-    avatarColor: 'info',
-    title: 'Банковские транзакции',
-    subtitle: 'Возврат',
-    stats: '+$98',
-    profit: true,
-  },
-  {
-    avatarIcon: 'tabler-brand-paypal',
-    avatarColor: 'error',
-    title: 'PayPal',
-    subtitle: 'Оплата клиента',
-    stats: '+$126',
-    profit: true,
-  },
-  {
-    avatarIcon: 'tabler-building-bank',
-    avatarColor: 'success',
-    title: 'Банковский перевод',
-    subtitle: 'Оплата аренды офиса',
-    stats: '-$1290',
-    profit: false,
-  },
-]
+const transitions = []
 
 const moreList = [
   {
@@ -77,7 +20,7 @@ const moreList = [
 <template>
   <VCard
     title="Транзакции"
-    subtitle="Всего 58 транзакций за этот месяц"
+    subtitle="Всего 0 транзакций за этот месяц"
   >
     <template #append>
       <div class="mt-n4 me-n2">

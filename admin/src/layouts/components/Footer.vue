@@ -3,7 +3,7 @@
     <!-- 👉 Footer: left content -->
     <span>
       &copy;
-      {{ new Date().getFullYear() }}. Все права защищены.
+      2026. Все права защищены.
     </span>
     <span class="mt-1">
       Created by

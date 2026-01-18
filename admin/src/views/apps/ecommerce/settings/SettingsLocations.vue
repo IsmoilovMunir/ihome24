@@ -5,18 +5,18 @@ const isFullfilOnline = ref(true)
 <template>
   <div>
     <VCard
-      title="Location Name"
+      title="Название местоположения"
       class="mb-6"
     >
       <VCardText>
         <AppTextField
-          label="Location Name"
-          placeholder="Empire Hub"
+          label="Название местоположения"
+          placeholder="Склад Москва"
         />
         <div class="my-4">
           <VCheckbox
             v-model="isFullfilOnline"
-            label="Fulfil online orders from this location"
+            label="Выполнять онлайн-заказы из этого местоположения"
           />
         </div>
         <VAlert
@@ -24,21 +24,21 @@ const isFullfilOnline = ref(true)
           variant="tonal"
         >
           <VAlertTitle class="mb-0">
-            This is your default location. To change whether you fulfill online orders from this location, select another default location first.
+            Это ваше местоположение по умолчанию. Чтобы изменить, выполняете ли вы онлайн-заказы из этого местоположения, сначала выберите другое местоположение по умолчанию.
           </VAlertTitle>
         </VAlert>
       </VCardText>
     </VCard>
 
-    <VCard title="Address">
+    <VCard title="Адрес">
       <VCardText>
         <VRow>
           <VCol cols="12">
             <AppSelect
-              label="Country/religion"
-              placeholder="Select Country"
-              :items="['United States', 'UK', 'Canada']"
-              model-value="United States"
+              label="Страна/Регион"
+              placeholder="Выберите страну"
+              :items="['Россия', 'Казахстан', 'Беларусь']"
+              model-value="Россия"
             />
           </VCol>
 
@@ -47,8 +47,8 @@ const isFullfilOnline = ref(true)
             md="4"
           >
             <AppTextField
-              label="Address"
-              placeholder="123 , New Street"
+              label="Адрес"
+              placeholder="г. Москва, ул. Примерная, д. 1"
             />
           </VCol>
 
@@ -57,8 +57,8 @@ const isFullfilOnline = ref(true)
             md="4"
           >
             <AppTextField
-              label="Apartment, suite, etc."
-              placeholder="Empire Heights"
+              label="Квартира, офис и т.д."
+              placeholder="Офис 101"
             />
           </VCol>
 
@@ -67,8 +67,8 @@ const isFullfilOnline = ref(true)
             md="4"
           >
             <AppTextField
-              label="Phone"
-              placeholder="+1 (234) 456-7890"
+              label="Телефон"
+              placeholder="+7 (999) 123-45-67"
             />
           </VCol>
 
@@ -77,8 +77,8 @@ const isFullfilOnline = ref(true)
             md="4"
           >
             <AppTextField
-              label="City"
-              placeholder="New York"
+              label="Город"
+              placeholder="Москва"
             />
           </VCol>
 
@@ -87,8 +87,8 @@ const isFullfilOnline = ref(true)
             md="4"
           >
             <AppTextField
-              label="State"
-              placeholder="NY"
+              label="Область/Регион"
+              placeholder="Московская область"
             />
           </VCol>
 
@@ -97,9 +97,9 @@ const isFullfilOnline = ref(true)
             md="4"
           >
             <AppTextField
-              label="PIN code"
+              label="Почтовый индекс"
               type="number"
-              placeholder="123897"
+              placeholder="101000"
             />
           </VCol>
         </VRow>
@@ -111,9 +111,9 @@ const isFullfilOnline = ref(true)
         variant="tonal"
         color="secondary"
       >
-        Discard
+        Отменить
       </VBtn>
-      <VBtn>Save Changes</VBtn>
+      <VBtn>Сохранить изменения</VBtn>
     </div>
   </div>
 </template>

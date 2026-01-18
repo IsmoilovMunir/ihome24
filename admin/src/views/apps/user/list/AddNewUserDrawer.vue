@@ -140,10 +140,10 @@ const handleDrawerModelValueUpdate = val => {
                   placeholder="Выберите страну"
                   :rules="[requiredValidator]"
                   :items="[
-                    { title: 'США', value: 'USA' },
-                    { title: 'Великобритания', value: 'UK' },
-                    { title: 'Индия', value: 'India' },
-                    { title: 'Австралия', value: 'Australia' }
+                    { title: 'Россия', value: 'Россия' },
+                    { title: 'Казахстан', value: 'Казахстан' },
+                    { title: 'Беларусь', value: 'Беларусь' },
+                    { title: 'Украина', value: 'Украина' }
                   ]"
                 />
               </VCol>

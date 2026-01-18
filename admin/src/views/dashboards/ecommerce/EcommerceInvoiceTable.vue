@@ -257,7 +257,7 @@ const deleteInvoice = async id => {
 
       <!-- Total -->
       <template #item.total="{ item }">
-        ${{ item.total }}
+        ₽{{ item.total }}
       </template>
 
       <!-- Date -->
@@ -278,7 +278,7 @@ const deleteInvoice = async id => {
 
         <template v-else>
           <span class="text-base text-high-emphasis">
-            {{ Number((resolveInvoiceBalanceVariant(item.balance, item.total)).status) > 0 ? `$${(resolveInvoiceBalanceVariant(item.balance, item.total)).status}` : `-$${Math.abs(Number((resolveInvoiceBalanceVariant(item.balance, item.total)).status))}` }}
+            {{ Number((resolveInvoiceBalanceVariant(item.balance, item.total)).status) > 0 ? `₽${(resolveInvoiceBalanceVariant(item.balance, item.total)).status}` : `-₽${Math.abs(Number((resolveInvoiceBalanceVariant(item.balance, item.total)).status))}` }}
           </span>
         </template>
       </template>

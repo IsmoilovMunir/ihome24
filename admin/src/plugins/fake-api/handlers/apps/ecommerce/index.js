@@ -1,8 +1,14 @@
 import is from '@sindresorhus/is'
 import { destr } from 'destr'
 import { HttpResponse, http } from 'msw'
-import { db } from '@db/apps/ecommerce/db'
 import { paginateArray } from '@api-utils/paginateArray'
+
+const db = {
+  products: [],
+  customerData: [],
+  reviews: [],
+  referrals: [],
+}
 
 export const handlerAppsEcommerce = [
   // 👉 Products

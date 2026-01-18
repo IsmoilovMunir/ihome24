@@ -144,7 +144,7 @@ const openAddDrawer = () => {
           </template>
           <template #item.totalEarning="{ item }">
             <div class="text-body-1 text-end pe-4">
-              {{ (item.totalEarning).toLocaleString("en-IN", { style: "currency", currency: 'USD' }) }}
+              ₽{{ (item.totalEarning || 0).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
             </div>
           </template>
           <template #item.totalProduct="{ item }">
