@@ -28,18 +28,31 @@ export const setupGuards = router => {
       else
         return undefined
     }
-    if (!canNavigate(to) && to.matched.length) {
-      /* eslint-disable indent */
-            return isLoggedIn
-                ? { name: 'not-authorized' }
-                : {
-                    name: 'login',
-                    query: {
-                        ...to.query,
-                        to: to.fullPath !== '/' ? to.path : undefined,
-                    },
-                }
-            /* eslint-enable indent */
+    // Проверяем права доступа только если пользователь залогинен
+    if (isLoggedIn && to.matched.length) {
+      const canAccess = canNavigate(to)
+      if (!canAccess) {
+        // Если пользователь залогинен, но нет прав - показываем страницу not-authorized
+        // Но только если маршрут действительно требует прав доступа
+        const hasPermissionRequirement = to.matched.some(route => route.meta?.action && route.meta?.subject)
+        if (hasPermissionRequirement) {
+          return { name: 'not-authorized' }
+        }
+        // Если нет требований к правам, но canNavigate вернул false - разрешаем доступ
+        // Это может произойти если ability не настроен
+      }
+    } else if (!isLoggedIn && !to.meta?.public && to.matched.length) {
+      // Если пользователь не залогинен и маршрут не публичный - редирект на логин
+      return {
+        name: 'login',
+        query: {
+          ...to.query,
+          to: to.fullPath !== '/' ? to.path : undefined,
+        },
+      }
     }
+    
+    // Продолжаем навигацию
+    return undefined
   })
 }

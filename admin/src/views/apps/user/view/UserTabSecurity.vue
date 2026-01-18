@@ -1,8 +1,65 @@
 <script setup>
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
 const isNewPasswordVisible = ref(false)
 const isConfirmPasswordVisible = ref(false)
 const smsVerificationNumber = ref('+1(968) 819-2547')
 const isTwoFactorDialogOpen = ref(false)
+
+const newPassword = ref('')
+const confirmPassword = ref('')
+const isLoading = ref(false)
+const errorMessage = ref('')
+const successMessage = ref('')
+
+const changePassword = async () => {
+  // Валидация
+  if (!newPassword.value || !confirmPassword.value) {
+    errorMessage.value = 'Пожалуйста, заполните все поля'
+    return
+  }
+
+  if (newPassword.value.length < 6) {
+    errorMessage.value = 'Пароль должен содержать минимум 6 символов'
+    return
+  }
+
+  if (newPassword.value !== confirmPassword.value) {
+    errorMessage.value = 'Пароли не совпадают'
+    return
+  }
+
+  isLoading.value = true
+  errorMessage.value = ''
+  successMessage.value = ''
+
+  try {
+    const userId = route.params.id
+    
+    // Используем отдельный endpoint для изменения пароля
+    await $api(`/apps/users/${userId}/password`, {
+      method: 'PATCH',
+      body: {
+        password: newPassword.value,
+      },
+    })
+
+    successMessage.value = 'Пароль успешно изменен'
+    newPassword.value = ''
+    confirmPassword.value = ''
+    
+    // Очищаем сообщения через 3 секунды
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (error) {
+    console.error('Error changing password:', error)
+    errorMessage.value = error.data?.message || error.message || 'Ошибка при изменении пароля'
+  } finally {
+    isLoading.value = false
+  }
+}
 
 // Recent devices Headers
 const recentDeviceHeader = [
@@ -75,17 +132,41 @@ const recentDevices = [
             text="Минимум 8 символов, заглавные буквы и символы"
           />
 
-          <VForm @submit.prevent="() => { }">
+          <VAlert
+            v-if="errorMessage"
+            type="error"
+            variant="tonal"
+            closable
+            class="mb-4"
+            @click:close="errorMessage = ''"
+          >
+            {{ errorMessage }}
+          </VAlert>
+
+          <VAlert
+            v-if="successMessage"
+            type="success"
+            variant="tonal"
+            closable
+            class="mb-4"
+            @click:close="successMessage = ''"
+          >
+            {{ successMessage }}
+          </VAlert>
+
+          <VForm @submit.prevent="changePassword">
             <VRow>
               <VCol
                 cols="12"
                 md="6"
               >
                 <AppTextField
+                  v-model="newPassword"
                   label="Новый пароль"
                   placeholder="············"
                   :type="isNewPasswordVisible ? 'text' : 'password'"
                   :append-inner-icon="isNewPasswordVisible ? 'tabler-eye-off' : 'tabler-eye'"
+                  :disabled="isLoading"
                   @click:append-inner="isNewPasswordVisible = !isNewPasswordVisible"
                 />
               </VCol>
@@ -94,18 +175,23 @@ const recentDevices = [
                 md="6"
               >
                 <AppTextField
+                  v-model="confirmPassword"
                   label="Подтвердите пароль"
                   autocomplete="confirm-password"
                   placeholder="············"
                   :type="isConfirmPasswordVisible ? 'text' : 'password'"
                   :append-inner-icon="isConfirmPasswordVisible ? 'tabler-eye-off' : 'tabler-eye'"
+                  :disabled="isLoading"
                   @click:append-inner="isConfirmPasswordVisible = !isConfirmPasswordVisible"
                 />
               </VCol>
 
               <VCol cols="12">
-                <VBtn type="submit">
-                  Change Password
+                <VBtn
+                  type="submit"
+                  :loading="isLoading"
+                >
+                  Изменить пароль
                 </VBtn>
               </VCol>
             </VRow>

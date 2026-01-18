@@ -15,5 +15,16 @@ export const $api = ofetch.create({
         options.headers['Authorization'] = `Bearer ${accessToken}`
       }
     }
+    // Убеждаемся, что Content-Type установлен правильно для всех POST/PUT запросов с body
+    if (options.method && ['POST', 'PUT', 'PATCH'].includes(options.method.toUpperCase())) {
+      if (options.body && typeof options.body === 'object' && !(options.body instanceof FormData)) {
+        if (options.headers instanceof Headers) {
+          options.headers.set('Content-Type', 'application/json')
+        } else {
+          options.headers = options.headers || {}
+          options.headers['Content-Type'] = 'application/json'
+        }
+      }
+    }
   },
 })

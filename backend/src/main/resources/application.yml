@@ -27,3 +27,14 @@ spring:
 
 server:
   port: 8080
+
+# Конфигурация администратора по умолчанию
+# Эти параметры используются только при первом запуске, если администратор еще не существует
+app:
+  admin:
+    username: ${ADMIN_USERNAME:admin}
+    email: ${ADMIN_EMAIL:admin@demo.com}
+    password: ${ADMIN_PASSWORD:admin}
+    fullName: ${ADMIN_FULL_NAME:Администратор}
+    # Если true, администратор будет вынужден сменить пароль при первом входе
+    passwordChangeRequired: ${ADMIN_PASSWORD_CHANGE_REQUIRED:true}

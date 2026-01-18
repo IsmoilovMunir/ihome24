@@ -1,6 +1,6 @@
 databaseChangeLog:
   - include:
-      file: db/changelog/changeset/users_V001__initial.sql
+      file: db/changelog/changeset/users_roles_permissions_V001__initial.sql
   - include:
       file: db/changelog/changeset/registration_requests_V001__initial.sql
   - include:
@@ -27,3 +27,5 @@ databaseChangeLog:
       file: db/changelog/changeset/products_V003__extend_fields.sql
   - include:
       file: db/changelog/changeset/company_settings_V001__initial.sql
+  - include:
+      file: db/changelog/changeset/orders_V001__initial.sql
