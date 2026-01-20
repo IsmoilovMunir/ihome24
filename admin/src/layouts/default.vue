@@ -46,6 +46,14 @@ watch([
         @resolve="isFallbackStateActive = false"
       >
         <Component :is="Component" />
+        <template #fallback>
+          <div class="d-flex align-center justify-center" style="min-height: 200px;">
+            <VProgressCircular
+              indeterminate
+              color="primary"
+            />
+          </div>
+        </template>
       </Suspense>
     </RouterView>
   </Component>

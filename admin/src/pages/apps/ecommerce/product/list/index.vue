@@ -346,13 +346,15 @@ const deleteProduct = async id => {
             Экспорт
           </VBtn>
 
+          <!-- 👉 Add Product button -->
           <VBtn
             color="primary"
             prepend-icon="tabler-plus"
-            @click="$router.push('/apps/ecommerce/product/add')"
+            @click="$router.push({ name: 'apps-ecommerce-product-add' })"
           >
             Добавить товар
           </VBtn>
+
         </div>
       </div>
 

@@ -25,8 +25,8 @@ const router = createRouter({
   extendRoutes: pages => [
     ...redirects,
     ...[
-      ...pages,
       ...routes,
+      ...pages,
     ].map(route => recursiveLayouts(route)),
   ],
 })

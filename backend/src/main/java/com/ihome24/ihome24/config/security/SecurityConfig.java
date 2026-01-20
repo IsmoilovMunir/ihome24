@@ -44,11 +44,15 @@ public class SecurityConfig {
                         .requestMatchers("/api/publicapi/**").permitAll() // Разрешаем публичные API endpoints (регистрация и т.д.)
                         .requestMatchers("/api/auth/**").permitAll() // Разрешаем аутентификацию
                         .requestMatchers("/api/apps/**").permitAll() // Temporarily permit all for frontend integration
+                        .requestMatchers("/api/files/**").permitAll() // Публичный доступ к файлам
+                        .requestMatchers("/api/admin/categories", "/api/admin/categories/**").permitAll() // Временно разрешаем доступ к категориям для разработки
+                        .requestMatchers("/api/admin/products", "/api/admin/products/**").permitAll() // Временно разрешаем доступ к продуктам для разработки
+                        .requestMatchers("/api/admin/files/**").permitAll() // Временно разрешаем загрузку файлов для разработки
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
-                        // Используем stateless сессии для REST API
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        // Используем stateless сессии для REST API, но разрешаем сессии для аутентификации
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
                 .authenticationProvider(authenticationProvider());
 

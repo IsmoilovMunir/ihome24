@@ -1,10 +1,13 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { $api } from '@/utils/api'
+import FileUploader from '@/components/file-upload/FileUploader.vue'
 
 const router = useRouter()
 const route = useRoute()
+
+// Состояние загрузки
 const isFetching = ref(false)
 const activeTab = ref('basic')
 const productId = ref(null)
@@ -21,6 +24,7 @@ const parentCategoryId = ref(null)
 const descriptionShort = ref('')
 const descriptionFull = ref('')
 const benefits = ref([''])
+
 const addBenefit = () => benefits.value.push('')
 const removeBenefit = (index) => {
   if (benefits.value.length > 1) {
@@ -32,9 +36,11 @@ const removeBenefit = (index) => {
 const characteristics = ref([
   { key: '', name: '', value: '', filterable: true }
 ])
+
 const addCharacteristic = () => {
   characteristics.value.push({ key: '', name: '', value: '', filterable: true })
 }
+
 const removeCharacteristic = (index) => {
   if (characteristics.value.length > 1) {
     characteristics.value.splice(index, 1)
@@ -42,14 +48,53 @@ const removeCharacteristic = (index) => {
 }
 
 // ========== MEDIA ==========
+const uploadedImages = ref([])
+const uploadedGalleryImages = ref([])
 const mainImage = ref('')
-const galleryImages = ref([''])
+const galleryImages = ref([])
 const videoUrl = ref('')
+
+const handleImagesUploaded = (files) => {
+  uploadedImages.value = files
+  if (files.length > 0 && files[0].url) {
+    mainImage.value = files[0].url
+  }
+}
+
+const handleImageDeleted = (file) => {
+  uploadedImages.value = uploadedImages.value.filter(f => f.id !== file.id)
+  if (uploadedImages.value.length > 0) {
+    mainImage.value = uploadedImages.value[0].url
+  } else {
+    mainImage.value = ''
+  }
+}
+
+const handleGalleryImagesUploaded = (files) => {
+  uploadedGalleryImages.value = files
+  uploadedGalleryImages.value.forEach((file, index) => {
+    file.sortOrder = index
+  })
+  const sortedFiles = [...files].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+  const galleryUrls = sortedFiles.map(f => f.url).filter(url => url)
+  if (galleryUrls.length > 0) {
+    const existingUrls = galleryImages.value.filter(url => url && url.trim())
+    const allUrls = [...new Set([...galleryUrls, ...existingUrls])]
+    galleryImages.value = allUrls.length > 0 ? allUrls : []
+  }
+  if (!mainImage.value && galleryUrls.length > 0) {
+    mainImage.value = galleryUrls[0]
+  }
+}
+
+const handleGalleryImageDeleted = (file) => {
+  uploadedGalleryImages.value = uploadedGalleryImages.value.filter(f => f.id !== file.id)
+  galleryImages.value = galleryImages.value.filter(url => url !== file.url)
+}
+
 const addGalleryImage = () => galleryImages.value.push('')
 const removeGalleryImage = (index) => {
-  if (galleryImages.value.length > 1) {
-    galleryImages.value.splice(index, 1)
-  }
+  galleryImages.value.splice(index, 1)
 }
 
 // ========== VARIANTS ==========
@@ -93,6 +138,18 @@ const removeVariant = (index) => {
 
 const deliveryMethods = ['COURIER', 'PICKUP', 'POST', 'EXPRESS']
 
+const toggleDeliveryMethod = (variant, method) => {
+  if (!variant.logistics.delivery.methods) {
+    variant.logistics.delivery.methods = []
+  }
+  const idx = variant.logistics.delivery.methods.indexOf(method)
+  if (idx > -1) {
+    variant.logistics.delivery.methods.splice(idx, 1)
+  } else {
+    variant.logistics.delivery.methods.push(method)
+  }
+}
+
 // ========== RETURNS ==========
 const returnsAllowed = ref(true)
 const returnsDays = ref(14)
@@ -108,7 +165,6 @@ const status = ref('draft')
 
 // ========== DROPDOWN DATA ==========
 const categories = ref([])
-
 const currencies = [
   { title: 'RUB', value: 'RUB' },
   { title: 'USD', value: 'USD' },
@@ -126,37 +182,26 @@ const loadCategories = async () => {
     }))
   } catch (error) {
     console.error('Ошибка при загрузке категорий:', error)
+    categories.value = []
   }
 }
 
-// Загрузка данных продукта для редактирования
 const loadProductData = async () => {
-  if (!productId.value) {
-    console.warn('Не указан ID продукта для загрузки')
-    return
-  }
+  if (!productId.value) return
   
   try {
     isFetching.value = true
-    console.log('Загрузка данных продукта с ID:', productId.value)
+    const response = await $api(`/admin/products/${productId.value}`, { method: 'GET' })
     
-    const response = await $api(`/admin/products/${productId.value}`, {
-      method: 'GET',
-    })
-    
-    console.log('Данные продукта загружены:', response)
-    
-    // Заполняем форму данными продукта
     productSku.value = response.sku || ''
-    productBrand.value = '' // Brand не хранится в ProductResponse, оставляем пустым
+    productBrand.value = ''
     productTitle.value = response.name || ''
     categoryId.value = response.category?.id || null
     parentCategoryId.value = response.category?.parentId || null
     
-    // Описание - в ProductResponse это просто строка
     if (response.description) {
       descriptionFull.value = response.description
-      descriptionShort.value = response.description.substring(0, 200) // Первые 200 символов как краткое описание
+      descriptionShort.value = response.description.substring(0, 200)
       benefits.value = ['']
     } else {
       descriptionShort.value = ''
@@ -164,7 +209,6 @@ const loadProductData = async () => {
       benefits.value = ['']
     }
     
-    // Загружаем характеристики из ответа
     if (response.characteristics && response.characteristics.length > 0) {
       characteristics.value = response.characteristics.map(c => ({
         key: c.key || '',
@@ -173,30 +217,35 @@ const loadProductData = async () => {
         filterable: c.filterable !== undefined ? c.filterable : true
       }))
     } else {
-      // Если характеристик нет, оставляем одну пустую
       characteristics.value = [{ key: '', name: '', value: '', filterable: true }]
     }
     
-    // Медиа - загружаем изображения из галереи
     if (response.images && response.images.length > 0) {
-      // Сортируем изображения по sortOrder
       const sortedImages = [...response.images].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
       mainImage.value = sortedImages[0]?.imageUrl || response.imageUrl || ''
       galleryImages.value = sortedImages.map(img => img.imageUrl).filter(url => url)
-      // Если галерея пустая, добавляем главное изображение
       if (galleryImages.value.length === 0 && response.imageUrl) {
         galleryImages.value = [response.imageUrl]
+      }
+      try {
+        const filesResponse = await $api(`/admin/files/product/${productId.value}/images`)
+        if (filesResponse && filesResponse.length > 0) {
+          uploadedImages.value = filesResponse.slice(0, 1)
+          uploadedGalleryImages.value = filesResponse.slice(1)
+        }
+      } catch (error) {
+        console.warn('Не удалось загрузить файлы из MinIO:', error)
       }
     } else if (response.imageUrl) {
       mainImage.value = response.imageUrl
       galleryImages.value = [response.imageUrl]
     } else {
       mainImage.value = ''
-      galleryImages.value = ['']
+      galleryImages.value = []
     }
+    
     videoUrl.value = ''
     
-    // Варианты - создаем один вариант на основе данных товара
     variants.value = [{
       variantId: '',
       sku: response.sku || '',
@@ -216,71 +265,29 @@ const loadProductData = async () => {
       },
       logistics: {
         weightKg: '',
-        dimensionsCm: {
-          length: '',
-          width: '',
-          height: ''
-        },
-        delivery: {
-          methods: [],
-          deliveryDays: ''
-        }
+        dimensionsCm: { length: '', width: '', height: '' },
+        delivery: { methods: [], deliveryDays: '' }
       }
     }]
     
-    // Возвраты - пока нет в ProductResponse, используем значения по умолчанию
     returnsAllowed.value = true
     returnsDays.value = 14
     returnsConditions.value = ''
     
-    // SEO - пока нет в ProductResponse, оставляем пустым
     seoSlug.value = ''
     seoMetaTitle.value = ''
     seoMetaDescription.value = ''
     
-    // Статус - определяем на основе isActive
     status.value = response.isActive ? 'published' : 'draft'
-    
-    console.log('Форма заполнена данными продукта')
   } catch (error) {
     console.error('Ошибка при загрузке данных продукта:', error)
     alert('Ошибка при загрузке данных продукта: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
-    // При ошибке загрузки переключаемся в режим добавления
     isEditMode.value = false
     productId.value = null
   } finally {
     isFetching.value = false
   }
 }
-
-// Watch на изменение route.params.id или route.query.id для загрузки данных при редактировании
-watch([() => route.params.id, () => route.query.id], async ([paramId, queryId]) => {
-  const id = paramId || queryId
-  if (id) {
-    const parsedId = parseInt(id)
-    if (parsedId && parsedId !== productId.value) {
-      productId.value = parsedId
-      isEditMode.value = true
-      await loadProductData()
-    }
-  } else {
-    // Если ID нет, значит это режим добавления
-    productId.value = null
-    isEditMode.value = false
-  }
-}, { immediate: true })
-
-onMounted(async () => {
-  await loadCategories()
-  
-  // Проверяем, есть ли ID продукта в параметрах пути или query параметрах
-  const id = route.params.id || route.query.id
-  if (id) {
-    productId.value = parseInt(id)
-    isEditMode.value = true
-    await loadProductData()
-  }
-})
 
 // ========== AUTO GENERATE SLUG ==========
 const generateSlug = () => {
@@ -295,6 +302,85 @@ const generateSlug = () => {
 }
 
 // ========== SUBMIT ==========
+const buildProductRequest = () => {
+  const allGalleryImages = [
+    ...uploadedImages.value.map(f => f.url).filter(url => url),
+    ...uploadedGalleryImages.value.map(f => f.url).filter(url => url),
+    ...galleryImages.value.filter(img => img && img.trim())
+  ].filter((url, index, self) => self.indexOf(url) === index)
+
+  return {
+    product: {
+      sku: productSku.value || null,
+      brand: productBrand.value || null,
+      title: productTitle.value,
+      category: {
+        id: categoryId.value || null,
+        parentId: parentCategoryId.value || null
+      },
+      description: {
+        shortDescription: descriptionShort.value || null,
+        full: descriptionFull.value || null,
+        benefits: benefits.value.filter(b => b.trim())
+      },
+      characteristics: characteristics.value
+        .filter(c => c.key && c.name && c.value)
+        .map(c => ({
+          key: c.key,
+          name: c.name,
+          value: c.value,
+          filterable: c.filterable
+        })),
+      media: {
+        mainImage: mainImage.value || (uploadedImages.value.length > 0 ? uploadedImages.value[0].url : null),
+        gallery: allGalleryImages,
+        video: videoUrl.value || null
+      }
+    },
+    variants: variants.value.map(v => ({
+      variantId: v.variantId || null,
+      sku: v.sku || null,
+      attributes: v.attributes,
+      price: {
+        base: parseFloat(v.price.base) || 0,
+        sale: v.price.sale ? parseFloat(v.price.sale) : null,
+        currency: v.price.currency || 'RUB',
+        vat: v.price.vat || 20
+      },
+      stock: {
+        quantity: parseInt(v.stock.quantity) || 0
+      },
+      barcodes: {
+        skuBarcode: v.barcodes.skuBarcode || null,
+        ean13: v.barcodes.ean13 || null
+      },
+      logistics: {
+        weightKg: v.logistics.weightKg ? parseFloat(v.logistics.weightKg) : null,
+        dimensionsCm: {
+          length: v.logistics.dimensionsCm.length ? parseFloat(v.logistics.dimensionsCm.length) : null,
+          width: v.logistics.dimensionsCm.width ? parseFloat(v.logistics.dimensionsCm.width) : null,
+          height: v.logistics.dimensionsCm.height ? parseFloat(v.logistics.dimensionsCm.height) : null
+        },
+        delivery: {
+          methods: v.logistics.delivery.methods || [],
+          deliveryDays: v.logistics.delivery.deliveryDays || null
+        }
+      }
+    })),
+    returns: {
+      allowed: returnsAllowed.value,
+      days: returnsDays.value || 14,
+      conditions: returnsConditions.value || null
+    },
+    seo: {
+      slug: seoSlug.value || null,
+      metaTitle: seoMetaTitle.value || null,
+      metaDescription: seoMetaDescription.value || null
+    },
+    status: status.value
+  }
+}
+
 const publishProduct = async () => {
   if (!productTitle.value || !variants.value[0]?.price?.base) {
     alert('Пожалуйста, заполните обязательные поля: Название товара и базовая цена варианта')
@@ -303,93 +389,20 @@ const publishProduct = async () => {
 
   try {
     isFetching.value = true
-
-    const productData = {
-      product: {
-        sku: productSku.value || null,
-        brand: productBrand.value || null,
-        title: productTitle.value,
-        category: {
-          id: categoryId.value || null,
-          parentId: parentCategoryId.value || null
-        },
-        description: {
-          short: descriptionShort.value || null,
-          full: descriptionFull.value || null,
-          benefits: benefits.value.filter(b => b.trim())
-        },
-        characteristics: characteristics.value
-          .filter(c => c.key && c.name && c.value)
-          .map(c => ({
-            key: c.key,
-            name: c.name,
-            value: c.value,
-            filterable: c.filterable
-          })),
-        media: {
-          mainImage: mainImage.value || null,
-          gallery: galleryImages.value.filter(img => img.trim()),
-          video: videoUrl.value || null
-        }
-      },
-      variants: variants.value.map(v => ({
-        variantId: v.variantId || null,
-        sku: v.sku || null,
-        attributes: v.attributes,
-        price: {
-          base: parseFloat(v.price.base) || 0,
-          sale: v.price.sale ? parseFloat(v.price.sale) : null,
-          currency: v.price.currency || 'RUB',
-          vat: v.price.vat || 20
-        },
-        stock: {
-          quantity: parseInt(v.stock.quantity) || 0
-        },
-        barcodes: {
-          skuBarcode: v.barcodes.skuBarcode || null,
-          ean13: v.barcodes.ean13 || null
-        },
-        logistics: {
-          weightKg: v.logistics.weightKg ? parseFloat(v.logistics.weightKg) : null,
-          dimensionsCm: {
-            length: v.logistics.dimensionsCm.length ? parseFloat(v.logistics.dimensionsCm.length) : null,
-            width: v.logistics.dimensionsCm.width ? parseFloat(v.logistics.dimensionsCm.width) : null,
-            height: v.logistics.dimensionsCm.height ? parseFloat(v.logistics.dimensionsCm.height) : null
-          },
-          delivery: {
-            methods: v.logistics.delivery.methods || [],
-            deliveryDays: v.logistics.delivery.deliveryDays || null
-          }
-        }
-      })),
-      returns: {
-        allowed: returnsAllowed.value,
-        days: returnsDays.value || 14,
-        conditions: returnsConditions.value || null
-      },
-      seo: {
-        slug: seoSlug.value || null,
-        metaTitle: seoMetaTitle.value || null,
-        metaDescription: seoMetaDescription.value || null
-      },
-      status: 'published'
-    }
+    const productData = buildProductRequest()
+    productData.status = 'published'
 
     let response
     if (isEditMode.value && productId.value) {
-      // Редактирование существующего продукта
       response = await $api(`/admin/products/${productId.value}`, {
         method: 'PUT',
         body: productData
       })
-      console.log('Товар обновлен успешно:', response)
     } else {
-      // Создание нового продукта
       response = await $api('/admin/products', {
         method: 'POST',
         body: productData
       })
-      console.log('Товар создан успешно:', response)
     }
     
     router.push('/apps/ecommerce/product/list')
@@ -409,94 +422,21 @@ const saveDraft = async () => {
 
   try {
     isFetching.value = true
-
-    const productData = {
-      product: {
-        sku: productSku.value || null,
-        brand: productBrand.value || null,
-        title: productTitle.value,
-        category: {
-          id: categoryId.value || null,
-          parentId: parentCategoryId.value || null
-        },
-        description: {
-          short: descriptionShort.value || null,
-          full: descriptionFull.value || null,
-          benefits: benefits.value.filter(b => b.trim())
-        },
-        characteristics: characteristics.value
-          .filter(c => c.key && c.name && c.value)
-          .map(c => ({
-            key: c.key,
-            name: c.name,
-            value: c.value,
-            filterable: c.filterable
-          })),
-        media: {
-          mainImage: mainImage.value || null,
-          gallery: galleryImages.value.filter(img => img.trim()),
-          video: videoUrl.value || null
-        }
-      },
-      variants: variants.value.map(v => ({
-        variantId: v.variantId || null,
-        sku: v.sku || null,
-        attributes: v.attributes,
-        price: {
-          base: parseFloat(v.price.base) || 0,
-          sale: v.price.sale ? parseFloat(v.price.sale) : null,
-          currency: v.price.currency || 'RUB',
-          vat: v.price.vat || 20
-        },
-        stock: {
-          quantity: parseInt(v.stock.quantity) || 0
-        },
-        barcodes: {
-          skuBarcode: v.barcodes.skuBarcode || null,
-          ean13: v.barcodes.ean13 || null
-        },
-        logistics: {
-          weightKg: v.logistics.weightKg ? parseFloat(v.logistics.weightKg) : null,
-          dimensionsCm: {
-            length: v.logistics.dimensionsCm.length ? parseFloat(v.logistics.dimensionsCm.length) : null,
-            width: v.logistics.dimensionsCm.width ? parseFloat(v.logistics.dimensionsCm.width) : null,
-            height: v.logistics.dimensionsCm.height ? parseFloat(v.logistics.dimensionsCm.height) : null
-          },
-          delivery: {
-            methods: v.logistics.delivery.methods || [],
-            deliveryDays: v.logistics.delivery.deliveryDays || null
-          }
-        }
-      })),
-      returns: {
-        allowed: returnsAllowed.value,
-        days: returnsDays.value || 14,
-        conditions: returnsConditions.value || null
-      },
-      seo: {
-        slug: seoSlug.value || null,
-        metaTitle: seoMetaTitle.value || null,
-        metaDescription: seoMetaDescription.value || null
-      },
-      status: 'draft'
-    }
+    const productData = buildProductRequest()
+    productData.status = 'draft'
 
     let response
     if (isEditMode.value && productId.value) {
-      // Редактирование существующего продукта
       response = await $api(`/admin/products/${productId.value}`, {
         method: 'PUT',
         body: productData
       })
-      console.log('Черновик обновлен успешно:', response)
       alert('Черновик обновлен успешно!')
     } else {
-      // Создание нового продукта
       response = await $api('/admin/products', {
         method: 'POST',
         body: productData
       })
-      console.log('Черновик сохранен успешно:', response)
       alert('Черновик сохранен успешно!')
     }
   } catch (error) {
@@ -511,22 +451,38 @@ const cancel = () => {
   router.push('/apps/ecommerce/product/list')
 }
 
-// Метод для переключения метода доставки
-const toggleDeliveryMethod = (variant, method) => {
-  if (!variant.logistics.delivery.methods) {
-    variant.logistics.delivery.methods = []
-  }
-  const idx = variant.logistics.delivery.methods.indexOf(method)
-  if (idx > -1) {
-    variant.logistics.delivery.methods.splice(idx, 1)
+onMounted(() => {
+  console.log('Product Add page mounted')
+  // Загружаем категории без await, чтобы не блокировать рендеринг
+  loadCategories().catch(err => {
+    console.error('Ошибка при загрузке категорий:', err)
+  })
+  
+  // Проверяем ID продукта
+  const id = route.params.id || route.query.id
+  if (id) {
+    productId.value = parseInt(id)
+    isEditMode.value = true
+    // Загружаем данные продукта без await
+    loadProductData().catch(err => {
+      console.error('Ошибка при загрузке данных продукта:', err)
+    })
   } else {
-    variant.logistics.delivery.methods.push(method)
+    isEditMode.value = false
+    productId.value = null
   }
-}
+})
+
+definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
 </script>
 
 <template>
   <div>
+    <!-- Debug info -->
+    <div v-if="false" class="pa-2 mb-2 bg-info text-white">
+      DEBUG: Страница загружена. Route: {{ route.path }}, Name: {{ route.name }}
+    </div>
+    
     <!-- Header -->
     <div class="d-flex flex-wrap justify-start justify-sm-space-between gap-y-4 gap-x-6 mb-6">
       <div class="d-flex flex-column justify-center">
@@ -581,15 +537,13 @@ const toggleDeliveryMethod = (variant, method) => {
         <VTab value="media">
           Медиа
         </VTab>
-        <VTab value="logistics">
-          Логистика
-        </VTab>
         <VTab value="seo">
           SEO
         </VTab>
       </VTabs>
     </VCard>
 
+    <!-- Content -->
     <VRow>
       <VCol cols="12">
         <!-- Basic Information Tab -->
@@ -600,7 +554,6 @@ const toggleDeliveryMethod = (variant, method) => {
         >
           <VCardText>
             <VRow>
-              <!-- Product Basic Info -->
               <VCol cols="12">
                 <h6 class="text-h6 mb-4">
                   Информация о товаре
@@ -679,9 +632,10 @@ const toggleDeliveryMethod = (variant, method) => {
               </VCol>
               <VCol cols="12">
                 <span class="mb-1 d-block">Полное описание</span>
-                <ProductDescriptionEditor
+                <AppTextarea
                   v-model="descriptionFull"
                   placeholder="Подробное описание товара"
+                  rows="8"
                   class="border rounded"
                 />
               </VCol>
@@ -848,7 +802,6 @@ const toggleDeliveryMethod = (variant, method) => {
                   />
                 </VCol>
 
-                <!-- Attributes -->
                 <VCol cols="12">
                   <h6 class="text-subtitle-1 mb-2">
                     Атрибуты варианта
@@ -875,7 +828,6 @@ const toggleDeliveryMethod = (variant, method) => {
                   />
                 </VCol>
 
-                <!-- Price -->
                 <VCol cols="12">
                   <VDivider class="my-4" />
                   <h6 class="text-subtitle-1 mb-2">
@@ -927,7 +879,6 @@ const toggleDeliveryMethod = (variant, method) => {
                   />
                 </VCol>
 
-                <!-- Stock -->
                 <VCol cols="12">
                   <VDivider class="my-4" />
                   <h6 class="text-subtitle-1 mb-2">
@@ -946,7 +897,6 @@ const toggleDeliveryMethod = (variant, method) => {
                   />
                 </VCol>
 
-                <!-- Barcodes -->
                 <VCol cols="12">
                   <VDivider class="my-4" />
                   <h6 class="text-subtitle-1 mb-2">
@@ -974,7 +924,6 @@ const toggleDeliveryMethod = (variant, method) => {
                   />
                 </VCol>
 
-                <!-- Logistics -->
                 <VCol cols="12">
                   <VDivider class="my-4" />
                   <h6 class="text-subtitle-1 mb-2">
@@ -1074,24 +1023,62 @@ const toggleDeliveryMethod = (variant, method) => {
           <VCardText>
             <VRow>
               <VCol cols="12">
+                <h6 class="text-h6 mb-4">
+                  Загрузка изображений (PNG, макс. 5 МБ)
+                </h6>
+                <FileUploader
+                  v-model="uploadedImages"
+                  :product-id="productId"
+                  file-type="IMAGE"
+                  :multiple="true"
+                  :max-size="5242880"
+                  @uploaded="handleImagesUploaded"
+                  @deleted="handleImageDeleted"
+                />
+              </VCol>
+
+              <VCol cols="12">
+                <VDivider class="my-4" />
                 <AppTextField
                   v-model="mainImage"
                   label="Основное изображение (URL)"
-                  placeholder="https://cdn.site.ru/products/100023/main.jpg"
+                  placeholder="Будет установлено автоматически при загрузке или укажите URL вручную"
+                  hint="Можно указать URL вручную или загрузить файл выше"
+                  persistent-hint
                 />
               </VCol>
+
               <VCol cols="12">
+                <VDivider class="my-4" />
+                <h6 class="text-h6 mb-4">
+                  Галерея изображений
+                </h6>
+                
+                <FileUploader
+                  v-model="uploadedGalleryImages"
+                  :product-id="productId"
+                  file-type="IMAGE"
+                  :multiple="true"
+                  :max-size="5242880"
+                  :max-files="4"
+                  @uploaded="handleGalleryImagesUploaded"
+                  @deleted="handleGalleryImageDeleted"
+                />
+                <p class="text-caption text-medium-emphasis mt-2">
+                  Максимум 4 фото. Перетащите фото для изменения порядка - первое фото станет главным
+                </p>
+                
                 <VDivider class="my-4" />
                 <div class="d-flex justify-space-between align-center mb-4">
                   <h6 class="text-h6 mb-0">
-                    Галерея изображений
+                    Или укажите URL вручную
                   </h6>
                   <VBtn
                     size="small"
                     prepend-icon="tabler-plus"
                     @click="addGalleryImage"
                   >
-                    Добавить изображение
+                    Добавить URL
                   </VBtn>
                 </div>
                 <div
@@ -1105,7 +1092,7 @@ const toggleDeliveryMethod = (variant, method) => {
                     class="flex-grow-1"
                   />
                   <VBtn
-                    v-if="galleryImages.length > 1"
+                    v-if="galleryImages.length > 0"
                     icon="tabler-x"
                     variant="text"
                     size="small"
@@ -1113,49 +1100,13 @@ const toggleDeliveryMethod = (variant, method) => {
                   />
                 </div>
               </VCol>
+
               <VCol cols="12">
                 <VDivider class="my-4" />
                 <AppTextField
                   v-model="videoUrl"
                   label="Видео (URL)"
                   placeholder="https://youtube.com/watch?v=..."
-                />
-              </VCol>
-            </VRow>
-          </VCardText>
-        </VCard>
-
-        <!-- Logistics Tab -->
-        <VCard
-          v-show="activeTab === 'logistics'"
-          title="Возвраты и логистика"
-          class="mb-6"
-        >
-          <VCardText>
-            <VRow>
-              <VCol cols="12">
-                <VCheckbox
-                  v-model="returnsAllowed"
-                  label="Возврат разрешен"
-                />
-              </VCol>
-              <VCol
-                cols="12"
-                md="6"
-              >
-                <AppTextField
-                  v-model="returnsDays"
-                  label="Срок возврата (дней)"
-                  placeholder="14"
-                  type="number"
-                />
-              </VCol>
-              <VCol cols="12">
-                <AppTextField
-                  v-model="returnsConditions"
-                  label="Условия возврата"
-                  placeholder="Товар без следов использования"
-                  rows="3"
                 />
               </VCol>
             </VRow>
@@ -1192,6 +1143,36 @@ const toggleDeliveryMethod = (variant, method) => {
                   placeholder="Хлопковая мужская футболка с доставкой по России"
                   rows="3"
                 />
+              </VCol>
+              <VCol cols="12">
+                <VDivider class="my-4" />
+                <h6 class="text-h6 mb-4">
+                  Возвраты
+                </h6>
+                <VCheckbox
+                  v-model="returnsAllowed"
+                  label="Возврат разрешен"
+                />
+                <VCol
+                  cols="12"
+                  md="6"
+                  class="mt-4"
+                >
+                  <AppTextField
+                    v-model="returnsDays"
+                    label="Срок возврата (дней)"
+                    placeholder="14"
+                    type="number"
+                  />
+                </VCol>
+                <VCol cols="12">
+                  <AppTextField
+                    v-model="returnsConditions"
+                    label="Условия возврата"
+                    placeholder="Товар без следов использования"
+                    rows="3"
+                  />
+                </VCol>
               </VCol>
             </VRow>
           </VCardText>

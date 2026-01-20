@@ -1,7 +1,7 @@
 package com.ihome24.ihome24.service.product;
 
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ihome24.ihome24.dto.request.product.CharacteristicRequest;
 import com.ihome24.ihome24.dto.request.product.DescriptionRequest;
 import com.ihome24.ihome24.dto.request.product.ProductInfoRequest;
