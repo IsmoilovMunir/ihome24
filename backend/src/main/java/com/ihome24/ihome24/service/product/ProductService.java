@@ -11,8 +11,11 @@ import com.ihome24.ihome24.dto.response.category.CategoryResponse;
 import com.ihome24.ihome24.dto.response.product.CharacteristicResponse;
 import com.ihome24.ihome24.dto.response.product.ProductImageResponse;
 import com.ihome24.ihome24.dto.response.product.ProductResponse;
+import com.ihome24.ihome24.dto.response.product.VariantResponse;
+import com.ihome24.ihome24.entity.category.Category;
 import com.ihome24.ihome24.entity.product.Product;
 import com.ihome24.ihome24.entity.product.ProductImage;
+import com.ihome24.ihome24.repository.category.CategoryRepository;
 import com.ihome24.ihome24.repository.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -20,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -28,6 +32,7 @@ import java.util.stream.Collectors;
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final CategoryRepository categoryRepository;
     private final ObjectMapper objectMapper;
 
     @Transactional
@@ -97,9 +102,44 @@ public class ProductService {
             }
         }
 
+        // Сохраняем преимущества в JSON
+        String benefitsJson = null;
+        if (productInfo.getDescription() != null && productInfo.getDescription().getBenefits() != null 
+                && !productInfo.getDescription().getBenefits().isEmpty()) {
+            try {
+                benefitsJson = objectMapper.writeValueAsString(productInfo.getDescription().getBenefits());
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Ошибка при сохранении преимуществ: " + e.getMessage());
+            }
+        }
+
+        // Сохраняем варианты в JSON
+        String variantsJson = null;
+        if (request.getVariants() != null && !request.getVariants().isEmpty()) {
+            try {
+                variantsJson = objectMapper.writeValueAsString(request.getVariants());
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Ошибка при сохранении вариантов: " + e.getMessage());
+            }
+        }
+
         // Определяем статус активности на основе статуса товара
         Boolean isActive = !"draft".equals(request.getStatus());
         Boolean isFeatured = false; // По умолчанию не избранный
+
+        // Получаем категорию, если указана
+        Category category = null;
+        if (productInfo.getCategory() != null) {
+            if (productInfo.getCategory().getId() != null) {
+                // Если указан ID категории, используем её
+                category = categoryRepository.findById(productInfo.getCategory().getId())
+                        .orElseThrow(() -> new IllegalArgumentException("Категория с ID " + productInfo.getCategory().getId() + " не найдена"));
+            } else if (productInfo.getCategory().getParentId() != null) {
+                // Если указан только parentId, используем родительскую категорию как категорию товара
+                category = categoryRepository.findById(productInfo.getCategory().getParentId())
+                        .orElseThrow(() -> new IllegalArgumentException("Родительская категория с ID " + productInfo.getCategory().getParentId() + " не найдена"));
+            }
+        }
 
         Product product = Product.builder()
                 .name(productInfo.getTitle())
@@ -107,12 +147,16 @@ public class ProductService {
                 .price(price)
                 .oldPrice(oldPrice)
                 .sku(sku)
+                .brand(productInfo.getBrand())
                 .stockQuantity(stockQuantity)
                 .isActive(isActive)
                 .isFeatured(isFeatured)
                 .imageUrl(imageUrl)
                 .characteristicsJson(characteristicsJson)
+                .benefitsJson(benefitsJson)
+                .variantsJson(variantsJson)
                 .status(request.getStatus())
+                .category(category)
                 .build();
 
         Product savedProduct = productRepository.save(product);
@@ -240,8 +284,43 @@ public class ProductService {
             }
         }
 
+        // Сохраняем преимущества в JSON
+        String benefitsJson = null;
+        if (productInfo.getDescription() != null && productInfo.getDescription().getBenefits() != null 
+                && !productInfo.getDescription().getBenefits().isEmpty()) {
+            try {
+                benefitsJson = objectMapper.writeValueAsString(productInfo.getDescription().getBenefits());
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Ошибка при сохранении преимуществ: " + e.getMessage());
+            }
+        }
+
+        // Сохраняем варианты в JSON
+        String variantsJson = null;
+        if (request.getVariants() != null && !request.getVariants().isEmpty()) {
+            try {
+                variantsJson = objectMapper.writeValueAsString(request.getVariants());
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Ошибка при сохранении вариантов: " + e.getMessage());
+            }
+        }
+
         // Определяем статус активности на основе статуса товара
         Boolean isActive = !"draft".equals(request.getStatus());
+
+        // Получаем категорию, если указана
+        Category category = null;
+        if (productInfo.getCategory() != null) {
+            if (productInfo.getCategory().getId() != null) {
+                // Если указан ID категории, используем её
+                category = categoryRepository.findById(productInfo.getCategory().getId())
+                        .orElseThrow(() -> new IllegalArgumentException("Категория с ID " + productInfo.getCategory().getId() + " не найдена"));
+            } else if (productInfo.getCategory().getParentId() != null) {
+                // Если указан только parentId, используем родительскую категорию как категорию товара
+                category = categoryRepository.findById(productInfo.getCategory().getParentId())
+                        .orElseThrow(() -> new IllegalArgumentException("Родительская категория с ID " + productInfo.getCategory().getParentId() + " не найдена"));
+            }
+        }
 
         // Обновляем поля товара
         product.setName(productInfo.getTitle());
@@ -249,11 +328,15 @@ public class ProductService {
         product.setPrice(price);
         product.setOldPrice(oldPrice);
         product.setSku(sku);
+        product.setBrand(productInfo.getBrand());
         product.setStockQuantity(stockQuantity);
         product.setIsActive(isActive);
         product.setImageUrl(imageUrl);
         product.setCharacteristicsJson(characteristicsJson);
+        product.setBenefitsJson(benefitsJson);
+        product.setVariantsJson(variantsJson);
         product.setStatus(request.getStatus());
+        product.setCategory(category);
 
         // Обновляем изображения галереи - удаляем старые и создаем новые
         product.getImages().clear();
@@ -292,6 +375,7 @@ public class ProductService {
                 .price(product.getPrice())
                 .oldPrice(product.getOldPrice())
                 .sku(product.getSku())
+                .brand(product.getBrand())
                 .stockQuantity(product.getStockQuantity())
                 .isActive(product.getIsActive())
                 .isFeatured(product.getIsFeatured())
@@ -322,6 +406,98 @@ public class ProductService {
         }
         builder.characteristics(characteristics);
 
+        // Загружаем преимущества из JSON
+        List<String> benefits = new ArrayList<>();
+        if (product.getBenefitsJson() != null && !product.getBenefitsJson().isEmpty()) {
+            try {
+                benefits = objectMapper.readValue(
+                        product.getBenefitsJson(),
+                        new TypeReference<List<String>>() {}
+                );
+            } catch (Exception e) {
+                // Если не удалось распарсить JSON, оставляем пустой список
+                System.err.println("Ошибка при загрузке преимуществ: " + e.getMessage());
+            }
+        }
+        builder.benefits(benefits);
+
+        // Загружаем варианты из JSON
+        List<VariantResponse> variants = new ArrayList<>();
+        if (product.getVariantsJson() != null && !product.getVariantsJson().isEmpty()) {
+            try {
+                List<VariantRequest> variantRequests = objectMapper.readValue(
+                        product.getVariantsJson(),
+                        new TypeReference<List<VariantRequest>>() {}
+                );
+                variants = variantRequests.stream()
+                        .map(vReq -> {
+                            VariantResponse.VariantResponseBuilder variantBuilder = VariantResponse.builder()
+                                    .variantId(vReq.getVariantId())
+                                    .sku(vReq.getSku())
+                                    .attributes(vReq.getAttributes() != null ? vReq.getAttributes() : new HashMap<>());
+                            
+                            // Преобразуем цену
+                            if (vReq.getPrice() != null) {
+                                variantBuilder.price(VariantResponse.PriceResponse.builder()
+                                        .base(vReq.getPrice().getBase())
+                                        .sale(vReq.getPrice().getSale())
+                                        .currency(vReq.getPrice().getCurrency())
+                                        .vat(vReq.getPrice().getVat())
+                                        .build());
+                            }
+                            
+                            // Преобразуем склад
+                            if (vReq.getStock() != null) {
+                                variantBuilder.stock(VariantResponse.StockResponse.builder()
+                                        .quantity(vReq.getStock().getQuantity())
+                                        .build());
+                            }
+                            
+                            // Преобразуем штрихкоды
+                            if (vReq.getBarcodes() != null) {
+                                variantBuilder.barcodes(VariantResponse.BarcodesResponse.builder()
+                                        .skuBarcode(vReq.getBarcodes().getSkuBarcode())
+                                        .ean13(vReq.getBarcodes().getEan13())
+                                        .build());
+                            }
+                            
+                            // Преобразуем логистику
+                            if (vReq.getLogistics() != null) {
+                                VariantResponse.LogisticsResponse.LogisticsResponseBuilder logisticsBuilder = 
+                                        VariantResponse.LogisticsResponse.builder()
+                                                .weightKg(vReq.getLogistics().getWeightKg())
+                                                .delivery(VariantResponse.LogisticsResponse.DeliveryResponse.builder()
+                                                        .methods(vReq.getLogistics().getDelivery() != null 
+                                                                ? vReq.getLogistics().getDelivery().getMethods() 
+                                                                : new ArrayList<>())
+                                                        .deliveryDays(vReq.getLogistics().getDelivery() != null 
+                                                                ? vReq.getLogistics().getDelivery().getDeliveryDays() 
+                                                                : null)
+                                                        .build());
+                                
+                                if (vReq.getLogistics().getDimensionsCm() != null) {
+                                    logisticsBuilder.dimensionsCm(
+                                            VariantResponse.LogisticsResponse.DimensionsResponse.builder()
+                                                    .length(vReq.getLogistics().getDimensionsCm().getLength())
+                                                    .width(vReq.getLogistics().getDimensionsCm().getWidth())
+                                                    .height(vReq.getLogistics().getDimensionsCm().getHeight())
+                                                    .build()
+                                    );
+                                }
+                                
+                                variantBuilder.logistics(logisticsBuilder.build());
+                            }
+                            
+                            return variantBuilder.build();
+                        })
+                        .collect(Collectors.toList());
+            } catch (Exception e) {
+                // Если не удалось распарсить JSON, оставляем пустой список
+                System.err.println("Ошибка при загрузке вариантов: " + e.getMessage());
+            }
+        }
+        builder.variants(variants);
+
         // Загружаем изображения галереи
         List<ProductImageResponse> images = new ArrayList<>();
         if (product.getImages() != null && !product.getImages().isEmpty()) {
@@ -349,6 +525,11 @@ public class ProductService {
     }
 
     private CategoryResponse mapCategoryToResponse(com.ihome24.ihome24.entity.category.Category category) {
+        Long parentId = null;
+        if (category.getParent() != null) {
+            parentId = category.getParent().getId();
+        }
+        
         return CategoryResponse.builder()
                 .id(category.getId())
                 .name(category.getName())
@@ -357,6 +538,7 @@ public class ProductService {
                 .imageUrl(category.getImageUrl())
                 .isActive(category.getIsActive())
                 .sortOrder(category.getSortOrder())
+                .parentId(parentId)
                 .createdAt(category.getCreatedAt())
                 .updatedAt(category.getUpdatedAt())
                 .build();

@@ -1,0 +1,152 @@
+version: '3.9'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ihome24-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ihome24}
+      POSTGRES_USER: ${POSTGRES_USER:-iHome24db}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-iHome242025db}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ihome24-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-iHome24db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # MinIO Object Storage
+  minio:
+    image: minio/minio:latest
+    container_name: ihome24-minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-iHome24mino}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-iHome242025mino}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - ihome24-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+  # MinIO Client (для создания bucket при старте)
+  minio-setup:
+    image: minio/mc:latest
+    container_name: ihome24-minio-setup
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set myminio http://minio:9000 ${MINIO_ROOT_USER:-iHome24mino} ${MINIO_ROOT_PASSWORD:-iHome242025mino};
+      /usr/bin/mc mb myminio/${MINIO_BUCKET_NAME:-ihome24-media} || true;
+      /usr/bin/mc anonymous set public myminio/${MINIO_BUCKET_NAME:-ihome24-media} || true;
+      exit 0;
+      "
+    networks:
+      - ihome24-network
+    restart: "no"
+
+  # Backend (Spring Boot)
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: ihome24-backend
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ihome24}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-iHome24db}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-iHome242025db}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER:-iHome24mino}
+      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:-iHome242025mino}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-ihome24-media}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-iHome24admin}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@demo.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-iHome242025admin}
+      SHOW_SQL: ${SHOW_SQL:-false}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - ihome24-network
+    restart: unless-stopped
+    volumes:
+      - ./logs/backend:/app/logs
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Admin Panel (Vue.js)
+  admin:
+    build:
+      context: ../admin
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${ADMIN_API_BASE_URL:-http://localhost:8080/api}
+    container_name: ihome24-admin
+    environment:
+      VITE_API_BASE_URL: ${ADMIN_API_BASE_URL:-http://localhost:8080/api}
+    ports:
+      - "${ADMIN_PORT:-5173}:5173"
+    depends_on:
+      - backend
+    networks:
+      - ihome24-network
+    restart: unless-stopped
+    volumes:
+      - ../admin:/app
+      - /app/node_modules
+
+  # Frontend (Vue.js)
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${FRONTEND_API_BASE_URL:-http://localhost:8080/api}
+    container_name: ihome24-frontend
+    environment:
+      VITE_API_BASE_URL: ${FRONTEND_API_BASE_URL:-http://localhost:8080/api}
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      - backend
+    networks:
+      - ihome24-network
+    restart: unless-stopped
+    volumes:
+      - ../frontend:/app
+      - /app/node_modules
+
+networks:
+  ihome24-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local

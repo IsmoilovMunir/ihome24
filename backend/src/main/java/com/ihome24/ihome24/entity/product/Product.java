@@ -42,6 +42,9 @@ public class Product {
     @Column(name = "sku", unique = true)
     private String sku;
 
+    @Column(name = "brand")
+    private String brand;
+
     @Column(name = "stock_quantity")
     private Integer stockQuantity;
 
@@ -72,6 +75,12 @@ public class Product {
 
     @Column(name = "characteristics", columnDefinition = "TEXT")
     private String characteristicsJson; // JSON строка для хранения характеристик
+
+    @Column(name = "benefits", columnDefinition = "TEXT")
+    private String benefitsJson; // JSON строка для хранения преимуществ
+
+    @Column(name = "variants", columnDefinition = "TEXT")
+    private String variantsJson; // JSON строка для хранения вариантов товара
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")

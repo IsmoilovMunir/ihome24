@@ -432,10 +432,13 @@ const uploadFiles = async (fileList) => {
 }
 
 const removeFile = async (file, index) => {
-  if (!file.id) {
-    // File not yet uploaded, just remove from list
+  // URL файлы или файлы без ID просто удаляем из списка локально
+  if (!file.id || file.isUrl || String(file.id).startsWith('url-')) {
     files.value.splice(index, 1)
+    // Обновляем индексы после удаления
+    fileIndices.value = files.value.map((_, i) => i)
     emit('update:modelValue', files.value)
+    emit('deleted', file)
     return
   }
 

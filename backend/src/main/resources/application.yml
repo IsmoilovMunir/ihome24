@@ -1,44 +1,45 @@
 spring:
-  # ВРЕМЕННО: Используется H2 вместо PostgreSQL (для работы без Docker)
-  # Чтобы вернуться к PostgreSQL: замените на jdbc:postgresql://localhost:5434/ihome24
+  # PostgreSQL Database Configuration
   datasource:
-    url: jdbc:h2:mem:ihome24;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    username: sa
-    password: 
-    driver-class-name: org.h2.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/ihome24}
+    username: ${SPRING_DATASOURCE_USERNAME:iHome24db}
+    password: ${SPRING_DATASOURCE_PASSWORD:iHome242025db}
+    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
       ddl-auto: update  # Автоматическое создание таблиц из сущностей
-    show-sql: true
+    show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.H2Dialect
+        dialect: org.hibernate.dialect.PostgreSQLDialect
     defer-datasource-initialization: false
 
+  # H2 Database (только для локальной разработки без Docker)
   h2:
     console:
-      enabled: true
+      enabled: ${H2_CONSOLE_ENABLED:false}
       path: /h2-console
 
   liquibase:
-    enabled: false  # Отключено для H2, используется ddl-auto=update
+    enabled: ${LIQUIBASE_ENABLED:false}
+    change-log: classpath:db/changelog/db.changelog-master.xml
 
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
 
 # Конфигурация администратора по умолчанию
 # Эти параметры используются только при первом запуске, если администратор еще не существует
 app:
   admin:
-    username: ${ADMIN_USERNAME:admin}
+    username: ${ADMIN_USERNAME:iHome24admin}
     email: ${ADMIN_EMAIL:admin@demo.com}
-    password: ${ADMIN_PASSWORD:admin}
+    password: ${ADMIN_PASSWORD:iHome242025admin}
     fullName: ${ADMIN_FULL_NAME:Администратор}
     # Если true, администратор будет вынужден сменить пароль при первом входе
     passwordChangeRequired: ${ADMIN_PASSWORD_CHANGE_REQUIRED:true}
@@ -46,8 +47,8 @@ app:
 # MinIO S3 Configuration
 minio:
   endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
-  access-key: ${MINIO_ACCESS_KEY:minioadmin}
-  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  access-key: ${MINIO_ACCESS_KEY:iHome24mino}
+  secret-key: ${MINIO_SECRET_KEY:iHome242025mino}
   bucket-name: ${MINIO_BUCKET_NAME:ihome24-media}
   # Инициализировать bucket при старте приложения (false - создаст при первом использовании)
   initialize-on-startup: ${MINIO_INITIALIZE_ON_STARTUP:false}
