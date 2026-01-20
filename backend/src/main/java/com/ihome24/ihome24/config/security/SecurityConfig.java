@@ -9,7 +9,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -45,6 +44,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll() // Разрешаем аутентификацию
                         .requestMatchers("/api/apps/**").permitAll() // Temporarily permit all for frontend integration
                         .requestMatchers("/api/files/**").permitAll() // Публичный доступ к файлам
+                        .requestMatchers("/api/products", "/api/products/**").permitAll() // Публичный доступ к продуктам
+                        .requestMatchers("/api/categories", "/api/categories/**").permitAll() // Публичный доступ к категориям
                         .requestMatchers("/api/admin/categories", "/api/admin/categories/**").permitAll() // Временно разрешаем доступ к категориям для разработки
                         .requestMatchers("/api/admin/products", "/api/admin/products/**").permitAll() // Временно разрешаем доступ к продуктам для разработки
                         .requestMatchers("/api/admin/files/**").permitAll() // Временно разрешаем загрузку файлов для разработки
@@ -65,7 +66,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of("http://localhost:5173"));
+        configuration.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
