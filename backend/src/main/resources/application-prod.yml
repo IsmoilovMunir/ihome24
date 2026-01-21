@@ -141,6 +141,8 @@ management:
       enabled: true
     diskspace:
       enabled: true
+    mail:
+      enabled: false  # Отключаем mail health check (почта не критична)
   metrics:
     export:
       prometheus:
