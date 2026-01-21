@@ -40,6 +40,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/h2-console/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll() // Разрешаем доступ к actuator endpoints для мониторинга
                         .requestMatchers("/api/publicapi/**").permitAll() // Разрешаем публичные API endpoints (регистрация и т.д.)
                         .requestMatchers("/api/auth/**").permitAll() // Разрешаем аутентификацию
                         .requestMatchers("/api/apps/**").permitAll() // Temporarily permit all for frontend integration
