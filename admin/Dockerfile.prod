@@ -10,12 +10,15 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
 # Копируем package files
 COPY package*.json ./
 
-# Устанавливаем зависимости
+# Устанавливаем зависимости БЕЗ postinstall скриптов
 # Используем npm ci если есть package-lock.json, иначе npm install
-RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
+RUN if [ -f package-lock.json ]; then npm ci --ignore-scripts; else npm install --ignore-scripts; fi
 
 # Копируем исходный код
 COPY . .
+
+# Запускаем postinstall скрипты после копирования всех файлов
+RUN npm run build:icons && npm run msw:init || true
 
 # Собираем приложение
 RUN npm run build

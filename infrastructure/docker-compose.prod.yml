@@ -9,6 +9,27 @@ version: '3.9'
 # - Используйте переменные окружения из .env.prod файла
 
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: ihome24-postgres-prod
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ihome24}
+      POSTGRES_USER: ${SPRING_DATASOURCE_USERNAME:-iHome24db}
+      POSTGRES_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ihome24-network
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME:-iHome24db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # Backend (Spring Boot)
   backend:
     build:
@@ -55,6 +76,9 @@ services:
     volumes:
       - ./logs/backend:/app/logs
     # Не используйте volumes для кода в продакшене - только для логов
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   # Admin Panel (Vue.js) - Production build
   admin:
@@ -98,6 +122,10 @@ services:
 networks:
   ihome24-network:
     driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
 
 # ВАЖНО: В продакшене НЕ используйте локальные volumes для PostgreSQL и MinIO
 # Используйте управляемые сервисы или отдельные серверы
