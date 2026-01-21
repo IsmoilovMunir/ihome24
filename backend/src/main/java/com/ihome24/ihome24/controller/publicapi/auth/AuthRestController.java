@@ -3,7 +3,6 @@ package com.ihome24.ihome24.controller.publicapi.auth;
 import com.ihome24.ihome24.dto.response.auth.LoginResponse;
 import com.ihome24.ihome24.entity.user.User;
 import com.ihome24.ihome24.repository.user.UserRepository;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -35,16 +34,20 @@ public class AuthRestController {
 
     // Endpoint для JSON
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> loginJson(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
-        log.info("Login request (JSON): Content-Type={}, Request={}", httpRequest.getContentType(), request);
+    public ResponseEntity<?> loginJson(@RequestBody Map<String, String> request) {
+        // Маскируем чувствительные данные в логах
+        Map<String, String> safeRequest = new HashMap<>(request);
+        if (safeRequest.containsKey("password")) {
+            safeRequest.put("password", "***");
+        }
+        log.info("Login request (JSON): username={}", safeRequest.get("username"));
         return processLogin(request);
     }
 
     // Endpoint для form-urlencoded
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<?> loginForm(@RequestParam Map<String, String> request, HttpServletRequest httpRequest) {
-        log.info("Login request (Form): Content-Type={}, Request={}, Params: username={}, password={}", 
-                httpRequest.getContentType(), request, request.get("username"), request.get("password") != null ? "***" : null);
+    public ResponseEntity<?> loginForm(@RequestParam Map<String, String> request) {
+        log.info("Login request (Form): username={}", request.get("username"));
         return processLogin(request);
     }
 
@@ -57,13 +60,14 @@ public class AuthRestController {
             
             if (password == null) {
                 Map<String, Object> errors = new HashMap<>();
-                errors.put("email", new String[]{"Password is required"});
+                errors.put("password", new String[]{"Пароль обязателен"});
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
             }
 
             // Определяем, что использовать для поиска пользователя
             User user = null;
             String searchValue = null;
+            boolean isUsernameLogin = false; // Флаг для определения типа входа
             
             if (email != null && !email.isEmpty()) {
                 // Если передан email, ищем по email
@@ -75,6 +79,7 @@ public class AuthRestController {
                 }
             } else if (username != null && !username.isEmpty()) {
                 // Если передан username, ищем по username
+                isUsernameLogin = true;
                 searchValue = username;
                 user = userRepository.findByUsername(username).orElse(null);
                 if (user == null) {
@@ -85,7 +90,8 @@ public class AuthRestController {
             
             if (searchValue == null) {
                 Map<String, Object> errors = new HashMap<>();
-                errors.put("email", new String[]{"Username or Email is required"});
+                String errorField = isUsernameLogin ? "username" : "email";
+                errors.put(errorField, new String[]{"Имя пользователя или Email обязательны"});
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
             }
 
@@ -93,7 +99,8 @@ public class AuthRestController {
                 log.warn("Login attempt failed: User not found with email/username: {} (email param: {}, username param: {})", 
                         searchValue, email, username);
                 Map<String, Object> errors = new HashMap<>();
-                errors.put("email", new String[]{"Invalid email or password"});
+                String errorField = isUsernameLogin ? "username" : "email";
+                errors.put(errorField, new String[]{"Неверное имя пользователя или пароль"});
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
             }
 
@@ -105,7 +112,8 @@ public class AuthRestController {
                 log.warn("Login attempt failed: User is not active. username={}, enabled={}, status={}", 
                         user.getUsername(), user.isEnabled(), user.getStatus());
                 Map<String, Object> errors = new HashMap<>();
-                errors.put("email", new String[]{"Account is disabled or inactive"});
+                String errorField = isUsernameLogin ? "username" : "email";
+                errors.put(errorField, new String[]{"Аккаунт отключен или неактивен"});
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
             }
 
@@ -124,12 +132,14 @@ public class AuthRestController {
             } catch (BadCredentialsException e) {
                 log.warn("Login attempt failed: Bad credentials for user: {}", user.getUsername());
                 Map<String, Object> errors = new HashMap<>();
-                errors.put("email", new String[]{"Invalid email or password"});
+                String errorField = isUsernameLogin ? "username" : "email";
+                errors.put(errorField, new String[]{"Неверное имя пользователя или пароль"});
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
             } catch (AuthenticationException e) {
                 log.error("Authentication failed for user: {}, error: {}", user.getUsername(), e.getMessage());
                 Map<String, Object> errors = new HashMap<>();
-                errors.put("email", new String[]{"Authentication failed: " + e.getMessage()});
+                String errorField = isUsernameLogin ? "username" : "email";
+                errors.put(errorField, new String[]{"Ошибка аутентификации: " + e.getMessage()});
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
             }
 
@@ -182,7 +192,12 @@ public class AuthRestController {
         } catch (Exception e) {
             log.error("Unexpected error during login: ", e);
             Map<String, Object> errors = new HashMap<>();
-            errors.put("email", new String[]{"Invalid username or password"});
+            // Определяем тип входа для правильного поля ошибки
+            String usernameParam = request.get("username");
+            String emailParam = request.get("email");
+            boolean isUsernameLoginParam = usernameParam != null && !usernameParam.isEmpty() && (emailParam == null || emailParam.isEmpty());
+            String errorField = isUsernameLoginParam ? "username" : "email";
+            errors.put(errorField, new String[]{"Неверное имя пользователя или пароль"});
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
         }
     }
@@ -365,9 +380,10 @@ public class AuthRestController {
         response.put("message", "Admin user is created automatically on first startup");
         response.put("config", Map.of(
                 "adminUsername", "admin (configurable via app.admin.username)",
-                "adminEmail", "admin@demo.com (configurable via app.admin.email)",
+                "adminEmail", "ismoilov.munir97@gmail.com (configurable via app.admin.email)",
                 "passwordChangeRequired", "true (configurable via app.admin.passwordChangeRequired)"
         ));
         return ResponseEntity.ok(response);
     }
+
 }

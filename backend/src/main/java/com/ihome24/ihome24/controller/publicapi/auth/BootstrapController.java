@@ -53,7 +53,7 @@ public class BootstrapController {
         User admin = User.builder()
                 .username("admin")
                 .password(passwordEncoder.encode("admin"))
-                .email("admin@demo.com")
+                .email("ismoilov.munir97@gmail.com")
                 .fullName("Администратор")
                 .role(adminRole)
                 .status(User.UserStatus.ACTIVE)
@@ -67,7 +67,7 @@ public class BootstrapController {
 
         admin = userRepository.save(admin);
 
-        log.info("✓ First admin created: username=admin, email=admin@demo.com, password=admin");
+        log.info("✓ First admin created: username=admin, email=ismoilov.munir97@gmail.com, password=admin");
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "First admin created successfully");

@@ -1,0 +1,111 @@
+# Production конфигурация для Spring Boot
+# Использование: --spring.profiles.active=prod
+
+spring:
+  # PostgreSQL Database Configuration
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    # Connection pool settings для продакшена
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  jpa:
+    hibernate:
+      # В продакшене НЕ создавать таблицы автоматически!
+      # Используйте Liquibase для миграций
+      ddl-auto: validate
+    show-sql: false  # Отключить SQL логи в продакшене
+    properties:
+      hibernate:
+        format_sql: false
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # Оптимизации для продакшена
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+    defer-datasource-initialization: false
+
+  # Отключить H2 в продакшене
+  h2:
+    console:
+      enabled: false
+
+  # Использовать Liquibase для миграций
+  liquibase:
+    enabled: ${LIQUIBASE_ENABLED:true}
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    drop-first: false  # НИКОГДА не устанавливайте в true в продакшене!
+
+  # Security settings
+  security:
+    require-ssl: false  # Используйте reverse proxy для SSL
+
+server:
+  port: ${SERVER_PORT:8080}
+  # Production server settings
+  compression:
+    enabled: true
+    mime-types: text/html,text/xml,text/plain,text/css,text/javascript,application/javascript,application/json
+  error:
+    include-message: never  # Не показывать детали ошибок клиентам
+    include-stacktrace: never
+
+# Конфигурация администратора
+app:
+  admin:
+    username: ${ADMIN_USERNAME}
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
+    fullName: ${ADMIN_FULL_NAME:Администратор}
+    passwordChangeRequired: ${ADMIN_PASSWORD_CHANGE_REQUIRED:true}
+
+# MinIO S3 Configuration
+minio:
+  endpoint: ${MINIO_ENDPOINT}
+  access-key: ${MINIO_ACCESS_KEY}
+  secret-key: ${MINIO_SECRET_KEY}
+  bucket-name: ${MINIO_BUCKET_NAME}
+  initialize-on-startup: ${MINIO_INITIALIZE_ON_STARTUP:false}
+  max-image-size: ${MINIO_MAX_IMAGE_SIZE:5242880}  # 5 МБ
+  max-video-size: ${MINIO_MAX_VIDEO_SIZE:104857600}  # 100 МБ
+  thumbnail-width: ${MINIO_THUMBNAIL_WIDTH:300}
+  thumbnail-height: ${MINIO_THUMBNAIL_HEIGHT:300}
+
+# Logging configuration для продакшена
+logging:
+  level:
+    root: INFO
+    com.ihome24: INFO
+    org.springframework: WARN
+    org.hibernate: WARN
+  file:
+    name: /app/logs/application.log
+    max-size: 100MB
+    max-history: 30
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Actuator endpoints (для мониторинга)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+      # В продакшене ограничьте доступ к actuator endpoints
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+  metrics:
+    export:
+      prometheus:
+        enabled: true

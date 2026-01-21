@@ -28,15 +28,16 @@ const router = useRouter()
 const ability = useAbility()
 
 const errors = ref({
-  email: undefined,
+  username: undefined,
+  email: undefined, // Оставляем для обратной совместимости с бэкендом
   password: undefined,
 })
 
 const refVForm = ref()
 
 const credentials = ref({
-  email: 'admin@demo.com',
-  password: 'admin',
+  username: '',
+  password: '',
 })
 
 const rememberMe = ref(false)
@@ -46,11 +47,16 @@ const login = async () => {
     const res = await $api('/auth/login', {
       method: 'POST',
       body: {
-        email: credentials.value.email,
+        username: credentials.value.username,
+        email: credentials.value.username, // Отправляем и username и email для обратной совместимости
         password: credentials.value.password,
       },
       onResponseError({ response }) {
         errors.value = response._data.errors
+        // Если ошибка в email, показываем её в поле username (для обратной совместимости)
+        if (response._data.errors?.email && !response._data.errors?.username) {
+          errors.value.username = response._data.errors.email
+        }
       },
     })
 
@@ -71,6 +77,7 @@ const login = async () => {
     console.error(err)
   }
 }
+
 
 const onSubmit = () => {
   refVForm.value?.validate().then(({ valid: isValid }) => {
@@ -139,34 +146,21 @@ const onSubmit = () => {
           </p>
         </VCardText>
         <VCardText>
-          <VAlert
-            color="primary"
-            variant="tonal"
-          >
-            <p class="text-sm mb-2">
-              Email администратора: <strong>admin@demo.com</strong> / Пароль: <strong>admin</strong>
-            </p>
-            <p class="text-sm mb-0">
-              Email клиента: <strong>client@demo.com</strong> / Пароль: <strong>client</strong>
-            </p>
-          </VAlert>
-        </VCardText>
-        <VCardText>
           <VForm
             ref="refVForm"
             @submit.prevent="onSubmit"
           >
             <VRow>
-              <!-- email -->
+              <!-- username -->
               <VCol cols="12">
                 <AppTextField
-                  v-model="credentials.email"
-                  label="Email"
-                  placeholder="johndoe@email.com"
-                  type="email"
+                  v-model="credentials.username"
+                  label="Имя пользователя"
+                  placeholder="Введите имя пользователя"
+                  type="text"
                   autofocus
-                  :rules="[requiredValidator, emailValidator]"
-                  :error-messages="errors.email"
+                  :rules="[requiredValidator]"
+                  :error-messages="errors.username || errors.email"
                 />
               </VCol>
 
@@ -240,6 +234,7 @@ const onSubmit = () => {
       </VCard>
     </VCol>
   </VRow>
+
 </template>
 
 <style lang="scss">

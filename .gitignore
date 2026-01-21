@@ -184,6 +184,7 @@ config/local.json
 config/local.yml
 application-local.yml
 application-local.properties
+backend/src/main/resources/application-local.yml
 
 # MacOS
 .AppleDouble
@@ -235,3 +236,8 @@ nbdist/
 
 # Cursor IDE
 .cursor/
+
+# Markdown documentation files (except README files)
+*.md
+!README.md
+!**/README.md

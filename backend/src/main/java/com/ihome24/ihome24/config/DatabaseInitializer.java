@@ -30,7 +30,7 @@ public class DatabaseInitializer implements CommandLineRunner {
     @Value("${app.admin.username:admin}")
     private String adminUsername;
 
-    @Value("${app.admin.email:admin@demo.com}")
+    @Value("${app.admin.email:ismoilov.munir97@gmail.com}")
     private String adminEmail;
 
     @Value("${app.admin.password:admin}")

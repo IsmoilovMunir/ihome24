@@ -30,6 +30,28 @@ spring:
     pathmatch:
       matching-strategy: ant_path_matcher
 
+  # Email Configuration (Timeweb SMTP)
+  mail:
+    host: smtp.timeweb.ru
+    port: 587
+    username: info@ihome24.ru
+    password: ov6t4gpce10
+    properties:
+      mail:
+        debug: ${MAIL_DEBUG:true}  # Включаем детальное логирование SMTP
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          ssl:
+            enable: ${MAIL_SMTP_SSL_ENABLE:false}
+            trust: ${MAIL_SMTP_SSL_TRUST:*}
+            checkserveridentity: ${MAIL_SMTP_SSL_CHECK_SERVER_IDENTITY:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+            required: ${MAIL_SMTP_STARTTLS_REQUIRED:true}
+          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:10000}
+          timeout: ${MAIL_TIMEOUT:10000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT:10000}
+
 server:
   port: ${SERVER_PORT:8080}
 
@@ -38,11 +60,14 @@ server:
 app:
   admin:
     username: ${ADMIN_USERNAME:iHome24admin}
-    email: ${ADMIN_EMAIL:admin@demo.com}
+    email: ${ADMIN_EMAIL:ismoilov.munir97@gmail.com}
     password: ${ADMIN_PASSWORD:iHome242025admin}
     fullName: ${ADMIN_FULL_NAME:Администратор}
     # Если true, администратор будет вынужден сменить пароль при первом входе
     passwordChangeRequired: ${ADMIN_PASSWORD_CHANGE_REQUIRED:true}
+  # Email Configuration
+  email:
+    from: ${APP_EMAIL_FROM:info@ihome24.ru}
 
 # MinIO S3 Configuration
 minio:
