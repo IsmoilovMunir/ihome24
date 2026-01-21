@@ -14,8 +14,22 @@ export const useProductsStore = defineStore('products', () => {
     error.value = null
     try {
       const response = await productsAPI.getAll()
+      
+      // Проверяем формат ответа и извлекаем массив продуктов
+      let productsData = []
+      if (Array.isArray(response.data)) {
+        productsData = response.data
+      } else if (Array.isArray(response)) {
+        productsData = response
+      } else if (response && response.data && Array.isArray(response.data)) {
+        productsData = response.data
+      } else {
+        console.warn('Unexpected API response format:', response)
+        productsData = []
+      }
+      
       // Преобразуем данные от бэкенда в формат фронтенда
-      products.value = response.data.map(product => {
+      products.value = productsData.map(product => {
         // Преобразуем images в gallery (массив URL)
         const gallery = product.images && product.images.length > 0 
           ? product.images.map(img => img.imageUrl).filter(url => url)
@@ -100,8 +114,19 @@ export const useProductsStore = defineStore('products', () => {
     error.value = null
     try {
       const response = await productsAPI.search(query)
+      
+      // Проверяем формат ответа
+      let productsData = []
+      if (Array.isArray(response.data)) {
+        productsData = response.data
+      } else if (Array.isArray(response)) {
+        productsData = response
+      } else {
+        productsData = []
+      }
+      
       // Преобразуем данные от бэкенда в формат фронтенда
-      products.value = response.data.map(product => ({
+      products.value = productsData.map(product => ({
         id: product.id,
         name: product.name,
         description: product.description || '',
