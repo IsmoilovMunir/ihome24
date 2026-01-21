@@ -134,6 +134,13 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+      probes:
+        enabled: false  # Отключаем health groups для простоты
+  health:
+    db:
+      enabled: true
+    diskspace:
+      enabled: true
   metrics:
     export:
       prometheus:
