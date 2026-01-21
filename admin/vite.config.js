@@ -118,4 +118,21 @@ export default defineConfig({
       './src/**/*.vue',
     ],
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            // Сохраняем оригинальный Content-Type
+            if (req.headers['content-type']) {
+              proxyReq.setHeader('Content-Type', req.headers['content-type'])
+            }
+          })
+        },
+      },
+    },
+  },
 })

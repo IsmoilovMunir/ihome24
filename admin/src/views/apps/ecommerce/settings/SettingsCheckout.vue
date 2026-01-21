@@ -8,8 +8,8 @@ const shippingAddress = ref('Optional')
 
 <template>
   <VCard
-    title="Customer contact method"
-    subtitle="Select what contact method customers use to check out."
+    title="Способ связи с клиентом"
+    subtitle="Выберите способ связи, который клиенты используют при оформлении заказа."
     class="mb-6"
   >
     <VCardText>
@@ -18,7 +18,7 @@ const shippingAddress = ref('Optional')
         class="mb-4"
       >
         <VRadio
-          label="Phone number"
+          label="Номер телефона"
           value="Phone number"
         />
         <VRadio
@@ -32,86 +32,86 @@ const shippingAddress = ref('Optional')
         variant="tonal"
       >
         <VAlertTitle class="mb-0">
-          To send SMS updates, you need to install an SMS App.
+          Для отправки SMS-уведомлений необходимо установить SMS-приложение.
         </VAlertTitle>
       </VAlert>
     </VCardText>
   </VCard>
 
   <VCard
-    title="Customer information"
+    title="Информация о клиенте"
     class="mb-6"
   >
     <VCardText class="customer-info-card">
       <VRadioGroup
         v-model="fullName"
-        label="Full name"
+        label="Полное имя"
         class="mb-4"
       >
         <VRadio
           value="Only require last name"
-          label="Only require last name"
+          label="Только фамилия обязательна"
         />
         <VRadio
           value="Require first and last name"
-          label="Require first and last name"
+          label="Имя и фамилия обязательны"
         />
       </VRadioGroup>
 
       <VRadioGroup
         v-model="companyName"
-        label="Company name"
+        label="Название компании"
         class="mb-4"
       >
         <VRadio
           value="Don't include"
-          label="Don't include"
+          label="Не включать"
         />
         <VRadio
           value="Optional"
-          label="Optional"
+          label="Необязательно"
         />
         <VRadio
           value="Required"
-          label="Required"
+          label="Обязательно"
         />
       </VRadioGroup>
 
       <VRadioGroup
         v-model="addressLine"
-        label="Address line 2 (apartment, unit, etc.)"
+        label="Адрес строка 2 (квартира, офис и т.д.)"
         class="mb-4"
       >
         <VRadio
           value="Don't include"
-          label="Don't include"
+          label="Не включать"
         />
         <VRadio
           value="Optional"
-          label="Optional"
+          label="Необязательно"
         />
         <VRadio
           value="Required"
-          label="Required"
+          label="Обязательно"
         />
       </VRadioGroup>
 
       <VRadioGroup
         v-model="shippingAddress"
-        label="Shipping address phone number"
+        label="Номер телефона адреса доставки"
         class="mb-4"
       >
         <VRadio
           value="Don't include"
-          label="Don't include"
+          label="Не включать"
         />
         <VRadio
           value="Optional"
-          label="Optional"
+          label="Необязательно"
         />
         <VRadio
           value="Required"
-          label="Required"
+          label="Обязательно"
         />
       </VRadioGroup>
     </VCardText>
@@ -122,9 +122,9 @@ const shippingAddress = ref('Optional')
       variant="tonal"
       color="secondary"
     >
-      Discard
+      Отменить
     </VBtn>
-    <VBtn>Save Changes</VBtn>
+    <VBtn>Сохранить изменения</VBtn>
   </div>
 </template>
 

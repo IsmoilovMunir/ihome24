@@ -11,30 +11,30 @@ const isPaymentProvidersDialogVisible = ref(false)
     <!-- 👉 Payment Providers  -->
     <VCard
       class="mb-6"
-      title="Payment providers"
+      title="Провайдеры платежей"
     >
       <VCardText>
         <div class="text-body-1 mb-5">
-          Providers that enable you to accept payment methods at a rate set by the third-party. An additional fee will apply to new orders once you select a plan.
+          Провайдеры, которые позволяют принимать платежи по ставке, установленной третьей стороной. Дополнительная комиссия будет применяться к новым заказам после выбора тарифа.
         </div>
         <VBtn
           variant="tonal"
           @click="isPaymentProvidersDialogVisible = !isPaymentProvidersDialogVisible"
         >
-          Choose a provider
+          Выбрать провайдера
         </VBtn>
       </VCardText>
     </VCard>
 
     <!-- 👉 Supported Payment Methods -->
     <VCard
-      title="Supported payment methods"
-      subtitle="Payment methods that are available with one of Vuexy's approved payment providers."
+      title="Поддерживаемые способы оплаты"
+      subtitle="Способы оплаты, доступные с одним из одобренных платежных провайдеров ihome."
       class="mb-6"
     >
       <VCardText>
         <h6 class="text-h6 mb-5">
-          Default
+          По умолчанию
         </h6>
         <div class="my-class mb-5">
           <div class="d-flex justify-space-between align-center mb-6">
@@ -47,7 +47,7 @@ const isPaymentProvidersDialogVisible = ref(false)
             </div>
 
             <VBtn variant="text">
-              Activate PayPal
+              Активировать PayPal
             </VBtn>
           </div>
           <VDivider />
@@ -57,7 +57,7 @@ const isPaymentProvidersDialogVisible = ref(false)
                 class="text-body-2 mb-2"
                 style="min-inline-size: 220px;"
               >
-                Provider
+                Провайдер
               </div>
               <h6 class="text-h6">
                 PayPal
@@ -69,14 +69,14 @@ const isPaymentProvidersDialogVisible = ref(false)
                 class="text-body-2 mb-2"
                 style="min-inline-size: 220px;"
               >
-                Status
+                Статус
               </div>
               <VChip
                 color="warning"
                 size="small"
                 label
               >
-                Inactive
+                Неактивен
               </VChip>
             </div>
 
@@ -85,7 +85,7 @@ const isPaymentProvidersDialogVisible = ref(false)
                 class="text-body-2 mb-2"
                 style="min-inline-size: 220px;"
               >
-                Transaction Fee
+                Комиссия за транзакцию
               </div>
               <h6 class="text-h6">
                 2.99%
@@ -97,29 +97,29 @@ const isPaymentProvidersDialogVisible = ref(false)
           variant="tonal"
           @click="isAddPaymentMethodsDialogVisible = !isAddPaymentMethodsDialogVisible"
         >
-          Add Payment Methods
+          Добавить способ оплаты
         </VBtn>
       </VCardText>
     </VCard>
 
     <!-- 👉 Manual Payment Methods -->
     <VCard
-      title="Manual payment methods"
+      title="Ручные способы оплаты"
       class="mb-6"
     >
       <VCardText>
-        <p>Payments that are made outside your online store. When a customer selects a manual payment method such as cash on delivery, you'll need to approve their order before it can be fulfilled.</p>
+        <p>Платежи, которые осуществляются вне вашего интернет-магазина. Когда клиент выбирает ручной способ оплаты, например, наложенный платеж, вам нужно будет подтвердить его заказ перед выполнением.</p>
 
         <VBtn
           variant="tonal"
           :append-icon="$vuetify.display.smAndUp ? 'tabler-chevron-down' : ''"
         >
-          Add Manual Payment Methods
+          Добавить ручной способ оплаты
 
           <VMenu activator="parent">
             <VList>
               <VListItem
-                v-for="(item, index) in ['Create custom payment method', 'Bank Deposit', 'Money Order', 'Cash on Delivery(COD)']"
+                v-for="(item, index) in ['Создать пользовательский способ оплаты', 'Банковский депозит', 'Денежный перевод', 'Наложенный платеж (НП)']"
                 :key="index"
                 :value="index"
               >
@@ -136,10 +136,10 @@ const isPaymentProvidersDialogVisible = ref(false)
         color="secondary"
         variant="tonal"
       >
-        Discard
+        Отменить
       </VBtn>
       <VBtn color="primary">
-        save changes
+        Сохранить изменения
       </VBtn>
     </div>
   </div>

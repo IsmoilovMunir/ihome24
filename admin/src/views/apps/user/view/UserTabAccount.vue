@@ -21,23 +21,23 @@ import xamarin from '@images/icons/project-icons/xamarin.png'
 
 const projectTableHeaders = [
   {
-    title: 'PROJECT',
+    title: 'ПРОЕКТ',
     key: 'project',
   },
   {
-    title: 'LEADER',
+    title: 'ЛИДЕР',
     key: 'leader',
   },
   {
-    title: 'Team',
+    title: 'Команда',
     key: 'team',
   },
   {
-    title: 'PROGRESS',
+    title: 'ПРОГРЕСС',
     key: 'progress',
   },
   {
-    title: 'Action',
+    title: 'Действие',
     key: 'Action',
     sortable: false,
   },
@@ -147,15 +147,15 @@ const projects = [
 
 const moreList = [
   {
-    title: 'Download',
+    title: 'Скачать',
     value: 'Download',
   },
   {
-    title: 'Delete',
+    title: 'Удалить',
     value: 'Delete',
   },
   {
-    title: 'View',
+    title: 'Просмотр',
     value: 'View',
   },
 ]
@@ -278,7 +278,7 @@ const moreList = [
 
     <VCol cols="12">
       <!-- 👉 User Activity timeline -->
-      <VCard title="User Activity Timeline">
+      <VCard title="История активности пользователя">
         <VCardText>
           <VTimeline
             side="end"
@@ -295,14 +295,14 @@ const moreList = [
               <!-- 👉 Header -->
               <div class="d-flex justify-space-between align-center gap-2 flex-wrap mb-2">
                 <span class="app-timeline-title">
-                  12 Invoices have been paid
+                  12 счетов оплачено
                 </span>
-                <span class="app-timeline-meta">12 min ago</span>
+                <span class="app-timeline-meta">12 мин назад</span>
               </div>
 
               <!-- 👉 Content -->
               <div class="app-timeline-text mt-1">
-                Invoices have been paid to the company
+                Счета были оплачены компании
               </div>
 
               <div class="d-inline-flex align-center timeline-chip mt-2">
@@ -327,13 +327,13 @@ const moreList = [
               <!-- 👉 Header -->
               <div class="d-flex justify-space-between align-center flex-wrap mb-2">
                 <div class="app-timeline-title">
-                  Client Meeting
+                  Встреча с клиентом
                 </div>
-                <span class="app-timeline-meta">45 min ago</span>
+                <span class="app-timeline-meta">45 мин назад</span>
               </div>
 
               <div class="app-timeline-text mt-1">
-                Project meeting with john @10:15am
+                Встреча по проекту с john @10:15
               </div>
 
               <!-- 👉 Person -->
@@ -364,14 +364,14 @@ const moreList = [
               <!-- 👉 Header -->
               <div class="d-flex justify-space-between align-center flex-wrap mb-2">
                 <span class="app-timeline-title">
-                  Create a new project for client
+                  Создан новый проект для клиента
                 </span>
-                <span class="app-timeline-meta">2 Day Ago</span>
+                <span class="app-timeline-meta">2 дня назад</span>
               </div>
 
               <!-- 👉 Content -->
               <p class="app-timeline-text mt-1 mb-2">
-                6 team members in a project
+                6 участников команды в проекте
               </p>
 
               <div class="v-avatar-group demo-avatar-group">

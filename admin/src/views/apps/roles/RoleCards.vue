@@ -13,7 +13,7 @@ import girlUsingMobile from '@images/pages/girl-using-mobile.png'
 
 const roles = ref([
   {
-    role: 'Administrator',
+    role: 'Администратор',
     users: [
       avatar1,
       avatar2,
@@ -21,22 +21,22 @@ const roles = ref([
       avatar4,
     ],
     details: {
-      name: 'Administrator',
+      name: 'Администратор',
       permissions: [
         {
-          name: 'User Management',
+          name: 'Управление пользователями',
           read: true,
           write: true,
           create: true,
         },
         {
-          name: 'Disputes Management',
+          name: 'Управление спорами',
           read: true,
           write: true,
           create: true,
         },
         {
-          name: 'API Control',
+          name: 'Управление API',
           read: true,
           write: true,
           create: true,
@@ -45,7 +45,7 @@ const roles = ref([
     },
   },
   {
-    role: 'Manager',
+    role: 'Менеджер',
     users: [
       avatar1,
       avatar2,
@@ -56,22 +56,22 @@ const roles = ref([
       avatar7,
     ],
     details: {
-      name: 'Manager',
+      name: 'Менеджер',
       permissions: [
         {
-          name: 'Reporting',
+          name: 'Отчетность',
           read: true,
           write: true,
           create: false,
         },
         {
-          name: 'Payroll',
+          name: 'Заработная плата',
           read: true,
           write: true,
           create: true,
         },
         {
-          name: 'User Management',
+          name: 'Управление пользователями',
           read: true,
           write: true,
           create: true,
@@ -80,7 +80,7 @@ const roles = ref([
     },
   },
   {
-    role: 'Users',
+    role: 'Пользователи',
     users: [
       avatar1,
       avatar2,
@@ -89,28 +89,28 @@ const roles = ref([
       avatar5,
     ],
     details: {
-      name: 'Users',
+      name: 'Пользователи',
       permissions: [
         {
-          name: 'User Management',
+          name: 'Управление пользователями',
           read: true,
           write: false,
           create: false,
         },
         {
-          name: 'Content Management',
+          name: 'Управление контентом',
           read: true,
           write: false,
           create: false,
         },
         {
-          name: 'Disputes Management',
+          name: 'Управление спорами',
           read: true,
           write: false,
           create: false,
         },
         {
-          name: 'Database Management',
+          name: 'Управление базой данных',
           read: true,
           write: false,
           create: false,
@@ -119,7 +119,7 @@ const roles = ref([
     },
   },
   {
-    role: 'Support',
+    role: 'Поддержка',
     users: [
       avatar1,
       avatar2,
@@ -129,22 +129,22 @@ const roles = ref([
       avatar6,
     ],
     details: {
-      name: 'Support',
+      name: 'Поддержка',
       permissions: [
         {
-          name: 'Repository Management',
+          name: 'Управление репозиторием',
           read: true,
           write: true,
           create: false,
         },
         {
-          name: 'Content Management',
+          name: 'Управление контентом',
           read: true,
           write: true,
           create: false,
         },
         {
-          name: 'Database Management',
+          name: 'Управление базой данных',
           read: true,
           write: true,
           create: false,
@@ -153,7 +153,7 @@ const roles = ref([
     },
   },
   {
-    role: 'Restricted User',
+    role: 'Ограниченный пользователь',
     users: [
       avatar1,
       avatar2,
@@ -167,28 +167,28 @@ const roles = ref([
       avatar10,
     ],
     details: {
-      name: 'Restricted User',
+      name: 'Ограниченный пользователь',
       permissions: [
         {
-          name: 'User Management',
+          name: 'Управление пользователями',
           read: true,
           write: false,
           create: false,
         },
         {
-          name: 'Content Management',
+          name: 'Управление контентом',
           read: true,
           write: false,
           create: false,
         },
         {
-          name: 'Disputes Management',
+          name: 'Управление спорами',
           read: true,
           write: false,
           create: false,
         },
         {
-          name: 'Database Management',
+          name: 'Управление базой данных',
           read: true,
           write: false,
           create: false,
@@ -221,7 +221,7 @@ const editPermission = value => {
       <VCard>
         <VCardText class="d-flex align-center pb-4">
           <div class="text-body-1">
-            Total {{ item.users.length }} users
+            Всего {{ item.users.length }} пользователей
           </div>
 
           <VSpacer />
@@ -265,7 +265,7 @@ const editPermission = value => {
                   href="javascript:void(0)"
                   @click="editPermission(item.details)"
                 >
-                  Edit Role
+                  Редактировать роль
                 </a>
               </div>
             </div>
@@ -310,10 +310,10 @@ const editPermission = value => {
                 size="small"
                 @click="isAddRoleDialogVisible = true"
               >
-                Add New Role
+                Добавить новую роль
               </VBtn>
               <div class="text-end">
-                Add new role,<br> if it doesn't exist.
+                Добавить новую роль,<br> если она не существует.
               </div>
             </VCardText>
           </VCol>

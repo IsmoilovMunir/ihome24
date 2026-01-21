@@ -1,6 +1,14 @@
 .layout-wrapper.layout-nav-type-horizontal {
   .layout-navbar-and-nav-container {
     .app-logo {
+      img {
+        max-width: 120px;
+        max-height: 40px;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+      }
+
       .app-title {
         font-size: 22px;
       }

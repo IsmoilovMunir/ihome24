@@ -1,24 +1,85 @@
 spring:
+  # PostgreSQL Database Configuration
   datasource:
-    url: jdbc:postgresql://localhost:5434/ihome24
-    username: ihome24
-    password: ihome242026
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/ihome24}
+    username: ${SPRING_DATASOURCE_USERNAME:iHome24db}
+    password: ${SPRING_DATASOURCE_PASSWORD:iHome242025db}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: none
-    show-sql: true
+      ddl-auto: update  # Автоматическое создание таблиц из сущностей
+    show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
         format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
     defer-datasource-initialization: false
 
+  # H2 Database (только для локальной разработки без Docker)
+  h2:
+    console:
+      enabled: ${H2_CONSOLE_ENABLED:false}
+      path: /h2-console
+
   liquibase:
-    enabled: true
-    change-log: classpath:db/changelog/db.changelog-master.yaml
-    drop-first: false
-    should-run: true
+    enabled: ${LIQUIBASE_ENABLED:false}
+    change-log: classpath:db/changelog/db.changelog-master.xml
+
+  mvc:
+    pathmatch:
+      matching-strategy: ant_path_matcher
+
+  # Email Configuration (Timeweb SMTP)
+  mail:
+    host: smtp.timeweb.ru
+    port: 587
+    username: info@ihome24.ru
+    password: ov6t4gpce10
+    properties:
+      mail:
+        debug: ${MAIL_DEBUG:true}  # Включаем детальное логирование SMTP
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          ssl:
+            enable: ${MAIL_SMTP_SSL_ENABLE:false}
+            trust: ${MAIL_SMTP_SSL_TRUST:*}
+            checkserveridentity: ${MAIL_SMTP_SSL_CHECK_SERVER_IDENTITY:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+            required: ${MAIL_SMTP_STARTTLS_REQUIRED:true}
+          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:10000}
+          timeout: ${MAIL_TIMEOUT:10000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT:10000}
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
+
+# Конфигурация администратора по умолчанию
+# Эти параметры используются только при первом запуске, если администратор еще не существует
+app:
+  admin:
+    username: ${ADMIN_USERNAME:iHome24admin}
+    email: ${ADMIN_EMAIL:ismoilov.munir97@gmail.com}
+    password: ${ADMIN_PASSWORD:iHome242025admin}
+    fullName: ${ADMIN_FULL_NAME:Администратор}
+    # Если true, администратор будет вынужден сменить пароль при первом входе
+    passwordChangeRequired: ${ADMIN_PASSWORD_CHANGE_REQUIRED:true}
+  # Email Configuration
+  email:
+    from: ${APP_EMAIL_FROM:info@ihome24.ru}
+
+# MinIO S3 Configuration
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:iHome24mino}
+  secret-key: ${MINIO_SECRET_KEY:iHome242025mino}
+  bucket-name: ${MINIO_BUCKET_NAME:ihome24-media}
+  # Инициализировать bucket при старте приложения (false - создаст при первом использовании)
+  initialize-on-startup: ${MINIO_INITIALIZE_ON_STARTUP:false}
+  # Максимальные размеры файлов (в байтах)
+  max-image-size: ${MINIO_MAX_IMAGE_SIZE:5242880}  # 5 МБ
+  max-video-size: ${MINIO_MAX_VIDEO_SIZE:104857600}  # 100 МБ
+  # Размер превью для фото (в пикселях)
+  thumbnail-width: ${MINIO_THUMBNAIL_WIDTH:300}
+  thumbnail-height: ${MINIO_THUMBNAIL_HEIGHT:300}

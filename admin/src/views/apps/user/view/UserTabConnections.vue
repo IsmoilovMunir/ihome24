@@ -14,31 +14,31 @@ const connectedAccounts = ref([
   {
     img: google,
     title: 'Google',
-    text: 'Calendar and contacts',
+    text: 'Календарь и контакты',
     connected: true,
   },
   {
     img: slack,
     title: 'Slack',
-    text: 'Communication',
+    text: 'Коммуникации',
     connected: false,
   },
   {
     img: github,
     title: 'GitHub',
-    text: 'Manage your Git repositories',
+    text: 'Управление Git репозиториями',
     connected: true,
   },
   {
     img: mailchimp,
     title: 'Mailchimp',
-    text: 'Email marketing service',
+    text: 'Сервис email маркетинга',
     connected: false,
   },
   {
     img: asana,
     title: 'Asana',
-    text: 'Communication',
+    text: 'Коммуникации',
     connected: false,
   },
 ])
@@ -81,8 +81,8 @@ const socialAccounts = ref([
     <!-- 👉 connected accounts -->
     <VCol cols="12">
       <VCard
-        title="Connected Accounts"
-        subtitle="Display content from your connected accounts on your site"
+        title="Подключенные аккаунты"
+        subtitle="Отображать контент из ваших подключенных аккаунтов на вашем сайте"
       >
         <VCardText>
           <VList class="card-list">
@@ -121,8 +121,8 @@ const socialAccounts = ref([
     <!-- 👉 social accounts -->
     <VCol cols="12">
       <VCard
-        title="Social Accounts"
-        subtitle="Display content from social accounts on your site"
+        title="Социальные аккаунты"
+        subtitle="Отображать контент из социальных аккаунтов на вашем сайте"
       >
         <VCardText>
           <VList class="card-list">
@@ -154,7 +154,7 @@ const socialAccounts = ref([
               </VListItemSubtitle>
 
               <VListItemSubtitle v-else>
-                Not connected
+                Не подключено
               </VListItemSubtitle>
 
               <template #append>

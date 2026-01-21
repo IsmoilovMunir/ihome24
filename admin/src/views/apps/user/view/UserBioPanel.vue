@@ -7,12 +7,12 @@ const props = defineProps({
 })
 
 const standardPlan = {
-  plan: 'Standard',
+  plan: 'Стандартный',
   price: 99,
   benefits: [
-    '10 Users',
-    'Up to 10GB storage',
-    'Basic Support',
+    '10 пользователей',
+    'До 10 ГБ хранилища',
+    'Базовая поддержка',
   ],
 }
 
@@ -115,7 +115,7 @@ const resolveUserRoleVariant = role => {
                   {{ `${(props.userData.taskDone / 1000).toFixed(2)}k` }}
                 </h5>
 
-                <span class="text-sm">Task Done</span>
+                <span class="text-sm">Задач выполнено</span>
               </div>
             </div>
 
@@ -137,14 +137,14 @@ const resolveUserRoleVariant = role => {
                 <h5 class="text-h5">
                   {{ kFormatter(props.userData.projectDone) }}
                 </h5>
-                <span class="text-sm">Project Done</span>
+                <span class="text-sm">Проектов выполнено</span>
               </div>
             </div>
           </div>
 
           <!-- 👉 Details -->
           <h5 class="text-h5">
-            Details
+            Детали
           </h5>
 
           <VDivider class="my-4" />
@@ -154,9 +154,9 @@ const resolveUserRoleVariant = role => {
             <VListItem>
               <VListItemTitle>
                 <h6 class="text-h6">
-                  Username:
+                  Имя пользователя:
                   <div class="d-inline-block text-body-1">
-                    {{ props.userData.fullName }}
+                    {{ props.userData.username || props.userData.fullName }}
                   </div>
                 </h6>
               </VListItemTitle>
@@ -165,7 +165,7 @@ const resolveUserRoleVariant = role => {
             <VListItem>
               <VListItemTitle>
                 <span class="text-h6">
-                  Billing Email:
+                  Email для оплаты:
                 </span>
                 <span class="text-body-1">
                   {{ props.userData.email }}
@@ -176,7 +176,7 @@ const resolveUserRoleVariant = role => {
             <VListItem>
               <VListItemTitle>
                 <h6 class="text-h6">
-                  Status:
+                  Статус:
                   <div class="d-inline-block text-body-1 text-capitalize">
                     {{ props.userData.status }}
                   </div>
@@ -187,7 +187,7 @@ const resolveUserRoleVariant = role => {
             <VListItem>
               <VListItemTitle>
                 <h6 class="text-h6">
-                  Role:
+                  Роль:
                   <div class="d-inline-block text-capitalize text-body-1">
                     {{ props.userData.role }}
                   </div>
@@ -198,9 +198,9 @@ const resolveUserRoleVariant = role => {
             <VListItem>
               <VListItemTitle>
                 <h6 class="text-h6">
-                  Tax ID:
+                  Налоговый ID:
                   <div class="d-inline-block text-body-1">
-                    {{ props.userData.taxId }}
+                    {{ props.userData.taxId || 'Не указан' }}
                   </div>
                 </h6>
               </VListItemTitle>
@@ -209,9 +209,9 @@ const resolveUserRoleVariant = role => {
             <VListItem>
               <VListItemTitle>
                 <h6 class="text-h6">
-                  Contact:
+                  Контакт:
                   <div class="d-inline-block text-body-1">
-                    {{ props.userData.contact }}
+                    {{ props.userData.contact || 'Не указан' }}
                   </div>
                 </h6>
               </VListItemTitle>
@@ -220,9 +220,9 @@ const resolveUserRoleVariant = role => {
             <VListItem>
               <VListItemTitle>
                 <h6 class="text-h6">
-                  Language:
+                  Язык:
                   <div class="d-inline-block text-body-1">
-                    {{ props.userData.language }}
+                    {{ props.userData.language || 'Не указан' }}
                   </div>
                 </h6>
               </VListItemTitle>
@@ -231,9 +231,9 @@ const resolveUserRoleVariant = role => {
             <VListItem>
               <VListItemTitle>
                 <h6 class="text-h6">
-                  Country:
+                  Страна:
                   <div class="d-inline-block text-body-1">
-                    {{ props.userData.country }}
+                    {{ props.userData.country || 'Не указана' }}
                   </div>
                 </h6>
               </VListItemTitle>
@@ -247,14 +247,14 @@ const resolveUserRoleVariant = role => {
             variant="elevated"
             @click="isUserInfoEditDialogVisible = true"
           >
-            Edit
+            Редактировать
           </VBtn>
 
           <VBtn
             variant="tonal"
             color="error"
           >
-            Suspend
+            Заблокировать
           </VBtn>
         </VCardText>
       </VCard>
@@ -279,11 +279,11 @@ const resolveUserRoleVariant = role => {
 
           <!-- 👉 Current Price  -->
           <div class="d-flex align-center">
-            <sup class="text-h5 text-primary mt-1">$</sup>
+            <sup class="text-h5 text-primary mt-1">₽</sup>
             <h1 class="text-h1 text-primary">
               99
             </h1>
-            <sub class="mt-3"><h6 class="text-h6 font-weight-regular mb-n1">/ month</h6></sub>
+            <sub class="mt-3"><h6 class="text-h6 font-weight-regular mb-n1">/ месяц</h6></sub>
           </div>
         </VCardText>
 
@@ -311,10 +311,10 @@ const resolveUserRoleVariant = role => {
           <div class="my-6">
             <div class="d-flex justify-space-between mb-1">
               <h6 class="text-h6">
-                Days
+                Дни
               </h6>
               <h6 class="text-h6">
-                26 of 30 Days
+                26 из 30 дней
               </h6>
             </div>
 
@@ -327,7 +327,7 @@ const resolveUserRoleVariant = role => {
             />
 
             <p class="mt-1">
-              4 days remaining
+              Осталось 4 дня
             </p>
           </div>
 
@@ -337,7 +337,7 @@ const resolveUserRoleVariant = role => {
               block
               @click="isUpgradePlanDialogVisible = true"
             >
-              Upgrade Plan
+              Обновить план
             </VBtn>
           </div>
         </VCardText>

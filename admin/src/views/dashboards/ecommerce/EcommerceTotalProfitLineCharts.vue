@@ -7,11 +7,11 @@ const vuetifyTheme = useTheme()
 const series = [{
   data: [
     0,
-    25,
-    10,
-    40,
-    25,
-    55,
+    0,
+    0,
+    0,
+    0,
+    0,
   ],
 }]
 
@@ -95,10 +95,10 @@ const chartOptions = computed(() => {
 
       <div class="d-flex align-center justify-space-between gap-x-2 mt-3">
         <h4 class="text-h4 text-center font-weight-medium">
-          624k
+          0
         </h4>
         <span class="text-sm text-success">
-          +8.24%
+          0%
         </span>
       </div>
     </VCardText>

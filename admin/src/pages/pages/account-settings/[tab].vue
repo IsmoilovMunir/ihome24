@@ -15,27 +15,27 @@ const activeTab = computed({
 // tabs
 const tabs = [
   {
-    title: 'Account',
+    title: 'Аккаунт',
     icon: 'tabler-users',
     tab: 'account',
   },
   {
-    title: 'Security',
+    title: 'Безопасность',
     icon: 'tabler-lock',
     tab: 'security',
   },
   {
-    title: 'Billing & Plans',
+    title: 'Оплата и планы',
     icon: 'tabler-file-text',
     tab: 'billing-plans',
   },
   {
-    title: 'Notifications',
+    title: 'Уведомления',
     icon: 'tabler-bell',
     tab: 'notification',
   },
   {
-    title: 'Connections',
+    title: 'Подключения',
     icon: 'tabler-link',
     tab: 'connection',
   },

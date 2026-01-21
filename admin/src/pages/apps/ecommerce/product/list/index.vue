@@ -2,27 +2,27 @@
 const widgetData = ref([
   {
     title: 'Продажи в магазине',
-    value: '$5,345',
+    value: '₽5,345',
     icon: 'tabler-smart-home',
-    desc: '5k заказов',
+    desc: '5к заказов',
     change: 5.7,
   },
   {
     title: 'Продажи на сайте',
-    value: '$674,347',
+    value: '₽674,347',
     icon: 'tabler-device-laptop',
-    desc: '21k заказов',
+    desc: '21к заказов',
     change: 12.4,
   },
   {
-    title: 'Скидка',
-    value: '$14,235',
+    title: 'Скидки',
+    value: '₽14,235',
     icon: 'tabler-gift',
-    desc: '6k заказов',
+    desc: '6к заказов',
   },
   {
-    title: 'Партнёрская программа',
-    value: '$8,345',
+    title: 'Партнерская программа',
+    value: '₽8,345',
     icon: 'tabler-wallet',
     desc: '150 заказов',
     change: -3.5,
@@ -39,12 +39,12 @@ const headers = [
     key: 'category',
   },
   {
-    title: 'Склад',
+    title: 'Наличие',
     key: 'stock',
     sortable: false,
   },
   {
-    title: 'SKU',
+    title: 'Артикул',
     key: 'sku',
   },
   {
@@ -52,7 +52,7 @@ const headers = [
     key: 'price',
   },
   {
-    title: 'Кол-во',
+    title: 'Количество',
     key: 'qty',
   },
   {
@@ -89,27 +89,27 @@ const status = ref([
 
 const categories = ref([
   {
-    title: 'Accessories',
+    title: 'Аксессуары',
     value: 'Accessories',
   },
   {
-    title: 'Home Decor',
+    title: 'Декор для дома',
     value: 'Home Decor',
   },
   {
-    title: 'Electronics',
+    title: 'Электроника',
     value: 'Electronics',
   },
   {
-    title: 'Shoes',
+    title: 'Обувь',
     value: 'Shoes',
   },
   {
-    title: 'Office',
+    title: 'Офис',
     value: 'Office',
   },
   {
-    title: 'Games',
+    title: 'Игры',
     value: 'Games',
   },
 ])
@@ -190,7 +190,7 @@ const resolveStatus = statusMsg => {
 const {
   data: productsData,
   execute: fetchProducts,
-} = await useApi(createUrl('/apps/ecommerce/products', {
+} = await useApi(createUrl('/admin/products', {
   query: {
     q: searchQuery,
     stock: selectedStock,
@@ -203,19 +203,59 @@ const {
   },
 }))
 
-const products = computed(() => productsData.value.products)
-const totalProduct = computed(() => productsData.value.total)
+// Преобразуем данные от бэкенда в формат, ожидаемый фронтендом
+const products = computed(() => {
+  if (!productsData.value || !Array.isArray(productsData.value)) {
+    return []
+  }
+  
+  return productsData.value.map(product => {
+    // Форматируем цену (BigDecimal -> строка с 2 знаками после запятой)
+    let priceFormatted = '₽0'
+    if (product.price) {
+      const priceValue = typeof product.price === 'number' 
+        ? product.price 
+        : parseFloat(product.price)
+      priceFormatted = `₽${priceValue.toFixed(2)}`
+    }
+    
+    return {
+      id: product.id,
+      productName: product.name || '',
+      productBrand: product.description || '',
+      category: product.category?.name || 'Uncategorized',
+      stock: (product.stockQuantity || 0) > 0,
+      sku: product.sku || '',
+      price: priceFormatted,
+      qty: product.stockQuantity || 0,
+      status: product.isActive ? 'Published' : 'Inactive',
+      image: product.imageUrl || '',
+    }
+  })
+})
+
+const totalProduct = computed(() => {
+  if (!productsData.value || !Array.isArray(productsData.value)) {
+    return 0
+  }
+  return productsData.value.length
+})
 
 const deleteProduct = async id => {
-  await $api(`apps/ecommerce/products/${ id }`, { method: 'DELETE' })
+  try {
+    await $api(`admin/products/${ id }`, { method: 'DELETE' })
 
-  // Delete from selectedRows
-  const index = selectedRows.value.findIndex(row => row === id)
-  if (index !== -1)
-    selectedRows.value.splice(index, 1)
+    // Delete from selectedRows
+    const index = selectedRows.value.findIndex(row => row === id)
+    if (index !== -1)
+      selectedRows.value.splice(index, 1)
 
-  // Refetch products
-  fetchProducts()
+    // Refetch products
+    fetchProducts()
+  } catch (error) {
+    console.error('Ошибка при удалении товара:', error)
+    // Можно добавить уведомление об ошибке
+  }
 }
 </script>
 
@@ -224,73 +264,6 @@ const deleteProduct = async id => {
     <!-- 👉 widgets -->
     <VCard class="mb-6">
       <VCardText class="px-3">
-        <VRow>
-          <template
-            v-for="(data, id) in widgetData"
-            :key="id"
-          >
-            <VCol
-              cols="12"
-              sm="6"
-              md="3"
-              class="px-6"
-            >
-              <div
-                class="d-flex justify-space-between"
-                :class="$vuetify.display.xs
-                  ? id !== widgetData.length - 1 ? 'border-b pb-4' : ''
-                  : $vuetify.display.sm
-                    ? id < (widgetData.length / 2) ? 'border-b pb-4' : ''
-                    : ''"
-              >
-                <div class="d-flex flex-column gap-y-1">
-                  <div class="text-body-1 text-capitalize">
-                    {{ data.title }}
-                  </div>
-
-                  <h4 class="text-h4">
-                    {{ data.value }}
-                  </h4>
-
-                  <div class="d-flex align-center gap-x-2">
-                    <div class="text-no-wrap">
-                      {{ data.desc }}
-                    </div>
-
-                    <VChip
-                      v-if="data.change"
-                      label
-                      :color="data.change > 0 ? 'success' : 'error'"
-                      size="small"
-                    >
-                      {{ prefixWithPlus(data.change) }}%
-                    </VChip>
-                  </div>
-                </div>
-
-                <VAvatar
-                  variant="tonal"
-                  rounded
-                  size="44"
-                >
-                  <VIcon
-                    :icon="data.icon"
-                    size="28"
-                    class="text-high-emphasis"
-                  />
-                </VAvatar>
-              </div>
-            </VCol>
-            <VDivider
-              v-if="$vuetify.display.mdAndUp ? id !== widgetData.length - 1
-                : $vuetify.display.smAndUp ? id % 2 === 0
-                  : false"
-              vertical
-              inset
-              length="92"
-            />
-          </template>
-        </VRow>
       </VCardText>
     </VCard>
 
@@ -336,7 +309,7 @@ const deleteProduct = async id => {
           >
             <AppSelect
               v-model="selectedStock"
-              placeholder="Склад"
+              placeholder="Наличие"
               :items="stockStatus"
               clearable
               clear-icon="tabler-x"
@@ -373,13 +346,15 @@ const deleteProduct = async id => {
             Экспорт
           </VBtn>
 
+          <!-- 👉 Add Product button -->
           <VBtn
             color="primary"
             prepend-icon="tabler-plus"
-            @click="$router.push('/apps/ecommerce/product/add')"
+            @click="$router.push({ name: 'apps-ecommerce-product-add' })"
           >
             Добавить товар
           </VBtn>
+
         </div>
       </div>
 
@@ -447,7 +422,7 @@ const deleteProduct = async id => {
 
         <!-- Actions -->
         <template #item.actions="{ item }">
-          <IconBtn>
+          <IconBtn @click="$router.push(`/apps/ecommerce/product/edit/${item.id}`)">
             <VIcon icon="tabler-edit" />
           </IconBtn>
 

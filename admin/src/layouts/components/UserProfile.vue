@@ -32,7 +32,7 @@ const userProfileList = [
   {
     type: 'navItem',
     icon: 'tabler-user',
-    title: 'Profile',
+    title: 'Профиль',
     to: {
       name: 'apps-user-view-id',
       params: { id: 21 },
@@ -41,7 +41,7 @@ const userProfileList = [
   {
     type: 'navItem',
     icon: 'tabler-settings',
-    title: 'Settings',
+    title: 'Настройки',
     to: {
       name: 'pages-account-settings-tab',
       params: { tab: 'account' },
@@ -50,7 +50,7 @@ const userProfileList = [
   {
     type: 'navItem',
     icon: 'tabler-file-dollar',
-    title: 'Billing Plan',
+    title: 'Тарифный план',
     to: {
       name: 'pages-account-settings-tab',
       params: { tab: 'billing-plans' },
@@ -64,7 +64,7 @@ const userProfileList = [
   {
     type: 'navItem',
     icon: 'tabler-currency-dollar',
-    title: 'Pricing',
+    title: 'Цены',
     to: { name: 'pages-pricing' },
   },
   {
@@ -191,7 +191,7 @@ const userProfileList = [
                 append-icon="tabler-logout"
                 @click="logout"
               >
-                Logout
+                Выйти
               </VBtn>
             </div>
           </PerfectScrollbar>

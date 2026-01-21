@@ -7,19 +7,19 @@ const isTwoFactorDialogOpen = ref(false)
 // Recent devices Headers
 const recentDeviceHeader = [
   {
-    title: 'BROWSER',
+    title: 'БРАУЗЕР',
     key: 'browser',
   },
   {
-    title: 'DEVICE',
+    title: 'УСТРОЙСТВО',
     key: 'device',
   },
   {
-    title: 'LOCATION',
+    title: 'МЕСТОПОЛОЖЕНИЕ',
     key: 'location',
   },
   {
-    title: 'RECENT ACTIVITY',
+    title: 'ПОСЛЕДНЯЯ АКТИВНОСТЬ',
     key: 'activity',
   },
 ]
@@ -80,13 +80,13 @@ const recentDevices = [
   <VRow>
     <VCol cols="12">
       <!-- 👉 Change password -->
-      <VCard title="Change Password">
+      <VCard title="Изменить пароль">
         <VCardText>
           <VAlert
             variant="tonal"
             color="warning"
-            title="Ensure that these requirements are met"
-            text="Minimum 8 characters long, uppercase & symbol"
+            title="Убедитесь, что выполнены следующие требования"
+            text="Минимум 8 символов, заглавные буквы и символы"
             class="mb-4"
             closable
           />
@@ -98,7 +98,7 @@ const recentDevices = [
                 md="6"
               >
                 <AppTextField
-                  label="New Password"
+                  label="Новый пароль"
                   placeholder="············"
                   :type="isNewPasswordVisible ? 'text' : 'password'"
                   :append-inner-icon="isNewPasswordVisible ? 'tabler-eye-off' : 'tabler-eye'"
@@ -110,7 +110,7 @@ const recentDevices = [
                 md="6"
               >
                 <AppTextField
-                  label="Confirm Password"
+                  label="Подтвердить пароль"
                   autocomplete="confirm-password"
                   placeholder="············"
                   :type="isConfirmPasswordVisible ? 'text' : 'password'"
@@ -121,7 +121,7 @@ const recentDevices = [
 
               <VCol cols="12">
                 <VBtn type="submit">
-                  Change Password
+                  Изменить пароль
                 </VBtn>
               </VCol>
             </VRow>
@@ -133,8 +133,8 @@ const recentDevices = [
     <VCol cols="12">
       <!-- 👉 Two step verification -->
       <VCard
-        title="Two-steps verification"
-        subtitle="Keep your account secure with authentication step."
+        title="Двухфакторная аутентификация"
+        subtitle="Обеспечьте безопасность вашего аккаунта с помощью шага аутентификации."
       >
         <VCardText>
           <div class="text-h6 mb-1">
@@ -158,10 +158,10 @@ const recentDevices = [
           </AppTextField>
 
           <p class="mb-0 mt-4">
-            Two-factor authentication adds an additional layer of security to your account by requiring more than just a password to log in. <a
+            Двухфакторная аутентификация добавляет дополнительный уровень безопасности к вашему аккаунту, требуя больше, чем просто пароль для входа. <a
               href="javascript:void(0)"
               class="text-decoration-none"
-            >Learn more</a>.
+            >Узнать больше</a>.
           </p>
         </VCardText>
       </VCard>
@@ -169,7 +169,7 @@ const recentDevices = [
 
     <VCol cols="12">
       <!-- 👉 Recent devices -->
-      <VCard title="Recent devices">
+      <VCard title="Недавние устройства">
         <VDivider />
         <VDataTable
           :items="recentDevices"

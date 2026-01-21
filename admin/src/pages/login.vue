@@ -28,15 +28,16 @@ const router = useRouter()
 const ability = useAbility()
 
 const errors = ref({
-  email: undefined,
+  username: undefined,
+  email: undefined, // Оставляем для обратной совместимости с бэкендом
   password: undefined,
 })
 
 const refVForm = ref()
 
 const credentials = ref({
-  email: 'admin@demo.com',
-  password: 'admin',
+  username: '',
+  password: '',
 })
 
 const rememberMe = ref(false)
@@ -46,11 +47,16 @@ const login = async () => {
     const res = await $api('/auth/login', {
       method: 'POST',
       body: {
-        email: credentials.value.email,
+        username: credentials.value.username,
+        email: credentials.value.username, // Отправляем и username и email для обратной совместимости
         password: credentials.value.password,
       },
       onResponseError({ response }) {
         errors.value = response._data.errors
+        // Если ошибка в email, показываем её в поле username (для обратной совместимости)
+        if (response._data.errors?.email && !response._data.errors?.username) {
+          errors.value.username = response._data.errors.email
+        }
       },
     })
 
@@ -71,6 +77,7 @@ const login = async () => {
     console.error(err)
   }
 }
+
 
 const onSubmit = () => {
   refVForm.value?.validate().then(({ valid: isValid }) => {
@@ -132,24 +139,11 @@ const onSubmit = () => {
       >
         <VCardText>
           <h4 class="text-h4 mb-1">
-            Welcome to <span class="text-capitalize"> {{ themeConfig.app.title }} </span>! 👋🏻
+            Добро пожаловать в <span class="text-capitalize"> {{ themeConfig.app.title }} </span>! 👋🏻
           </h4>
           <p class="mb-0">
-            Please sign-in to your account and start the adventure
+            Пожалуйста, войдите в свой аккаунт и начните приключение
           </p>
-        </VCardText>
-        <VCardText>
-          <VAlert
-            color="primary"
-            variant="tonal"
-          >
-            <p class="text-sm mb-2">
-              Admin Email: <strong>admin@demo.com</strong> / Pass: <strong>admin</strong>
-            </p>
-            <p class="text-sm mb-0">
-              Client Email: <strong>client@demo.com</strong> / Pass: <strong>client</strong>
-            </p>
-          </VAlert>
         </VCardText>
         <VCardText>
           <VForm
@@ -157,16 +151,16 @@ const onSubmit = () => {
             @submit.prevent="onSubmit"
           >
             <VRow>
-              <!-- email -->
+              <!-- username -->
               <VCol cols="12">
                 <AppTextField
-                  v-model="credentials.email"
-                  label="Email"
-                  placeholder="johndoe@email.com"
-                  type="email"
+                  v-model="credentials.username"
+                  label="Имя пользователя"
+                  placeholder="Введите имя пользователя"
+                  type="text"
                   autofocus
-                  :rules="[requiredValidator, emailValidator]"
-                  :error-messages="errors.email"
+                  :rules="[requiredValidator]"
+                  :error-messages="errors.username || errors.email"
                 />
               </VCol>
 
@@ -174,7 +168,7 @@ const onSubmit = () => {
               <VCol cols="12">
                 <AppTextField
                   v-model="credentials.password"
-                  label="Password"
+                  label="Пароль"
                   placeholder="············"
                   :rules="[requiredValidator]"
                   :type="isPasswordVisible ? 'text' : 'password'"
@@ -187,13 +181,13 @@ const onSubmit = () => {
                 <div class="d-flex align-center flex-wrap justify-space-between my-6">
                   <VCheckbox
                     v-model="rememberMe"
-                    label="Remember me"
+                    label="Запомнить меня"
                   />
                   <RouterLink
                     class="text-primary ms-2 mb-1"
                     :to="{ name: 'forgot-password' }"
                   >
-                    Forgot Password?
+                    Забыли пароль?
                   </RouterLink>
                 </div>
 
@@ -201,7 +195,7 @@ const onSubmit = () => {
                   block
                   type="submit"
                 >
-                  Login
+                  Войти
                 </VBtn>
               </VCol>
 
@@ -210,12 +204,12 @@ const onSubmit = () => {
                 cols="12"
                 class="text-center"
               >
-                <span>New on our platform?</span>
+                <span>Впервые на нашей платформе?</span>
                 <RouterLink
                   class="text-primary ms-1"
                   :to="{ name: 'register' }"
                 >
-                  Create an account
+                  Создать аккаунт
                 </RouterLink>
               </VCol>
               <VCol
@@ -223,7 +217,7 @@ const onSubmit = () => {
                 class="d-flex align-center"
               >
                 <VDivider />
-                <span class="mx-4">or</span>
+                <span class="mx-4">или</span>
                 <VDivider />
               </VCol>
 
@@ -240,6 +234,7 @@ const onSubmit = () => {
       </VCard>
     </VCol>
   </VRow>
+
 </template>
 
 <style lang="scss">

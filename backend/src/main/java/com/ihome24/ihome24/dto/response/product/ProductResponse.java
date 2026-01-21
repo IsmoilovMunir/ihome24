@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -18,14 +20,19 @@ public class ProductResponse {
     private Long id;
     private String name;
     private String description;
+    private List<String> benefits = new ArrayList<>();
     private BigDecimal price;
     private BigDecimal oldPrice;
     private String sku;
+    private String brand;
     private Integer stockQuantity;
     private Boolean isActive;
     private Boolean isFeatured;
     private String imageUrl;
     private CategoryResponse category;
+    private List<CharacteristicResponse> characteristics = new ArrayList<>();
+    private List<VariantResponse> variants = new ArrayList<>();
+    private List<ProductImageResponse> images = new ArrayList<>();
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -5,11 +5,16 @@ import SettingsNotifications from '@/views/apps/ecommerce/settings/SettingsNotif
 import SettingsPayment from '@/views/apps/ecommerce/settings/SettingsPayment.vue'
 import SettingsShippingAndDelivery from '@/views/apps/ecommerce/settings/SettingsShippingAndDelivery.vue'
 import SettingsStoreDetails from '@/views/apps/ecommerce/settings/SettingsStoreDetails.vue'
+import SettingsCompanyInfo from '@/views/apps/ecommerce/settings/SettingsCompanyInfo.vue'
 
 const tabsData = [
   {
     icon: 'tabler-building-store',
     title: 'Детали магазина',
+  },
+  {
+    icon: 'tabler-building',
+    title: 'Информация о компании',
   },
   {
     icon: 'tabler-credit-card',
@@ -72,6 +77,10 @@ const activeTab = ref(null)
       >
         <VWindowItem>
           <SettingsStoreDetails />
+        </VWindowItem>
+
+        <VWindowItem>
+          <SettingsCompanyInfo />
         </VWindowItem>
 
         <VWindowItem>

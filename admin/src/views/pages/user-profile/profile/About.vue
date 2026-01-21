@@ -11,7 +11,7 @@ const props = defineProps({
   <VCard class="mb-6">
     <VCardText>
       <p class="text-sm text-disabled">
-        ABOUT
+        О СЕБЕ
       </p>
 
       <VList class="card-list text-medium-emphasis">
@@ -34,7 +34,7 @@ const props = defineProps({
       </VList>
 
       <p class="text-sm text-disabled mt-6">
-        CONTACTS
+        КОНТАКТЫ
       </p>
 
       <VList class="card-list text-medium-emphasis">
@@ -57,7 +57,7 @@ const props = defineProps({
       </VList>
 
       <p class="text-sm text-disabled mt-6">
-        TEAMS
+        КОМАНДЫ
       </p>
 
       <VList class="card-list text-medium-emphasis">
@@ -79,7 +79,7 @@ const props = defineProps({
   <VCard>
     <VCardText>
       <p class="text-sm text-disabled">
-        OVERVIEW
+        ОБЗОР
       </p>
 
       <VList class="card-list text-medium-emphasis">

@@ -86,17 +86,17 @@ const themeMode = computed(() => {
     {
       bgImage: 'tabler-sun',
       value: Theme.Light,
-      label: 'Light',
+      label: 'Светлая',
     },
     {
       bgImage: 'tabler-moon-stars',
       value: Theme.Dark,
-      label: 'Dark',
+      label: 'Темная',
     },
     {
       bgImage: 'tabler-device-desktop-analytics',
       value: Theme.System,
-      label: 'System',
+      label: 'Системная',
     },
   ]
 })
@@ -107,12 +107,12 @@ const themeSkin = computed(() => {
     {
       bgImage: defaultSkin,
       value: Skins.Default,
-      label: 'Default',
+      label: 'По умолчанию',
     },
     {
       bgImage: borderSkin,
       value: Skins.Bordered,
-      label: 'Bordered',
+      label: 'С рамкой',
     },
   ]
 })
@@ -161,12 +161,12 @@ const contentWidth = computed(() => {
     {
       bgImage: compact,
       value: ContentWidth.Boxed,
-      label: 'Compact',
+      label: 'Компактный',
     },
     {
       bgImage: wideSvg,
       value: ContentWidth.Fluid,
-      label: 'Wide',
+      label: 'Широкий',
     },
   ]
 })
@@ -179,12 +179,12 @@ const direction = computed(() => {
     {
       bgImage: ltrSvg,
       value: Direction.Ltr,
-      label: 'Left to right',
+      label: 'Слева направо',
     },
     {
       bgImage: rtlSvg,
       value: Direction.Rtl,
-      label: 'Right to left',
+      label: 'Справа налево',
     },
   ]
 })
@@ -301,10 +301,10 @@ const resetCustomizer = async () => {
       <div class="customizer-heading d-flex align-center justify-space-between">
         <div>
           <h6 class="text-h6">
-            Theme Customizer
+            Настройщик темы
           </h6>
           <p class="text-body-2 mb-0">
-            Customize & Preview in Real Time
+            Настройка и предпросмотр в реальном времени
           </p>
         </div>
 
@@ -355,13 +355,13 @@ const resetCustomizer = async () => {
       >
         <!-- SECTION Theming -->
         <CustomizerSection
-          title="Theming"
+          title="Темы"
           :divider="false"
         >
           <!-- 👉 Primary Color -->
           <div class="d-flex flex-column gap-2">
             <h6 class="text-h6">
-              Primary Color
+              Основной цвет
             </h6>
 
             <div
@@ -433,7 +433,7 @@ const resetCustomizer = async () => {
           <!-- 👉 Theme -->
           <div class="d-flex flex-column gap-2">
             <h6 class="text-h6">
-              Theme
+              Тема
             </h6>
 
             <CustomRadiosWithImage
@@ -489,7 +489,7 @@ const resetCustomizer = async () => {
               for="customizer-semi-dark"
               class="text-h6 text-high-emphasis"
             >
-              Semi Dark Menu
+              Полутемное меню
             </VLabel>
 
             <div>
@@ -504,11 +504,11 @@ const resetCustomizer = async () => {
         <!-- !SECTION -->
 
         <!-- SECTION LAYOUT -->
-        <CustomizerSection title="Layout">
+        <CustomizerSection title="Макет">
           <!-- 👉 Layouts -->
           <div class="d-flex flex-column gap-2">
             <h6 class="text-base font-weight-medium">
-              Layout
+              Макет
             </h6>
 
             <CustomRadiosWithImage
@@ -526,7 +526,7 @@ const resetCustomizer = async () => {
           <!-- 👉 Content Width -->
           <div class="d-flex flex-column gap-2">
             <h6 class="text-base font-weight-medium">
-              Content
+              Содержимое
             </h6>
 
             <CustomRadiosWithImage
@@ -544,7 +544,7 @@ const resetCustomizer = async () => {
           <!-- 👉 Direction -->
           <div class="d-flex flex-column gap-2">
             <h6 class="text-base font-weight-medium">
-              Direction
+              Направление
             </h6>
 
             <CustomRadiosWithImage

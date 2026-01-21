@@ -1,5 +1,8 @@
+node_modules
+.git
 .env
 *.log
-*.md
-.git
-.gitignore
+.DS_Store
+dist
+build
+target

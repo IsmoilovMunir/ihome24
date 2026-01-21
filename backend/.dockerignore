@@ -1,8 +1,10 @@
 target/
-.mvn/wrapper/
-.idea/
-*.iml
+.mvn/
+mvnw
+mvnw.cmd
+.git
+.gitignore
 *.log
 .DS_Store
-.env
-.env.local
+.idea
+*.iml

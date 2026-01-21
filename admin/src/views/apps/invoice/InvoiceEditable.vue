@@ -70,7 +70,7 @@ const removeProduct = id => {
           Office 149, 450 South Brand Brooklyn
         </p>
         <p class="text-high-emphasis mb-0">
-          San Diego County, CA 91905, USA
+          Москва, Россия
         </p>
         <p class="text-high-emphasis mb-0">
           +1 (123) 456 7891, +44 (876) 543 2198

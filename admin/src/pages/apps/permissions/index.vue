@@ -1,21 +1,21 @@
 <script setup>
 const headers = [
   {
-    title: 'Name',
+    title: 'Название',
     key: 'name',
   },
   {
-    title: 'Assigned To',
+    title: 'Назначено',
     key: 'assignedTo',
     sortable: false,
   },
   {
-    title: 'Created Date',
+    title: 'Дата создания',
     key: 'createdDate',
     sortable: false,
   },
   {
-    title: 'Actions',
+    title: 'Действия',
     key: 'actions',
     sortable: false,
   },
@@ -41,23 +41,23 @@ const permissionName = ref('')
 const colors = {
   'support': {
     color: 'info',
-    text: 'Support',
+    text: 'Поддержка',
   },
   'users': {
     color: 'success',
-    text: 'Users',
+    text: 'Пользователи',
   },
   'manager': {
     color: 'warning',
-    text: 'Manager',
+    text: 'Менеджер',
   },
   'administrator': {
     color: 'primary',
-    text: 'Administrator',
+    text: 'Администратор',
   },
   'restricted-user': {
     color: 'error',
-    text: 'Restricted User',
+    text: 'Ограниченный пользователь',
   },
 }
 
@@ -83,11 +83,19 @@ const editPermission = name => {
 <template>
   <VRow>
     <VCol cols="12">
+      <h4 class="text-h4 mb-1">
+        Список разрешений
+      </h4>
+      <p class="text-body-1 mb-6">
+        Разрешения определяют, какие действия может выполнять пользователь в системе. Управляйте разрешениями для различных ролей.
+      </p>
+    </VCol>
+    <VCol cols="12">
       <VCard>
         <VCardText class="d-flex align-center justify-space-between flex-wrap gap-4">
           <div class="d-flex gap-2 align-center">
             <p class="text-body-1 mb-0">
-              Show
+              Показать
             </p>
             <AppSelect
               :model-value="itemsPerPage"
@@ -96,7 +104,7 @@ const editPermission = name => {
                 { value: 25, title: '25' },
                 { value: 50, title: '50' },
                 { value: 100, title: '100' },
-                { value: -1, title: 'All' },
+                { value: -1, title: 'Все' },
               ]"
               style="inline-size: 5.5rem;"
               @update:model-value="itemsPerPage = parseInt($event, 10)"
@@ -106,7 +114,7 @@ const editPermission = name => {
           <div class="d-flex align-center gap-4 flex-wrap">
             <AppTextField
               v-model="search"
-              placeholder="Search Permission"
+              placeholder="Поиск разрешения"
               style="inline-size: 15.625rem;"
             />
             <VBtn
@@ -114,7 +122,7 @@ const editPermission = name => {
               prepend-icon="tabler-plus"
               @click="isAddPermissionDialogVisible = true"
             >
-              Add Permission
+              Добавить разрешение
             </VBtn>
           </div>
         </VCardText>

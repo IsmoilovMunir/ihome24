@@ -3,7 +3,7 @@ import { useTheme } from 'vuetify'
 import { hexToRgb } from '@layouts/utils'
 
 const vuetifyTheme = useTheme()
-const series = [78]
+const series = [0]
 
 const chartOptions = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors
@@ -108,7 +108,7 @@ const chartOptions = computed(() => {
       />
 
       <div class="text-sm text-center clamp-text text-disabled mt-3">
-        $21k расходов больше, чем в прошлом месяце
+        ₽0 расходов больше, чем в прошлом месяце
       </div>
     </VCardText>
   </VCard>

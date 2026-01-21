@@ -54,7 +54,7 @@ const currentAddress = {
   vatNumber: 'SDF754K77',
   address: '100 Water Plant Avenue, Building 1303 Wake Island',
   contact: '+1(609) 933-44-22',
-  country: 'USA',
+  country: 'Россия',
   state: 'Queensland',
   zipCode: 403114,
 }
@@ -62,12 +62,12 @@ const currentAddress = {
 const currentBillingAddress = {
   firstName: 'Shamus',
   lastName: 'Tuttle',
-  selectedCountry: 'USA',
+  selectedCountry: 'Россия',
   addressLine1: '45 Rocker Terrace',
   addressLine2: 'Latheronwheel',
   landmark: 'KW5 8NW, London',
   contact: '+1 (609) 972-22-22',
-  country: 'USA',
+  country: 'Россия',
   city: 'London',
   state: 'London',
   zipCode: 110001,
@@ -78,7 +78,7 @@ const currentBillingAddress = {
   <VRow>
     <!-- 👉 Current Plan -->
     <VCol cols="12">
-      <VCard title="Current Plan">
+      <VCard title="Текущий план">
         <VCardText>
           <VRow>
             <VCol
@@ -88,31 +88,31 @@ const currentBillingAddress = {
               order="2"
             >
               <h6 class="text-h6 mb-1">
-                Your Current Plan is Basic
+                Ваш текущий план - Базовый
               </h6>
               <p>
-                A simple start for everyone
+                Простой старт для всех
               </p>
 
               <h6 class="text-h6 mb-1">
-                Active until Dec 09, 2021
+                Активен до 09 дек 2026
               </h6>
               <p>
-                We will send you a notification upon Subscription expiration
+                Мы отправим вам уведомление при истечении подписки
               </p>
 
               <h6 class="text-h6 mb-1">
-                <span class="d-inline-block me-2">$99 Per Month</span>
+                <span class="d-inline-block me-2">₽99 в месяц</span>
                 <VChip
                   color="primary"
                   size="small"
                   label
                 >
-                  Popular
+                  Популярный
                 </VChip>
               </h6>
               <p class="mb-0">
-                Standard plan for small to medium businesses
+                Стандартный план для малого и среднего бизнеса
               </p>
             </VCol>
 
@@ -128,20 +128,20 @@ const currentBillingAddress = {
                 variant="tonal"
               >
                 <VAlertTitle class="mb-1">
-                  We need your attention!
+                  Требуется ваше внимание!
                 </VAlertTitle>
                 <div class="text-base">
-                  Your plan requires update
+                  Ваш план требует обновления
                 </div>
               </VAlert>
 
               <!-- 👉 Progress -->
               <div class="d-flex justify-space-between font-weight-bold mt-4 mb-2">
                 <h6 class="text-h6">
-                  Days
+                  Дни
                 </h6>
                 <h6 class="text-h6">
-                  26 of 30 Days
+                  26 из 30 дней
                 </h6>
               </div>
 
@@ -152,7 +152,7 @@ const currentBillingAddress = {
                 :model-value="75"
               />
               <p class="text-sm mt-1">
-                Your plan requires update
+                Ваш план требует обновления
               </p>
             </VCol>
 
@@ -162,14 +162,14 @@ const currentBillingAddress = {
             >
               <div class="d-flex flex-wrap gap-4">
                 <VBtn @click="isUpgradePlanDialogVisible = true">
-                  upgrade plan
+                  Обновить план
                 </VBtn>
 
                 <VBtn
                   color="error"
                   variant="tonal"
                 >
-                  Cancel Subscription
+                  Отменить подписку
                 </VBtn>
               </div>
             </VCol>
@@ -178,16 +178,16 @@ const currentBillingAddress = {
       </VCard>
     </VCol>
 
-    <!-- 👉 Payment Methods -->
+      <!-- 👉 Payment Methods -->
     <VCol cols="12">
-      <VCard title="Payment Methods">
+      <VCard title="Способы оплаты">
         <template #append>
           <VBtn
             prepend-icon="tabler-plus"
             size="small"
             @click="isCardAddDialogVisible = !isCardAddDialogVisible"
           >
-            Add Card
+            Добавить карту
           </VBtn>
         </template>
 
@@ -214,7 +214,7 @@ const currentBillingAddress = {
                     :color="card.isPrimary ? 'primary' : card.isExpired ? 'error' : 'secondary'"
                     size="small"
                   >
-                    {{ card.isPrimary ? 'Popular' : card.isExpired ? 'Expired' : '' }}
+                    {{ card.isPrimary ? 'Основная' : card.isExpired ? 'Истекла' : '' }}
                   </VChip>
                 </div>
                 <div class="text-body-1">
@@ -230,19 +230,19 @@ const currentBillingAddress = {
                     class="me-4"
                     @click="openEditCardDialog(card)"
                   >
-                    Edit
+                    Редактировать
                   </VBtn>
                   <VBtn
                     color="error"
                     variant="tonal"
                     size="small"
                   >
-                    Delete
+                    Удалить
                   </VBtn>
                 </div>
 
                 <div class="order-sm-1 order-0 text-sm">
-                  Card expires at {{ card.expiry }}
+                  Карта истекает {{ card.expiry }}
                 </div>
               </div>
             </VCardText>
@@ -253,14 +253,14 @@ const currentBillingAddress = {
 
     <VCol cols="12">
       <!-- 👉 Billing Address -->
-      <VCard title="Billing Address">
+      <VCard title="Адрес для выставления счетов">
         <template #append>
           <VBtn
             size="small"
             prepend-icon="tabler-plus"
             @click="isEditAddressDialogVisible = !isEditAddressDialogVisible"
           >
-            Edit Address
+            Редактировать адрес
           </VBtn>
         </template>
 
@@ -274,7 +274,7 @@ const currentBillingAddress = {
                 <tr>
                   <td>
                     <h6 class="text-h6 text-no-wrap mb-2">
-                      Company Name:
+                      Название компании:
                     </h6>
                   </td>
                   <td>
@@ -286,7 +286,7 @@ const currentBillingAddress = {
                 <tr>
                   <td>
                     <h6 class="text-h6 text-no-wrap mb-2">
-                      Billing Email:
+                      Email для оплаты:
                     </h6>
                   </td>
                   <td>
@@ -298,7 +298,7 @@ const currentBillingAddress = {
                 <tr>
                   <td>
                     <h6 class="text-h6 text-no-wrap mb-2">
-                      Tax ID:
+                      Налоговый ID:
                     </h6>
                   </td>
                   <td>
@@ -310,7 +310,7 @@ const currentBillingAddress = {
                 <tr>
                   <td>
                     <h6 class="text-h6 text-no-wrap mb-2">
-                      VAT Number:
+                      НДС номер:
                     </h6>
                   </td>
                   <td>
@@ -322,7 +322,7 @@ const currentBillingAddress = {
                 <tr>
                   <td class="d-flex align-baseline">
                     <h6 class="text-h6 text-no-wrap">
-                      Billing Address:
+                      Адрес для выставления счетов:
                     </h6>
                   </td>
                   <td>
@@ -342,7 +342,7 @@ const currentBillingAddress = {
                 <tr>
                   <td>
                     <h6 class="text-h6 text-no-wrap mb-2">
-                      Contact:
+                      Контакт:
                     </h6>
                   </td>
                   <td>
@@ -354,7 +354,7 @@ const currentBillingAddress = {
                 <tr>
                   <td>
                     <h6 class="text-h6 text-no-wrap mb-2">
-                      Country:
+                      Страна:
                     </h6>
                   </td>
                   <td>
@@ -366,7 +366,7 @@ const currentBillingAddress = {
                 <tr>
                   <td>
                     <h6 class="text-h6 text-no-wrap mb-2">
-                      State:
+                      Регион:
                     </h6>
                   </td>
                   <td>
@@ -378,7 +378,7 @@ const currentBillingAddress = {
                 <tr>
                   <td>
                     <h6 class="text-h6 text-no-wrap mb-2">
-                      Zip Code:
+                      Почтовый индекс:
                     </h6>
                   </td>
                   <td>

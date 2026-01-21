@@ -1,12 +1,45 @@
 <script setup>
+import UserProfileHeaderBg from '@images/pages/user-profile-header-bg.png'
+
 const profileHeaderData = ref()
-const { data, error } = await useApi('/pages/profile/header')
-if (error.value) {
-  console.log(error.value)
-} else {
-  if (data.value)
-    profileHeaderData.value = data.value
+
+const fetchProfileHeader = async () => {
+  try {
+    const data = await $api('/auth/me')
+    if (data) {
+      // Форматируем дату создания
+      let joiningDateText = 'Присоединился недавно'
+      if (data.createdAt) {
+        try {
+          const date = new Date(data.createdAt)
+          const monthNames = ['января', 'февраля', 'марта', 'апреля', 'мая', 'июня', 
+                             'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря']
+          const month = monthNames[date.getMonth()]
+          const year = date.getFullYear()
+          joiningDateText = `Присоединился ${month} ${year}`
+        } catch (e) {
+          console.error('Ошибка форматирования даты:', e)
+        }
+      }
+      
+      // Преобразуем данные из бэкенда в формат, ожидаемый фронтендом
+      profileHeaderData.value = {
+        fullName: data.fullName || data.username || 'Пользователь',
+        location: data.country || 'Россия',
+        joiningDate: joiningDateText,
+        designation: data.role || 'Пользователь',
+        profileImg: data.avatar || null,
+        coverImg: UserProfileHeaderBg, // Дефолтное изображение
+      }
+    }
+  } catch (error) {
+    console.error('Ошибка при загрузке профиля:', error)
+  }
 }
+
+onMounted(() => {
+  fetchProfileHeader()
+})
 </script>
 
 <template>
@@ -67,7 +100,7 @@ if (error.value) {
           </div>
 
           <VBtn prepend-icon="tabler-user-check">
-            Connected
+            Подключен
           </VBtn>
         </div>
       </div>

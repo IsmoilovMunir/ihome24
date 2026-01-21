@@ -1,131 +1,43 @@
 <script setup>
 import ECommerceAddCategoryDrawer from '@/views/apps/ecommerce/ECommerceAddCategoryDrawer.vue'
-import product1 from '@images/ecommerce-images/product-1.png'
-import product10 from '@images/ecommerce-images/product-10.png'
-import product11 from '@images/ecommerce-images/product-11.png'
-import product12 from '@images/ecommerce-images/product-12.png'
-import product14 from '@images/ecommerce-images/product-14.png'
-import product17 from '@images/ecommerce-images/product-17.png'
-import product19 from '@images/ecommerce-images/product-19.png'
-import product2 from '@images/ecommerce-images/product-2.png'
-import product25 from '@images/ecommerce-images/product-25.png'
-import product28 from '@images/ecommerce-images/product-28.png'
-import product9 from '@images/ecommerce-images/product-9.png'
 
-const categoryData = ref([
-  {
-    id: 1,
-    categoryTitle: 'Смартфоны',
-    description: 'Выберите из широкого ассортимента смартфонов онлайн по лучшим ценам.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product1,
-  },
-  {
-    id: 2,
-    categoryTitle: 'Одежда, обувь и украшения',
-    description: 'Мода для широкого выбора одежды, обуви, украшений и часов.',
-    totalProduct: 4689,
-    totalEarning: 45627,
-    image: product9,
-  },
-  {
-    id: 3,
-    categoryTitle: 'Дом и кухня',
-    description: 'Просмотрите широкий ассортимент товаров для дома и кухни.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product10,
-  },
-  {
-    id: 4,
-    categoryTitle: 'Красота и личная гигиена',
-    description: 'Изучите товары для красоты и личной гигиены, покупайте косметику и т.д.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product19,
-  },
-  {
-    id: 5,
-    categoryTitle: 'Books',
-    description: 'Over 25 million titles across categories such as business  and etc.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product25,
-  },
-  {
-    id: 6,
-    categoryTitle: 'Games',
-    description: 'Every month, get exclusive in-game loot, free games, a free subscription.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product12,
-  },
-  {
-    id: 7,
-    categoryTitle: 'Baby Products',
-    description: 'Buy baby products across different categories from top brands.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product14,
-  },
-  {
-    id: 8,
-    categoryTitle: 'Grocery',
-    description: 'Shop grocery Items through at best prices in India.',
-    totalProduct: 12548,
-    totalEarning: 98784,
-    image: product28,
-  },
-  {
-    id: 9,
-    categoryTitle: 'Computer Accessories',
-    description: 'Enhance your computing experience with our range of computer accessories.',
-    totalProduct: 9876,
-    totalEarning: 65421,
-    image: product17,
-  },
-  {
-    id: 10,
-    categoryTitle: 'Fitness Tracker',
-    description: 'Monitor your health and fitness goals with our range of advanced fitness trackers.',
-    totalProduct: 1987,
-    totalEarning: 32067,
-    image: product10,
-  },
-  {
-    id: 11,
-    categoryTitle: 'Smart Home Devices',
-    description: 'Transform your home into a smart home with our innovative smart home devices.',
-    totalProduct: 2345,
-    totalEarning: 87654,
-    image: product11,
-  },
-  {
-    id: 12,
-    categoryTitle: 'Audio Speakers',
-    description: 'Immerse yourself in rich audio quality with our wide range of speakers.',
-    totalProduct: 5678,
-    totalEarning: 32145,
-    image: product2,
-  },
-])
+// Получаем данные категорий с бэкенда
+const {
+  data: categoriesData,
+  execute: fetchCategories,
+} = await useApi(createUrl('/admin/categories'))
+
+// Преобразуем данные от бэкенда в формат, ожидаемый фронтендом
+const categoryData = computed(() => {
+  if (!categoriesData.value || !Array.isArray(categoriesData.value)) {
+    return []
+  }
+  
+  return categoriesData.value.map(category => ({
+    id: category.id,
+    categoryTitle: category.name || '',
+    description: category.description || '',
+    totalProduct: 0, // TODO: Добавить подсчет продуктов по категории
+    totalEarning: 0, // TODO: Добавить подсчет доходов по категории
+    image: category.imageUrl || '',
+  }))
+})
 
 const headers = [
   {
-    title: 'Categories',
+    title: 'Категории',
     key: 'categoryTitle',
   },
   {
-    title: 'Total Products',
+    title: 'Всего товаров',
     key: 'totalProduct',
   },
   {
-    title: 'Total Earning',
+    title: 'Общий доход',
     key: 'totalEarning',
   },
   {
-    title: 'Actions',
+    title: 'Действия',
     key: 'actions',
     sortable: false,
   },
@@ -135,6 +47,21 @@ const itemsPerPage = ref(10)
 const page = ref(1)
 const searchQuery = ref('')
 const isAddProductDrawerOpen = ref(false)
+const editingCategoryId = ref(null)
+
+const openEditDrawer = (categoryId) => {
+  editingCategoryId.value = categoryId
+  isAddProductDrawerOpen.value = true
+}
+
+const closeDrawer = () => {
+  editingCategoryId.value = null
+}
+
+const openAddDrawer = () => {
+  editingCategoryId.value = null
+  isAddProductDrawerOpen.value = true
+}
 </script>
 
 <template>
@@ -144,7 +71,7 @@ const isAddProductDrawerOpen = ref(false)
         <div class="d-flex justify-sm-space-between flex-wrap gap-y-4 gap-x-6 justify-start">
           <AppTextField
             v-model="searchQuery"
-            placeholder="Search Category"
+            placeholder="Поиск категории"
             style="max-inline-size: 280px; min-inline-size: 280px;"
           />
 
@@ -156,9 +83,9 @@ const isAddProductDrawerOpen = ref(false)
             />
             <VBtn
               prepend-icon="tabler-plus"
-              @click="isAddProductDrawerOpen = !isAddProductDrawerOpen"
+              @click="openAddDrawer"
             >
-              Add Category
+              Добавить категорию
             </VBtn>
           </div>
         </div>
@@ -177,8 +104,8 @@ const isAddProductDrawerOpen = ref(false)
           show-select
           class="text-no-wrap"
         >
-          <template #item.actions>
-            <IconBtn>
+          <template #item.actions="{ item }">
+            <IconBtn @click="openEditDrawer(item.id)">
               <VIcon
                 icon="tabler-edit"
                 size="22"
@@ -217,7 +144,7 @@ const isAddProductDrawerOpen = ref(false)
           </template>
           <template #item.totalEarning="{ item }">
             <div class="text-body-1 text-end pe-4">
-              {{ (item.totalEarning).toLocaleString("en-IN", { style: "currency", currency: 'USD' }) }}
+              ₽{{ (item.totalEarning || 0).toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
             </div>
           </template>
           <template #item.totalProduct="{ item }">
@@ -237,7 +164,12 @@ const isAddProductDrawerOpen = ref(false)
       </div>
     </VCard>
 
-    <ECommerceAddCategoryDrawer v-model:is-drawer-open="isAddProductDrawerOpen" />
+    <ECommerceAddCategoryDrawer 
+      v-model:is-drawer-open="isAddProductDrawerOpen"
+      :category-id="editingCategoryId"
+      @category-created="fetchCategories"
+      @drawer-closed="closeDrawer"
+    />
   </div>
 </template>
 

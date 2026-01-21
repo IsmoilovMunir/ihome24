@@ -14,35 +14,30 @@ const isLoading = ref(false)
 // 👉 Default suggestions
 const suggestionGroups = [
   {
-    title: 'Popular Searches',
+    title: 'Популярные поиски',
     content: [
       {
         icon: 'tabler-shopping-cart',
-        title: 'eCommerce',
+        title: 'Электронная коммерция',
         url: { name: 'dashboards-ecommerce' },
       },
     ],
   },
   {
-    title: 'Apps & Pages',
+    title: 'Приложения и страницы',
     content: [
       {
         icon: 'tabler-lock',
-        title: 'Roles & Permissions',
+        title: 'Роли и разрешения',
         url: { name: 'apps-roles' },
       },
       {
         icon: 'tabler-settings',
-        title: 'Account Settings',
+        title: 'Настройки аккаунта',
         url: {
           name: 'pages-account-settings-tab',
           params: { tab: 'account' },
         },
-      },
-      {
-        icon: 'tabler-copy',
-        title: 'Dialog Examples',
-        url: { name: 'pages-dialog-examples' },
       },
     ],
   },
@@ -51,7 +46,7 @@ const suggestionGroups = [
 // 👉 No Data suggestion
 const noDataSuggestions = [
   {
-    title: 'eCommerce',
+    title: 'Электронная коммерция',
     icon: 'tabler-shopping-cart',
     url: { name: 'dashboards-ecommerce' },
   },
@@ -107,7 +102,7 @@ const LazyAppBarSearch = defineAsyncComponent(() => import('@core/components/App
       class="d-none d-md-flex align-center text-disabled ms-2"
       @click="Shepherd.activeTour?.cancel()"
     >
-      <span class="me-2">Search</span>
+      <span class="me-2">Поиск</span>
       <span class="meta-key">&#8984;K</span>
     </span>
   </div>
@@ -160,7 +155,7 @@ const LazyAppBarSearch = defineAsyncComponent(() => import('@core/components/App
     <!-- no data suggestion -->
     <template #noDataSuggestion>
       <div class="mt-9">
-        <span class="d-flex justify-center text-disabled mb-2">Try searching for</span>
+        <span class="d-flex justify-center text-disabled mb-2">Попробуйте найти</span>
         <h6
           v-for="suggestion in noDataSuggestions"
           :key="suggestion.title"

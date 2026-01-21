@@ -1,104 +1,186 @@
 <script setup>
 import avatar1 from '@images/avatars/avatar-1.png'
-
-const accountData = {
-  avatarImg: avatar1,
-  firstName: 'john',
-  lastName: 'Doe',
-  email: 'johnDoe@example.com',
-  org: 'Pixinvent',
-  phone: '+1 (917) 543-9876',
-  address: '123 Main St, New York, NY 10001',
-  state: 'New York',
-  zip: '10001',
-  country: 'USA',
-  language: 'English',
-  timezone: '(GMT-11:00) International Date Line West',
-  currency: 'USD',
-}
+import { $api } from '@/utils/api'
 
 const refInputEl = ref()
 const isConfirmDialogOpen = ref(false)
-const accountDataLocal = ref(structuredClone(accountData))
+const isLoading = ref(false)
+const isSaving = ref(false)
+const accountDataLocal = ref({
+  avatarImg: avatar1,
+  firstName: '',
+  lastName: '',
+  email: '',
+  org: '',
+  phone: '',
+  address: '',
+  state: '',
+  zip: '',
+  country: 'Россия',
+  language: 'Русский',
+  timezone: '(GMT+03:00) Москва',
+  currency: 'RUB',
+})
+const originalAccountData = ref(null)
 const isAccountDeactivated = ref(false)
-const validateAccountDeactivation = [v => !!v || 'Please confirm account deactivation']
+const validateAccountDeactivation = [v => !!v || 'Пожалуйста, подтвердите деактивацию аккаунта']
 
-const resetForm = () => {
-  accountDataLocal.value = structuredClone(accountData)
+// Загрузка данных пользователя с бэкенда
+const loadUserData = async () => {
+  try {
+    isLoading.value = true
+    const data = await $api('/auth/me')
+    
+    if (data) {
+      // Разделяем fullName на firstName и lastName
+      const nameParts = (data.fullName || '').split(' ')
+      const firstName = nameParts[0] || ''
+      const lastName = nameParts.slice(1).join(' ') || ''
+      
+      accountDataLocal.value = {
+        avatarImg: data.avatar || avatar1,
+        firstName: firstName,
+        lastName: lastName,
+        email: data.email || '',
+        org: data.company || '',
+        phone: data.contact || '',
+        address: '',
+        state: '',
+        zip: '',
+        country: data.country || 'Россия',
+        language: 'Русский',
+        timezone: '(GMT+03:00) Москва',
+        currency: 'RUB',
+      }
+      
+      originalAccountData.value = structuredClone(accountDataLocal.value)
+    }
+  } catch (error) {
+    console.error('Ошибка при загрузке данных пользователя:', error)
+  } finally {
+    isLoading.value = false
+  }
 }
 
-const changeAvatar = file => {
+const resetForm = () => {
+  if (originalAccountData.value) {
+    accountDataLocal.value = structuredClone(originalAccountData.value)
+  }
+}
+
+// Сохранение данных на бэкенд
+const saveAccountData = async () => {
+  try {
+    isSaving.value = true
+    
+    // Формируем fullName из firstName и lastName
+    const fullName = [accountDataLocal.value.firstName, accountDataLocal.value.lastName]
+      .filter(Boolean)
+      .join(' ')
+    
+    const updateData = {
+      fullName: fullName || accountDataLocal.value.firstName || accountDataLocal.value.lastName,
+      email: accountDataLocal.value.email,
+      company: accountDataLocal.value.org,
+      country: accountDataLocal.value.country,
+      contact: accountDataLocal.value.phone,
+      avatar: accountDataLocal.value.avatarImg !== avatar1 ? accountDataLocal.value.avatarImg : null,
+    }
+    
+    await $api('/auth/me', {
+      method: 'PUT',
+      body: updateData,
+    })
+    
+    // Обновляем originalAccountData после успешного сохранения
+    originalAccountData.value = structuredClone(accountDataLocal.value)
+    
+    // Показываем уведомление об успехе
+    alert('Данные успешно сохранены!')
+  } catch (error) {
+    console.error('Ошибка при сохранении данных:', error)
+    alert('Ошибка при сохранении данных: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
+  } finally {
+    isSaving.value = false
+  }
+}
+
+onMounted(() => {
+  loadUserData()
+})
+
+const changeAvatar = async file => {
   const fileReader = new FileReader()
   const { files } = file.target
   if (files && files.length) {
-    fileReader.readAsDataURL(files[0])
-    fileReader.onload = () => {
-      if (typeof fileReader.result === 'string')
+    const selectedFile = files[0]
+    
+    // Проверка размера файла (800KB)
+    if (selectedFile.size > 800 * 1024) {
+      alert('Размер файла превышает 800КБ')
+      return
+    }
+    
+    fileReader.readAsDataURL(selectedFile)
+    fileReader.onload = async () => {
+      if (typeof fileReader.result === 'string') {
         accountDataLocal.value.avatarImg = fileReader.result
+        
+        // Автоматически сохраняем аватар на бэкенд
+        try {
+          await $api('/auth/me', {
+            method: 'PUT',
+            body: {
+              avatar: fileReader.result,
+            },
+          })
+        } catch (error) {
+          console.error('Ошибка при сохранении аватара:', error)
+        }
+      }
     }
   }
 }
 
 // reset avatar image
-const resetAvatar = () => {
-  accountDataLocal.value.avatarImg = accountData.avatarImg
+const resetAvatar = async () => {
+  const defaultAvatar = avatar1
+  accountDataLocal.value.avatarImg = defaultAvatar
+  
+  // Сбрасываем аватар на бэкенде
+  try {
+    await $api('/auth/me', {
+      method: 'PUT',
+      body: {
+        avatar: null,
+      },
+    })
+  } catch (error) {
+    console.error('Ошибка при сбросе аватара:', error)
+  }
 }
 
 const timezones = [
-  '(GMT-11:00) International Date Line West',
-  '(GMT-11:00) Midway Island',
-  '(GMT-10:00) Hawaii',
-  '(GMT-09:00) Alaska',
-  '(GMT-08:00) Pacific Time (US & Canada)',
-  '(GMT-08:00) Tijuana',
-  '(GMT-07:00) Arizona',
-  '(GMT-07:00) Chihuahua',
-  '(GMT-07:00) La Paz',
-  '(GMT-07:00) Mazatlan',
-  '(GMT-07:00) Mountain Time (US & Canada)',
-  '(GMT-06:00) Central America',
-  '(GMT-06:00) Central Time (US & Canada)',
-  '(GMT-06:00) Guadalajara',
-  '(GMT-06:00) Mexico City',
-  '(GMT-06:00) Monterrey',
-  '(GMT-06:00) Saskatchewan',
-  '(GMT-05:00) Bogota',
-  '(GMT-05:00) Eastern Time (US & Canada)',
-  '(GMT-05:00) Indiana (East)',
-  '(GMT-05:00) Lima',
-  '(GMT-05:00) Quito',
-  '(GMT-04:00) Atlantic Time (Canada)',
-  '(GMT-04:00) Caracas',
-  '(GMT-04:00) La Paz',
-  '(GMT-04:00) Santiago',
-  '(GMT-03:30) Newfoundland',
-  '(GMT-03:00) Brasilia',
-  '(GMT-03:00) Buenos Aires',
-  '(GMT-03:00) Georgetown',
-  '(GMT-03:00) Greenland',
-  '(GMT-02:00) Mid-Atlantic',
-  '(GMT-01:00) Azores',
-  '(GMT-01:00) Cape Verde Is.',
-  '(GMT+00:00) Casablanca',
-  '(GMT+00:00) Dublin',
-  '(GMT+00:00) Edinburgh',
-  '(GMT+00:00) Lisbon',
-  '(GMT+00:00) London',
+  '(GMT+03:00) Москва',
+  '(GMT+05:00) Екатеринбург',
+  '(GMT+07:00) Красноярск',
+  '(GMT+10:00) Владивосток',
+  '(GMT+02:00) Калининград',
+  '(GMT+04:00) Самара',
+  '(GMT+06:00) Омск',
+  '(GMT+08:00) Иркутск',
+  '(GMT+09:00) Якутск',
+  '(GMT+11:00) Магадан',
+  '(GMT+12:00) Камчатка',
 ]
 
 const currencies = [
+  'RUB',
   'USD',
   'EUR',
-  'GBP',
-  'AUD',
-  'BRL',
-  'CAD',
-  'CNY',
-  'CZK',
-  'DKK',
-  'HKD',
-  'HUF',
-  'INR',
+  'KZT',
+  'BYN',
+  'UAH',
 ]
 </script>
 
@@ -127,7 +209,7 @@ const currencies = [
                   icon="tabler-cloud-upload"
                   class="d-sm-none"
                 />
-                <span class="d-none d-sm-block">Upload new photo</span>
+                <span class="d-none d-sm-block">Загрузить новое фото</span>
               </VBtn>
 
               <input
@@ -146,7 +228,7 @@ const currencies = [
                 variant="tonal"
                 @click="resetAvatar"
               >
-                <span class="d-none d-sm-block">Reset</span>
+                <span class="d-none d-sm-block">Сбросить</span>
                 <VIcon
                   icon="tabler-refresh"
                   class="d-sm-none"
@@ -155,7 +237,7 @@ const currencies = [
             </div>
 
             <p class="text-body-1 mb-0">
-              Allowed JPG, GIF or PNG. Max size of 800K
+              Разрешены JPG, GIF или PNG. Максимальный размер 800КБ
             </p>
           </form>
         </VCardText>
@@ -171,8 +253,8 @@ const currencies = [
               >
                 <AppTextField
                   v-model="accountDataLocal.firstName"
-                  placeholder="John"
-                  label="First Name"
+                  placeholder="Иван"
+                  label="Имя"
                 />
               </VCol>
 
@@ -183,8 +265,8 @@ const currencies = [
               >
                 <AppTextField
                   v-model="accountDataLocal.lastName"
-                  placeholder="Doe"
-                  label="Last Name"
+                  placeholder="Иванов"
+                  label="Фамилия"
                 />
               </VCol>
 
@@ -196,7 +278,7 @@ const currencies = [
                 <AppTextField
                   v-model="accountDataLocal.email"
                   label="E-mail"
-                  placeholder="johndoe@gmail.com"
+                  placeholder="ivanov@example.com"
                   type="email"
                 />
               </VCol>
@@ -208,8 +290,8 @@ const currencies = [
               >
                 <AppTextField
                   v-model="accountDataLocal.org"
-                  label="Organization"
-                  placeholder="Pixinvent"
+                  label="Организация"
+                  placeholder="Название компании"
                 />
               </VCol>
 
@@ -220,8 +302,8 @@ const currencies = [
               >
                 <AppTextField
                   v-model="accountDataLocal.phone"
-                  label="Phone Number"
-                  placeholder="+1 (917) 543-9876"
+                  label="Номер телефона"
+                  placeholder="+7 (999) 123-45-67"
                 />
               </VCol>
 
@@ -232,8 +314,8 @@ const currencies = [
               >
                 <AppTextField
                   v-model="accountDataLocal.address"
-                  label="Address"
-                  placeholder="123 Main St, New York, NY 10001"
+                  label="Адрес"
+                  placeholder="г. Москва, ул. Примерная, д. 1"
                 />
               </VCol>
 
@@ -244,8 +326,8 @@ const currencies = [
               >
                 <AppTextField
                   v-model="accountDataLocal.state"
-                  label="State"
-                  placeholder="New York"
+                  label="Область/Регион"
+                  placeholder="Московская область"
                 />
               </VCol>
 
@@ -256,8 +338,8 @@ const currencies = [
               >
                 <AppTextField
                   v-model="accountDataLocal.zip"
-                  label="Zip Code"
-                  placeholder="10001"
+                  label="Почтовый индекс"
+                  placeholder="101000"
                 />
               </VCol>
 
@@ -268,9 +350,9 @@ const currencies = [
               >
                 <AppSelect
                   v-model="accountDataLocal.country"
-                  label="Country"
-                  :items="['USA', 'Canada', 'UK', 'India', 'Australia']"
-                  placeholder="Select Country"
+                  label="Страна"
+                  :items="['Россия', 'Казахстан', 'Беларусь', 'Украина']"
+                  placeholder="Выберите страну"
                 />
               </VCol>
 
@@ -281,9 +363,9 @@ const currencies = [
               >
                 <AppSelect
                   v-model="accountDataLocal.language"
-                  label="Language"
-                  placeholder="Select Language"
-                  :items="['English', 'Spanish', 'Arabic', 'Hindi', 'Urdu']"
+                  label="Язык"
+                  placeholder="Выберите язык"
+                  :items="['Русский', 'English', 'Қазақша']"
                 />
               </VCol>
 
@@ -294,8 +376,8 @@ const currencies = [
               >
                 <AppSelect
                   v-model="accountDataLocal.timezone"
-                  label="Timezone"
-                  placeholder="Select Timezone"
+                  label="Часовой пояс"
+                  placeholder="Выберите часовой пояс"
                   :items="timezones"
                   :menu-props="{ maxHeight: 200 }"
                 />
@@ -308,8 +390,8 @@ const currencies = [
               >
                 <AppSelect
                   v-model="accountDataLocal.currency"
-                  label="Currency"
-                  placeholder="Select Currency"
+                  label="Валюта"
+                  placeholder="Выберите валюту"
                   :items="currencies"
                   :menu-props="{ maxHeight: 200 }"
                 />
@@ -320,7 +402,13 @@ const currencies = [
                 cols="12"
                 class="d-flex flex-wrap gap-4"
               >
-                <VBtn>Save changes</VBtn>
+                <VBtn
+                  :loading="isSaving"
+                  :disabled="isSaving"
+                  @click="saveAccountData"
+                >
+                  Сохранить изменения
+                </VBtn>
 
                 <VBtn
                   color="secondary"
@@ -328,7 +416,7 @@ const currencies = [
                   type="reset"
                   @click.prevent="resetForm"
                 >
-                  Cancel
+                  Отменить
                 </VBtn>
               </VCol>
             </VRow>
@@ -339,14 +427,14 @@ const currencies = [
 
     <VCol cols="12">
       <!-- 👉 Delete Account -->
-      <VCard title="Delete Account">
+      <VCard title="Удаление аккаунта">
         <VCardText>
           <!-- 👉 Checkbox and Button  -->
           <div>
             <VCheckbox
               v-model="isAccountDeactivated"
               :rules="validateAccountDeactivation"
-              label="I confirm my account deactivation"
+              label="Я подтверждаю деактивацию моего аккаунта"
             />
           </div>
 
@@ -356,7 +444,7 @@ const currencies = [
             class="mt-6"
             @click="isConfirmDialogOpen = true"
           >
-            Deactivate Account
+            Деактивировать аккаунт
           </VBtn>
         </VCardText>
       </VCard>
@@ -366,10 +454,10 @@ const currencies = [
   <!-- Confirm Dialog -->
   <ConfirmDialog
     v-model:is-dialog-visible="isConfirmDialogOpen"
-    confirmation-question="Are you sure you want to deactivate your account?"
-    confirm-title="Deactivated!"
-    confirm-msg="Your account has been deactivated successfully."
-    cancel-title="Cancelled"
-    cancel-msg="Account Deactivation Cancelled!"
+    confirmation-question="Вы уверены, что хотите деактивировать свой аккаунт?"
+    confirm-title="Деактивировано!"
+    confirm-msg="Ваш аккаунт был успешно деактивирован."
+    cancel-title="Отменено"
+    cancel-msg="Деактивация аккаунта отменена!"
   />
 </template>

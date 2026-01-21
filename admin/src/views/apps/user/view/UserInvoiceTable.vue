@@ -22,20 +22,20 @@ const headers = [
     key: 'id',
   },
   {
-    title: 'Status',
+    title: 'Статус',
     key: 'trending',
     sortable: false,
   },
   {
-    title: 'Total',
+    title: 'Итого',
     key: 'total',
   },
   {
-    title: 'Issued Date',
+    title: 'Дата выдачи',
     key: 'date',
   },
   {
-    title: 'Actions',
+    title: 'Действия',
     key: 'actions',
     sortable: false,
   },
@@ -99,12 +99,12 @@ const resolveInvoiceStatusVariantAndIcon = status => {
 const computedMoreList = computed(() => {
   return paramId => [
     {
-      title: 'Download',
+      title: 'Скачать',
       value: 'download',
       prependIcon: 'tabler-download',
     },
     {
-      title: 'Edit',
+      title: 'Редактировать',
       value: 'edit',
       prependIcon: 'tabler-pencil',
       to: {
@@ -113,7 +113,7 @@ const computedMoreList = computed(() => {
       },
     },
     {
-      title: 'Duplicate',
+      title: 'Дублировать',
       value: 'duplicate',
       prependIcon: 'tabler-layers-intersect',
     },
@@ -132,7 +132,7 @@ const deleteInvoice = async id => {
       <VCardText>
         <div class="d-flex align-center justify-space-between flex-wrap gap-4">
           <div class="text-h5">
-            Invoice List
+            Список счетов
           </div>
           <div class="d-flex align-center gap-x-4">
             <AppSelect
@@ -142,7 +142,7 @@ const deleteInvoice = async id => {
                 { value: 25, title: '25' },
                 { value: 50, title: '50' },
                 { value: 100, title: '100' },
-                { value: -1, title: 'All' },
+                { value: -1, title: 'Все' },
               ]"
               style="inline-size: 6.25rem;"
               @update:model-value="itemsPerPage = parseInt($event, 10)"
@@ -154,7 +154,7 @@ const deleteInvoice = async id => {
               variant="tonal"
               color="secondary"
             >
-              Export
+              Экспорт
             </VBtn>
           </div>
         </div>
@@ -201,17 +201,17 @@ const deleteInvoice = async id => {
               {{ item.invoiceStatus }}
             </p>
             <p class="mb-0">
-              Balance: {{ item.balance }}
+              Баланс: {{ item.balance }}
             </p>
             <p class="mb-0">
-              Due date: {{ item.dueDate }}
+              Срок оплаты: {{ item.dueDate }}
             </p>
           </VTooltip>
         </template>
 
         <!-- Total -->
         <template #item.total="{ item }">
-          ${{ item.total }}
+          ₽{{ item.total }}
         </template>
 
         <!-- issued Date -->

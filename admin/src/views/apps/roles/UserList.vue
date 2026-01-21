@@ -21,27 +21,27 @@ const updateOptions = options => {
 // Headers
 const headers = [
   {
-    title: 'User',
+    title: 'Пользователь',
     key: 'user',
   },
   {
-    title: 'Role',
+    title: 'Роль',
     key: 'role',
   },
   {
-    title: 'Plan',
+    title: 'План',
     key: 'plan',
   },
   {
-    title: 'Billing',
+    title: 'Биллинг',
     key: 'billing',
   },
   {
-    title: 'Status',
+    title: 'Статус',
     key: 'status',
   },
   {
-    title: 'Actions',
+    title: 'Действия',
     key: 'actions',
     sortable: false,
   },
@@ -69,23 +69,23 @@ const totalUsers = computed(() => usersData.value.totalUsers)
 // 👉 search filters
 const roles = [
   {
-    title: 'Admin',
+    title: 'Администратор',
     value: 'admin',
   },
   {
-    title: 'Author',
+    title: 'Автор',
     value: 'author',
   },
   {
-    title: 'Editor',
+    title: 'Редактор',
     value: 'editor',
   },
   {
-    title: 'Maintainer',
+    title: 'Сопровождающий',
     value: 'maintainer',
   },
   {
-    title: 'Subscriber',
+    title: 'Подписчик',
     value: 'subscriber',
   },
 ]
@@ -136,6 +136,25 @@ const resolveUserStatusVariant = stat => {
   return 'primary'
 }
 
+const translateStatus = status => {
+  const statusMap = {
+    'active': 'Активен',
+    'inactive': 'Неактивен',
+    'pending': 'Ожидает',
+  }
+  return statusMap[status?.toLowerCase()] || status
+}
+
+const translatePlan = plan => {
+  const planMap = {
+    'basic': 'Базовый',
+    'company': 'Компания',
+    'enterprise': 'Предприятие',
+    'team': 'Команда',
+  }
+  return planMap[plan?.toLowerCase()] || plan
+}
+
 const isAddNewUserDrawerVisible = ref(false)
 
 const addNewUser = async userData => {
@@ -167,7 +186,7 @@ const deleteUser = async id => {
       <VCardText class="d-flex flex-wrap gap-4">
         <div class="d-flex gap-2 align-center">
           <p class="text-body-1 mb-0">
-            Show
+            Показать
           </p>
           <AppSelect
             :model-value="itemsPerPage"
@@ -176,7 +195,7 @@ const deleteUser = async id => {
               { value: 25, title: '25' },
               { value: 50, title: '50' },
               { value: 100, title: '100' },
-              { value: -1, title: 'All' },
+              { value: -1, title: 'Все' },
             ]"
             style="inline-size: 5.5rem;"
             @update:model-value="itemsPerPage = parseInt($event, 10)"
@@ -189,14 +208,14 @@ const deleteUser = async id => {
           <!-- 👉 Search  -->
           <AppTextField
             v-model="searchQuery"
-            placeholder="Search User"
+            placeholder="Поиск пользователя"
             style="inline-size: 15.625rem;"
           />
 
           <!-- 👉 Add user button -->
           <AppSelect
             v-model="selectedRole"
-            placeholder="Select Role"
+            placeholder="Выбрать роль"
             :items="roles"
             clearable
             clear-icon="tabler-x"
@@ -264,16 +283,16 @@ const deleteUser = async id => {
               :color="resolveUserRoleVariant(item.role).color"
             />
 
-            <div class="text-capitalize text-high-emphasis text-body-1">
-              {{ item.role }}
+            <div class="text-high-emphasis text-body-1">
+              {{ item.role === 'admin' ? 'Администратор' : item.role === 'author' ? 'Автор' : item.role === 'editor' ? 'Редактор' : item.role === 'maintainer' ? 'Сопровождающий' : item.role === 'subscriber' ? 'Подписчик' : item.role }}
             </div>
           </div>
         </template>
 
         <!-- Plan -->
         <template #item.plan="{ item }">
-          <div class="text-body-1 text-high-emphasis text-capitalize">
-            {{ item.currentPlan }}
+          <div class="text-body-1 text-high-emphasis">
+            {{ translatePlan(item.currentPlan) }}
           </div>
         </template>
 
@@ -283,9 +302,8 @@ const deleteUser = async id => {
             :color="resolveUserStatusVariant(item.status)"
             size="small"
             label
-            class="text-capitalize"
           >
-            {{ item.status }}
+            {{ translateStatus(item.status) }}
           </VChip>
         </template>
 
@@ -312,21 +330,21 @@ const deleteUser = async id => {
                     <VIcon icon="tabler-eye" />
                   </template>
 
-                  <VListItemTitle>View</VListItemTitle>
+                  <VListItemTitle>Просмотр</VListItemTitle>
                 </VListItem>
 
                 <VListItem link>
                   <template #prepend>
                     <VIcon icon="tabler-pencil" />
                   </template>
-                  <VListItemTitle>Edit</VListItemTitle>
+                  <VListItemTitle>Редактировать</VListItemTitle>
                 </VListItem>
 
                 <VListItem @click="deleteUser(item.id)">
                   <template #prepend>
                     <VIcon icon="tabler-trash" />
                   </template>
-                  <VListItemTitle>Delete</VListItemTitle>
+                  <VListItemTitle>Удалить</VListItemTitle>
                 </VListItem>
               </VList>
             </VMenu>

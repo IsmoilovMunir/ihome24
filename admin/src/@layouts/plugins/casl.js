@@ -37,14 +37,54 @@ export const canViewNavMenuGroup = item => {
 export const canNavigate = to => {
   const ability = useAbility()
 
+  // Если маршрут публичный, разрешаем доступ
+  if (to.meta?.public) {
+    return true
+  }
+
   // Get the most specific route (last one in the matched array)
   const targetRoute = to.matched[to.matched.length - 1]
 
-  // If the target route has specific permissions, check those first
-  if (targetRoute?.meta?.action && targetRoute?.meta?.subject)
-    return ability.can(targetRoute.meta.action, targetRoute.meta.subject)
+  // Если у маршрута нет требований к правам доступа, разрешаем доступ
+  if (!targetRoute?.meta?.action && !targetRoute?.meta?.subject) {
+    // Проверяем, есть ли у родительских маршрутов требования
+    const hasAnyPermissionRequirement = to.matched.some(route => route.meta?.action && route.meta?.subject)
+    if (!hasAnyPermissionRequirement) {
+      return true // Нет требований к правам - разрешаем доступ
+    }
+  }
 
-  // If no specific permissions, fall back to checking if any parent route allows access
+  // Проверяем, инициализирован ли ability
+  // Если ability не настроен или пуст, разрешаем доступ (fallback для совместимости)
+  try {
+    // Если у маршрута есть требования к правам, проверяем их
+    if (targetRoute?.meta?.action && targetRoute?.meta?.subject) {
+      const canAccess = ability.can(targetRoute.meta.action, targetRoute.meta.subject)
+      // Если ability не настроен (возвращает false для всех), но у нас есть пользователь - разрешаем
+      // Это временная мера до полной настройки CASL
+      if (!canAccess && ability.rules && ability.rules.length === 0) {
+        return true // Ability не настроен - разрешаем доступ
+      }
+      return canAccess
+    }
+
+    // Проверяем родительские маршруты
+    const parentCanAccess = to.matched.some(route => {
+      if (route.meta?.action && route.meta?.subject) {
+        return ability.can(route.meta.action, route.meta.subject)
+      }
+      return false
+    })
     
-  return to.matched.some(route => ability.can(route.meta.action, route.meta.subject))
+    // Если ability не настроен, разрешаем доступ
+    if (!parentCanAccess && ability.rules && ability.rules.length === 0) {
+      return true
+    }
+    
+    return parentCanAccess
+  } catch (error) {
+    // В случае ошибки разрешаем доступ (fallback)
+    console.warn('Error checking permissions:', error)
+    return true
+  }
 }

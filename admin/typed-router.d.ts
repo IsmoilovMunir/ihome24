@@ -90,7 +90,6 @@ declare module 'vue-router/auto-routes' {
     'forms-switch': RouteRecordInfo<'forms-switch', '/forms/switch', Record<never, never>, Record<never, never>>,
     'forms-textarea': RouteRecordInfo<'forms-textarea', '/forms/textarea', Record<never, never>, Record<never, never>>,
     'forms-textfield': RouteRecordInfo<'forms-textfield', '/forms/textfield', Record<never, never>, Record<never, never>>,
-    'front-pages-checkout': RouteRecordInfo<'front-pages-checkout', '/front-pages/checkout', Record<never, never>, Record<never, never>>,
     'front-pages-help-center': RouteRecordInfo<'front-pages-help-center', '/front-pages/help-center', Record<never, never>, Record<never, never>>,
     'front-pages-help-center-article-title': RouteRecordInfo<'front-pages-help-center-article-title', '/front-pages/help-center/article/:title', { title: ParamValue<true> }, { title: ParamValue<false> }>,
     'front-pages-landing-page': RouteRecordInfo<'front-pages-landing-page', '/front-pages/landing-page', Record<never, never>, Record<never, never>>,
@@ -117,7 +116,6 @@ declare module 'vue-router/auto-routes' {
     'pages-cards-card-basic': RouteRecordInfo<'pages-cards-card-basic', '/pages/cards/card-basic', Record<never, never>, Record<never, never>>,
     'pages-cards-card-statistics': RouteRecordInfo<'pages-cards-card-statistics', '/pages/cards/card-statistics', Record<never, never>, Record<never, never>>,
     'pages-cards-card-widgets': RouteRecordInfo<'pages-cards-card-widgets', '/pages/cards/card-widgets', Record<never, never>, Record<never, never>>,
-    'pages-dialog-examples': RouteRecordInfo<'pages-dialog-examples', '/pages/dialog-examples', Record<never, never>, Record<never, never>>,
     'pages-faq': RouteRecordInfo<'pages-faq', '/pages/faq', Record<never, never>, Record<never, never>>,
     'pages-icons': RouteRecordInfo<'pages-icons', '/pages/icons', Record<never, never>, Record<never, never>>,
     'pages-misc-coming-soon': RouteRecordInfo<'pages-misc-coming-soon', '/pages/misc/coming-soon', Record<never, never>, Record<never, never>>,
@@ -128,8 +126,5 @@ declare module 'vue-router/auto-routes' {
     'register': RouteRecordInfo<'register', '/register', Record<never, never>, Record<never, never>>,
     'tables-data-table': RouteRecordInfo<'tables-data-table', '/tables/data-table', Record<never, never>, Record<never, never>>,
     'tables-simple-table': RouteRecordInfo<'tables-simple-table', '/tables/simple-table', Record<never, never>, Record<never, never>>,
-    'wizard-examples-checkout': RouteRecordInfo<'wizard-examples-checkout', '/wizard-examples/checkout', Record<never, never>, Record<never, never>>,
-    'wizard-examples-create-deal': RouteRecordInfo<'wizard-examples-create-deal', '/wizard-examples/create-deal', Record<never, never>, Record<never, never>>,
-    'wizard-examples-property-listing': RouteRecordInfo<'wizard-examples-property-listing', '/wizard-examples/property-listing', Record<never, never>, Record<never, never>>,
   }
 }

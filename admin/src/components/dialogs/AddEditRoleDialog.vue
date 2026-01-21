@@ -25,55 +25,55 @@ const emit = defineEmits([
 // 👉 Permission List
 const permissions = ref([
   {
-    name: 'User Management',
+    name: 'Управление пользователями',
     read: false,
     write: false,
     create: false,
   },
   {
-    name: 'Content Management',
+    name: 'Управление контентом',
     read: false,
     write: false,
     create: false,
   },
   {
-    name: 'Disputes Management',
+    name: 'Управление спорами',
     read: false,
     write: false,
     create: false,
   },
   {
-    name: 'Database Management',
+    name: 'Управление базой данных',
     read: false,
     write: false,
     create: false,
   },
   {
-    name: 'Financial Management',
+    name: 'Финансовое управление',
     read: false,
     write: false,
     create: false,
   },
   {
-    name: 'Reporting',
+    name: 'Отчетность',
     read: false,
     write: false,
     create: false,
   },
   {
-    name: 'API Control',
+    name: 'Управление API',
     read: false,
     write: false,
     create: false,
   },
   {
-    name: 'Repository Management',
+    name: 'Управление репозиторием',
     read: false,
     write: false,
     create: false,
   },
   {
-    name: 'Payroll',
+    name: 'Заработная плата',
     read: false,
     write: false,
     create: false,
@@ -170,10 +170,10 @@ const onReset = () => {
       <VCardText>
         <!-- 👉 Title -->
         <h4 class="text-h4 text-center mb-2">
-          {{ props.rolePermissions.name ? 'Edit' : 'Add New' }} Role
+          {{ props.rolePermissions.name ? 'Редактировать' : 'Добавить новую' }} роль
         </h4>
         <p class="text-body-1 text-center mb-6">
-          Set Role Permissions
+          Установить разрешения роли
         </p>
 
         <!-- 👉 Form -->
@@ -181,12 +181,12 @@ const onReset = () => {
           <!-- 👉 Role name -->
           <AppTextField
             v-model="role"
-            label="Role Name"
-            placeholder="Enter Role Name"
+            label="Название роли"
+            placeholder="Введите название роли"
           />
 
           <h5 class="text-h5 my-6">
-            Role Permissions
+            Разрешения роли
           </h5>
 
           <!-- 👉 Role Permissions -->
@@ -196,7 +196,7 @@ const onReset = () => {
             <tr>
               <td>
                 <h6 class="text-h6">
-                  Administrator Access
+                  Доступ администратора
                 </h6>
               </td>
               <td colspan="3">
@@ -204,7 +204,7 @@ const onReset = () => {
                   <VCheckbox
                     v-model="isSelectAll"
                     v-model:indeterminate="isIndeterminate"
-                    label="Select All"
+                    label="Выбрать все"
                   />
                 </div>
               </td>
@@ -225,7 +225,7 @@ const onReset = () => {
                   <div class="d-flex justify-end">
                     <VCheckbox
                       v-model="permission.read"
-                      label="Read"
+                      label="Чтение"
                     />
                   </div>
                 </td>
@@ -233,7 +233,7 @@ const onReset = () => {
                   <div class="d-flex justify-end">
                     <VCheckbox
                       v-model="permission.write"
-                      label="Write"
+                      label="Запись"
                     />
                   </div>
                 </td>
@@ -241,7 +241,7 @@ const onReset = () => {
                   <div class="d-flex justify-end">
                     <VCheckbox
                       v-model="permission.create"
-                      label="Create"
+                      label="Создание"
                     />
                   </div>
                 </td>
@@ -252,7 +252,7 @@ const onReset = () => {
           <!-- 👉 Actions button -->
           <div class="d-flex align-center justify-center gap-4">
             <VBtn @click="onSubmit">
-              Submit
+              Отправить
             </VBtn>
 
             <VBtn
@@ -260,7 +260,7 @@ const onReset = () => {
               variant="tonal"
               @click="onReset"
             >
-              Cancel
+              Отмена
             </VBtn>
           </div>
         </VForm>

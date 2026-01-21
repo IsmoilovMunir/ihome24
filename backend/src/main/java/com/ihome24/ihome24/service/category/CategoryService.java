@@ -109,6 +109,7 @@ public class CategoryService {
                 .imageUrl(category.getImageUrl())
                 .isActive(category.getIsActive())
                 .sortOrder(category.getSortOrder())
+                .parentId(category.getParent() != null ? category.getParent().getId() : null)
                 .createdAt(category.getCreatedAt())
                 .updatedAt(category.getUpdatedAt());
 

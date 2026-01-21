@@ -1,25 +1,25 @@
 <script setup>
 const notifications = ref([
   {
-    type: 'New for you',
+    type: 'Новое для вас',
     email: true,
     browser: true,
     app: true,
   },
   {
-    type: 'Account activity',
+    type: 'Активность аккаунта',
     email: true,
     browser: true,
     app: true,
   },
   {
-    type: 'A new browser used to sign in',
+    type: 'Использован новый браузер для входа',
     email: true,
     browser: true,
     app: false,
   },
   {
-    type: 'A new device is linked',
+    type: 'Подключено новое устройство',
     email: true,
     browser: false,
     app: false,
@@ -31,10 +31,10 @@ const notifications = ref([
   <VCard class="user-tab-notification">
     <VCardItem>
       <VCardTitle class="mb-1">
-        Notifications
+        Уведомления
       </VCardTitle>
       <VCardSubtitle class="text-body-1 text-wrap">
-        You will receive notification for the below selected items.
+        Вы будете получать уведомления для выбранных ниже элементов.
       </VCardSubtitle>
     </VCardItem>
     <VCardText class="px-0">
@@ -43,16 +43,16 @@ const notifications = ref([
         <thead>
           <tr>
             <th scope="col">
-              TYPE
+              ТИП
             </th>
             <th scope="col">
               EMAIL
             </th>
             <th scope="col">
-              BROWSER
+              БРАУЗЕР
             </th>
             <th scope="col">
-              APP
+              ПРИЛОЖЕНИЕ
             </th>
           </tr>
         </thead>
@@ -81,12 +81,12 @@ const notifications = ref([
     </VCardText>
 
     <VCardText class="d-flex flex-wrap gap-4">
-      <VBtn>Save changes</VBtn>
+      <VBtn>Сохранить изменения</VBtn>
       <VBtn
         color="secondary"
         variant="tonal"
       >
-        Discard
+        Отменить
       </VBtn>
     </VCardText>
   </VCard>

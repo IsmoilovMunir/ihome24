@@ -50,7 +50,7 @@ const resolvePaymentStatus = payment => {
     }
   if (payment === 4)
     return {
-      text: 'Failed',
+      text: 'Ошибка',
       color: 'error',
     }
 }
@@ -84,7 +84,7 @@ const userData = {
   company: 'Pixinvent',
   role: 'Web developer',
   username: 'T1940',
-  country: 'United States',
+  country: 'Россия',
   contact: '+1 (609) 972-22-22',
   email: orderData.value?.email,
   status: 'Active',
@@ -100,12 +100,12 @@ const currentBillingAddress = {
   fullName: orderData.value?.customer,
   firstName: orderData.value?.customer.split(' ')[0],
   lastName: orderData.value?.customer.split(' ')[1],
-  selectedCountry: 'USA',
+  selectedCountry: 'Россия',
   addressLine1: '45 Rocker Terrace',
   addressLine2: 'Latheronwheel',
   landmark: 'KW5 8NW, London',
   contact: '+1 (609) 972-22-22',
-  country: 'USA',
+  country: 'Россия',
   city: 'London',
   state: 'London',
   zipCode: 110001,
@@ -153,7 +153,7 @@ const orderDetail = [
       <div>
         <div class="d-flex gap-2 align-center mb-2 flex-wrap">
           <h5 class="text-h5">
-            Order #{{ route.params.id }}
+            Заказ #{{ route.params.id }}
           </h5>
           <div class="d-flex gap-x-2">
             <VChip
@@ -183,7 +183,7 @@ const orderDetail = [
         color="error"
         @click="isConfirmDialogVisible = !isConfirmDialogVisible"
       >
-        Delete Order
+        Удалить заказ
       </VBtn>
     </div>
 
@@ -263,27 +263,27 @@ const orderDetail = [
                 <tbody>
                   <tr>
                     <td width="200px">
-                      Subtotal:
+                      Подытог:
                     </td>
                     <td class="font-weight-medium">
                       $2,093
                     </td>
                   </tr>
                   <tr>
-                    <td>Shipping Total: </td>
+                    <td>Доставка: </td>
                     <td class="font-weight-medium">
                       $2
                     </td>
                   </tr>
                   <tr>
-                    <td>Tax: </td>
+                    <td>Налог: </td>
                     <td class="font-weight-medium">
                       $28
                     </td>
                   </tr>
                   <tr>
                     <td class="text-high-emphasis font-weight-medium">
-                      Total:
+                      Итого:
                     </td>
                     <td class="font-weight-medium">
                       $2,113
@@ -312,14 +312,14 @@ const orderDetail = [
               >
                 <div class="d-flex justify-space-between align-center">
                   <div class="app-timeline-title">
-                    Order was placed (Order ID: #32543)
+                    Заказ размещен (ID заказа: #32543)
                   </div>
                   <div class="app-timeline-meta">
-                    Tuesday 10:20 AM
+                    Вторник 10:20
                   </div>
                 </div>
                 <p class="app-timeline-text mb-0 mt-3">
-                  Your order has been placed successfully
+                  Ваш заказ успешно размещен
                 </p>
               </VTimelineItem>
 
@@ -341,11 +341,11 @@ const orderDetail = [
                 size="x-small"
               >
                 <div class="d-flex justify-space-between align-center">
-                  <span class="app-timeline-title">Dispatched</span>
-                  <span class="app-timeline-meta">Thursday 8:15 AM</span>
+                  <span class="app-timeline-title">Отправлено</span>
+                  <span class="app-timeline-meta">Четверг 8:15</span>
                 </div>
                 <p class="app-timeline-text mb-0 mt-3">
-                  Item has been picked up by courier.
+                  Товар забран курьером.
                 </p>
               </VTimelineItem>
 
@@ -367,11 +367,11 @@ const orderDetail = [
                 size="x-small"
               >
                 <div class="d-flex justify-space-between align-center">
-                  <span class="app-timeline-title">Dispatched for delivery</span>
-                  <span class="app-timeline-meta">Today 14:12 PM</span>
+                  <span class="app-timeline-title">Отправлено на доставку</span>
+                  <span class="app-timeline-meta">Сегодня 14:12</span>
                 </div>
                 <p class="app-timeline-text mb-0 mt-3">
-                  Package has left an Amazon facility , NY
+                  Посылка покинула склад Amazon, NY
                 </p>
               </VTimelineItem>
 
@@ -399,7 +399,7 @@ const orderDetail = [
         <VCard class="mb-6">
           <VCardText class="d-flex flex-column gap-y-6">
             <h5 class="text-h5">
-              Customer details
+              Данные клиента
             </h5>
 
             <div class="d-flex align-center">
@@ -424,7 +424,7 @@ const orderDetail = [
                   {{ orderData?.customer }}
                 </h6>
                 <div class="text-body-1">
-                  Customer ID: #{{ orderData?.order }}
+                  ID клиента: #{{ orderData?.order }}
                 </div>
               </div>
             </div>
@@ -444,17 +444,17 @@ const orderDetail = [
             <div class="d-flex flex-column gap-y-1">
               <div class="d-flex justify-space-between align-center">
                 <h6 class="text-h6">
-                  Contact Info
+                  Контактная информация
                 </h6>
                 <div
                   class="text-base text-primary cursor-pointer font-weight-medium"
                   @click="isUserInfoEditDialogVisible = !isUserInfoEditDialogVisible"
                 >
-                  Edit
+                  Редактировать
                 </div>
               </div>
               <span>Email: {{ orderData?.email }}</span>
-              <span>Mobile: +1 (609) 972-22-22</span>
+              <span>Телефон: +1 (609) 972-22-22</span>
             </div>
           </VCardText>
         </VCard>
@@ -462,14 +462,14 @@ const orderDetail = [
         <!-- 👉 Shipping Address -->
         <VCard class="mb-6">
           <VCardItem>
-            <VCardTitle>Shipping Address</VCardTitle>
+            <VCardTitle>Адрес доставки</VCardTitle>
             <template #append>
               <div class="d-flex align-center justify-space-between">
                 <div
                   class="text-base font-weight-medium text-primary cursor-pointer"
                   @click="isEditAddressDialogVisible = !isEditAddressDialogVisible"
                 >
-                  Edit
+                  Редактировать
                 </div>
               </div>
             </template>
@@ -477,7 +477,7 @@ const orderDetail = [
 
           <VCardText>
             <div class="text-body-1">
-              45 Rocker Terrace <br> Latheronwheel <br> KW5 8NW, London <br> UK
+              Москва, ул. Тверская, д. 1 <br> Россия
             </div>
           </VCardText>
         </VCard>
@@ -497,7 +497,7 @@ const orderDetail = [
               </div>
             </div>
             <div>
-              45 Rocker Terrace <br> Latheronwheel <br> KW5 8NW, London <br> UK
+              Москва, ул. Тверская, д. 1 <br> Россия
             </div>
 
             <div class="mt-6">
@@ -515,11 +515,11 @@ const orderDetail = [
 
     <ConfirmDialog
       v-model:is-dialog-visible="isConfirmDialogVisible"
-      confirmation-question="Are you sure to cancel your Order?"
-      cancel-msg="Order cancelled!!"
-      cancel-title="Cancelled"
-      confirm-msg="Your order cancelled successfully."
-      confirm-title="Cancelled!"
+      confirmation-question="Вы уверены, что хотите отменить заказ?"
+      cancel-msg="Заказ отменен!!"
+      cancel-title="Отменено"
+      confirm-msg="Ваш заказ успешно отменен."
+      confirm-title="Отменено!"
     />
 
     <UserInfoEditDialog
@@ -537,7 +537,7 @@ const orderDetail = [
       type="error"
       variant="tonal"
     >
-      Order with ID #{{ route.params.id }} is not available or could not be found!
+      Заказ с ID #{{ route.params.id }} недоступен или не найден!
     </VAlert>
   </section>
 </template>

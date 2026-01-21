@@ -6,6 +6,7 @@ yarn-error.log*
 pnpm-debug.log*
 package-lock.json
 pnpm-lock.yaml
+yarn.lock
 
 # Build outputs
 dist/
@@ -15,6 +16,38 @@ target/
 *.jar
 *.war
 *.ear
+*.nar
+
+# Java / Maven
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+.mvn/settings.xml
+mvnw
+mvnw.cmd
+
+# Spring Boot
+*.original
+spring-boot-*.log
+
+# Frontend build outputs
+frontend/.nuxt/
+frontend/.output/
+frontend/_nuxt/
+frontend/.vite/
+frontend/dist/
+frontend/.cache/
+admin/dist/
+admin/.vite/
+admin/.nuxt/
+admin/.output/
+admin/_nuxt/
+
+# Browser data / testing
+browser_data/
+browser_data_interactive/
+*.localstorage
+*.sqlite
+*.sqlite3
 
 # IDE
 .idea/
@@ -23,27 +56,197 @@ target/
 *.swo
 *~
 .DS_Store
+*.iml
+*.ipr
+*.iws
+.settings/
+.classpath
+.project
 
 # Environment variables
 .env
 .env.local
 .env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.prod
+.env.production
+*.env.prod
+*.env.production
+# Но оставляем примеры
+!.env.example
+!env.prod.example
+!**/.env.example
+!**/env.prod.example
 
 # Logs
 *.log
 logs/
+*.log.*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
 
 # OS
 Thumbs.db
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
 
 # Temporary files
 *.tmp
 *.temp
 .cache/
+.temp/
+tmp/
+temp/
 
 # SSL certificates
 *.pem
 *.key
 *.crt
 ssl/
+*.p12
+*.jks
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.h2.db
+*.mv.db
+*.trace.db
+
+# SQL dumps and temporary SQL files (but keep migration files)
+*.sql
+!**/db/changelog/**/*.sql
+!**/migrations/**/*.sql
+!**/flyway/**/*.sql
+!**/liquibase/**/*.sql
+
+# Keep Liquibase migration files
+!backend/src/main/resources/db/changelog/changeset/*.sql
+
+# Coverage reports
+coverage/
+*.lcov
+.nyc_output/
+
+# TypeScript
+*.tsbuildinfo
+
+# Vue / Nuxt
+.nuxt/
+.output/
+.nitro/
+.cache/
+
+# Vite
+.vite/
+vite.config.*.timestamp-*
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Auto-generated files
+auto-imports.d.ts
+components.d.ts
+typed-router.d.ts
+*.generated.*
+
+# Test files
+.nyc_output/
+coverage/
+*.test.js.snap
+
+# Misc
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+
+# Application specific
+*.pid
+*.seed
+*.pid.lock
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Local configuration
+config/local.json
+config/local.yml
+application-local.yml
+application-local.properties
+backend/src/main/resources/application-local.yml
+
+# MacOS
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+bin/
+.metadata/
+
+# NetBeans
+nbproject/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history/
+
+# Cursor IDE
+.cursor/
+
+# Markdown documentation files (except README files)
+*.md
+!README.md
+!**/README.md

@@ -48,7 +48,7 @@ const onSubmit = () => {
         currentPlan: plan.value,
         status: status.value,
         avatar: '',
-        billing: 'Auto Debit',
+        billing: 'Автоматическое списание',
       })
       emit('update:isDrawerOpen', false)
       nextTick(() => {
@@ -139,7 +139,12 @@ const handleDrawerModelValueUpdate = val => {
                   label="Выберите страну"
                   placeholder="Выберите страну"
                   :rules="[requiredValidator]"
-                  :items="['USA', 'UK', 'India', 'Australia']"
+                  :items="[
+                    { title: 'Россия', value: 'Россия' },
+                    { title: 'Казахстан', value: 'Казахстан' },
+                    { title: 'Беларусь', value: 'Беларусь' },
+                    { title: 'Украина', value: 'Украина' }
+                  ]"
                 />
               </VCol>
 
@@ -161,7 +166,13 @@ const handleDrawerModelValueUpdate = val => {
                   label="Выберите роль"
                   placeholder="Выберите роль"
                   :rules="[requiredValidator]"
-                  :items="['Admin', 'Author', 'Editor', 'Maintainer', 'Subscriber']"
+                  :items="[
+                    { title: 'Администратор', value: 'admin' },
+                    { title: 'Автор', value: 'author' },
+                    { title: 'Редактор', value: 'editor' },
+                    { title: 'Сопровождающий', value: 'maintainer' },
+                    { title: 'Подписчик', value: 'subscriber' }
+                  ]"
                 />
               </VCol>
 
@@ -172,7 +183,12 @@ const handleDrawerModelValueUpdate = val => {
                   label="Выберите план"
                   placeholder="Выберите план"
                   :rules="[requiredValidator]"
-                  :items="['Basic', 'Company', 'Enterprise', 'Team']"
+                  :items="[
+                    { title: 'Базовый', value: 'basic' },
+                    { title: 'Компания', value: 'company' },
+                    { title: 'Предприятие', value: 'enterprise' },
+                    { title: 'Команда', value: 'team' }
+                  ]"
                 />
               </VCol>
 

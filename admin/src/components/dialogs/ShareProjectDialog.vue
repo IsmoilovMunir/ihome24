@@ -162,7 +162,7 @@ const membersList = [
               class="me-2"
               size="20"
             />
-            <div>Public to Vuexy - Pixinvent</div>
+            <div>Public to ihome - Pixinvent</div>
           </h6>
 
           <VBtn

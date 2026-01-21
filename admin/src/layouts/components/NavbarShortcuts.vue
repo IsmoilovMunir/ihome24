@@ -2,26 +2,26 @@
 const shortcuts = [
   {
     icon: 'tabler-user',
-    title: 'Users',
-    subtitle: 'Manage Users',
+    title: 'Пользователи',
+    subtitle: 'Управление пользователями',
     to: { name: 'apps-user-list' },
   },
   {
     icon: 'tabler-users',
-    title: 'Role Management',
-    subtitle: 'Permission',
+    title: 'Управление ролями',
+    subtitle: 'Разрешения',
     to: { name: 'apps-roles' },
   },
   {
     icon: 'tabler-device-desktop-analytics',
-    title: 'Dashboard',
-    subtitle: 'Ecommerce Dashboard',
+    title: 'Панель управления',
+    subtitle: 'Панель электронной коммерции',
     to: { name: 'dashboards-ecommerce' },
   },
   {
     icon: 'tabler-settings',
-    title: 'Settings',
-    subtitle: 'Account Settings',
+    title: 'Настройки',
+    subtitle: 'Настройки аккаунта',
     to: {
       name: 'pages-account-settings-tab',
       params: { tab: 'account' },

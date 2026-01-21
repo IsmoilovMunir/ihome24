@@ -8,22 +8,22 @@ const props = defineProps({
 
 const moreList = [
   {
-    title: 'Share connections',
+    title: 'Поделиться связями',
     value: 'Share connections',
   },
   {
-    title: 'Suggest edits',
+    title: 'Предложить правки',
     value: 'Suggest edits',
   },
   {
-    title: 'Report Bug',
+    title: 'Сообщить об ошибке',
     value: 'Report Bug',
   },
 ]
 </script>
 
 <template>
-  <VCard title="Teams">
+  <VCard title="Команды">
     <template #append>
       <div>
         <MoreBtn :menu-list="moreList" />
@@ -46,7 +46,7 @@ const moreList = [
           <VListItemTitle class="font-weight-medium">
             {{ data.title }}
           </VListItemTitle>
-          <VListItemSubtitle>{{ data.members }} Members</VListItemSubtitle>
+          <VListItemSubtitle>{{ data.members }} Участников</VListItemSubtitle>
 
           <template #append>
             <VChip
@@ -64,7 +64,7 @@ const moreList = [
           <VListItemTitle class="pt-2 text-center">
             <RouterLink :to="{ name: 'pages-user-profile-tab', params: { tab: 'teams' } }">
               <p class="mb-0">
-                View all Teams
+                Просмотреть все команды
               </p>
             </RouterLink>
           </VListItemTitle>

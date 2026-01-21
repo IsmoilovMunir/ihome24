@@ -14,36 +14,36 @@ const updateOptions = options => {
 
 const headers = [
   {
-    title: 'Order',
+    title: 'Заказ',
     key: 'order',
   },
   {
-    title: 'Date',
+    title: 'Дата',
     key: 'date',
   },
   {
-    title: 'Status',
+    title: 'Статус',
     key: 'status',
   },
   {
-    title: 'Spent',
+    title: 'Потрачено',
     key: 'spent',
   },
   {
-    title: 'Actions',
+    title: 'Действия',
     key: 'actions',
     sortable: false,
   },
 ]
 
 const resolveStatus = status => {
-  if (status === 'Delivered')
+  if (status === 'Delivered' || status === 'Доставлено')
     return { color: 'success' }
-  if (status === 'Out for Delivery')
+  if (status === 'Out for Delivery' || status === 'В доставке')
     return { color: 'primary' }
-  if (status === 'Ready to Pickup')
+  if (status === 'Ready to Pickup' || status === 'Готово к получению')
     return { color: 'info' }
-  if (status === 'Dispatched')
+  if (status === 'Dispatched' || status === 'Отправлено')
     return { color: 'warning' }
 }
 
@@ -135,13 +135,13 @@ const deleteOrder = async id => {
                 value="view"
                 :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.order } }"
               >
-                View
+                Просмотр
               </VListItem>
               <VListItem
                 value="delete"
                 @click="deleteOrder(item.id)"
               >
-                Delete
+                Удалить
               </VListItem>
             </VList>
           </VMenu>

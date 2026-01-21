@@ -15,6 +15,16 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsBySku(String sku);
 
-    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category ORDER BY p.createdAt DESC")
+    Optional<Product> findByBarcode(String barcode);
+
+    boolean existsByBarcode(String barcode);
+
+    @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category c LEFT JOIN FETCH c.parent LEFT JOIN FETCH p.images ORDER BY p.createdAt DESC")
     List<Product> findAllWithCategory();
+
+    @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category c LEFT JOIN FETCH c.parent LEFT JOIN FETCH p.images WHERE p.isActive = true ORDER BY p.createdAt DESC")
+    List<Product> findByIsActiveTrue();
+    
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category c LEFT JOIN FETCH c.parent LEFT JOIN FETCH p.images WHERE p.id = :id")
+    Optional<Product> findByIdWithImages(Long id);
 }

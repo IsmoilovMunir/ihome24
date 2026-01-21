@@ -1,58 +1,58 @@
 export default [
   {
-    title: 'Apps',
+    title: 'Приложения',
     icon: { icon: 'tabler-layout-grid-add' },
     children: [
       {
-        title: 'Ecommerce',
+        title: 'Электронная коммерция',
         icon: { icon: 'tabler-shopping-cart-plus' },
         children: [
           {
-            title: 'Dashboard',
+            title: 'Панель управления',
             to: 'apps-ecommerce-dashboard',
           },
           {
-            title: 'Product',
+            title: 'Товары',
             children: [
-              { title: 'List', to: 'apps-ecommerce-product-list' },
-              { title: 'Add', to: 'apps-ecommerce-product-add' },
-              { title: 'Category', to: 'apps-ecommerce-product-category-list' },
+              { title: 'Список', to: 'apps-ecommerce-product-list' },
+              { title: 'Добавить', to: 'apps-ecommerce-product-add' },
+              { title: 'Категории', to: 'apps-ecommerce-product-category-list' },
             ],
           },
           {
-            title: 'Order',
+            title: 'Заказы',
             children: [
-              { title: 'List', to: 'apps-ecommerce-order-list' },
-              { title: 'Details', to: { name: 'apps-ecommerce-order-details-id', params: { id: '9042' } } },
+              { title: 'Список', to: 'apps-ecommerce-order-list' },
+              { title: 'Детали', to: { name: 'apps-ecommerce-order-details-id', params: { id: '9042' } } },
             ],
           },
           {
-            title: 'Customer',
+            title: 'Клиенты',
             children: [
-              { title: 'List', to: 'apps-ecommerce-customer-list' },
-              { title: 'Details', to: { name: 'apps-ecommerce-customer-details-id', params: { id: 478426 } } },
+              { title: 'Список', to: 'apps-ecommerce-customer-list' },
+              { title: 'Детали', to: { name: 'apps-ecommerce-customer-details-id', params: { id: 478426 } } },
             ],
           },
           {
-            title: 'Manage Review',
+            title: 'Управление отзывами',
             to: 'apps-ecommerce-manage-review',
           },
           {
-            title: 'Referrals',
+            title: 'Рефералы',
             to: 'apps-ecommerce-referrals',
           },
           {
-            title: 'Settings',
+            title: 'Настройки',
             to: 'apps-ecommerce-settings',
           },
         ],
       },
       {
-        title: 'User',
+        title: 'Пользователи',
         icon: { icon: 'tabler-users' },
         children: [
-          { title: 'List', to: 'apps-user-list' },
-          { title: 'View', to: { name: 'apps-user-view-id', params: { id: 21 } } },
+          { title: 'Список', to: 'apps-user-list' },
+          { title: 'Просмотр', to: { name: 'apps-user-view-id', params: { id: 21 } } },
         ],
       },
       {

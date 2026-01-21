@@ -1,41 +1,33 @@
 package com.ihome24.ihome24.dto.request.product;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public class ProductRequest {
 
-    @NotBlank(message = "Название товара обязательно")
-    @Size(min = 3, max = 255, message = "Название должно быть от 3 до 255 символов")
-    private String name;
+    // Информация о компании теперь берется из настроек компании (company-settings)
+    // Это поле оставлено для обратной совместимости, но игнорируется при создании товара
+    @Valid
+    private CompanyRequest company;
 
-    @Size(max = 5000, message = "Описание не должно превышать 5000 символов")
-    private String description;
+    @NotNull(message = "Информация о товаре обязательна")
+    @Valid
+    private ProductInfoRequest product;
 
-    @NotNull(message = "Цена обязательна")
-    @DecimalMin(value = "0.01", message = "Цена должна быть больше 0")
-    @Digits(integer = 10, fraction = 2, message = "Неверный формат цены")
-    private BigDecimal price;
+    @Valid
+    private List<VariantRequest> variants = new ArrayList<>();
 
-    @DecimalMin(value = "0.01", message = "Старая цена должна быть больше 0")
-    @Digits(integer = 10, fraction = 2, message = "Неверный формат старой цены")
-    private BigDecimal oldPrice;
+    @Valid
+    private ReturnsRequest returns;
 
-    @Size(max = 100, message = "SKU не должен превышать 100 символов")
-    private String sku;
+    @Valid
+    private SeoRequest seo;
 
-    @Min(value = 0, message = "Количество на складе не может быть отрицательным")
-    private Integer stockQuantity;
-
-    private Boolean isActive = true;
-
-    private Boolean isFeatured = false;
-
-    @Size(max = 500, message = "URL изображения не должен превышать 500 символов")
-    private String imageUrl;
-
-    private Long categoryId;
+    private String status = "draft";
 }

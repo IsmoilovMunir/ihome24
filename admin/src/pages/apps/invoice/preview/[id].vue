@@ -84,7 +84,7 @@ const printInvoice = () => {
                 Office 149, 450 South Brand Brooklyn
               </h6>
               <h6 class="text-h6 font-weight-regular">
-                San Diego County, CA 91905, USA
+                Москва, Россия
               </h6>
               <h6 class="text-h6 font-weight-regular">
                 +1 (123) 456 7891, +44 (876) 543 2198
