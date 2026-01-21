@@ -70,6 +70,15 @@ browser_data_interactive/
 .env.development.local
 .env.test.local
 .env.production.local
+.env.prod
+.env.production
+*.env.prod
+*.env.production
+# Но оставляем примеры
+!.env.example
+!env.prod.example
+!**/.env.example
+!**/env.prod.example
 
 # Logs
 *.log

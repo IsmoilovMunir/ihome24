@@ -1,6 +1,43 @@
+# Environment variables (СЕКРЕТЫ - НЕ КОММИТИТЬ!)
 .env
+.env.prod
+.env.production
+*.env.prod
+*.env.production
+# Но оставляем примеры
+!.env.example
+!env.prod.example
+
+# Logs
 *.log
+logs/
+*.log.*
+
+# SSL certificates (СЕКРЕТЫ - НЕ КОММИТИТЬ!)
 ssl/
 *.pem
 *.key
 *.crt
+*.p12
+*.jks
+*.pfx
+
+# Database dumps (могут содержать данные)
+*.sql.dump
+*.sql.backup
+*.dump
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Docker volumes data
+postgres_data/
+minio_data/
+data/
+
+# Local configuration files with secrets
+config/local.*
+**/local.*
+!**/local.example.*

@@ -48,6 +48,28 @@ spring:
   security:
     require-ssl: false  # Используйте reverse proxy для SSL
 
+  # Email Configuration
+  mail:
+    host: ${MAIL_HOST:smtp.yandex.ru}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    properties:
+      mail:
+        debug: ${MAIL_DEBUG:false}
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          ssl:
+            enable: ${MAIL_SMTP_SSL_ENABLE:true}
+            trust: ${MAIL_SMTP_SSL_TRUST:*}
+            checkserveridentity: ${MAIL_SMTP_SSL_CHECK_SERVER_IDENTITY:false}
+          starttls:
+            enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
+            required: ${MAIL_SMTP_STARTTLS_REQUIRED:false}
+          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:10000}
+          timeout: ${MAIL_TIMEOUT:10000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT:10000}
+
 server:
   port: ${SERVER_PORT:8080}
   # Production server settings
@@ -66,6 +88,9 @@ app:
     password: ${ADMIN_PASSWORD}
     fullName: ${ADMIN_FULL_NAME:Администратор}
     passwordChangeRequired: ${ADMIN_PASSWORD_CHANGE_REQUIRED:true}
+  # Email Configuration
+  email:
+    from: ${APP_EMAIL_FROM}
 
 # MinIO S3 Configuration
 minio:
@@ -78,6 +103,10 @@ minio:
   max-video-size: ${MINIO_MAX_VIDEO_SIZE:104857600}  # 100 МБ
   thumbnail-width: ${MINIO_THUMBNAIL_WIDTH:300}
   thumbnail-height: ${MINIO_THUMBNAIL_HEIGHT:300}
+
+# CORS Configuration для продакшена
+cors:
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://ihome24.ru,https://www.ihome24.ru,https://admin.ihome24.ru,https://api.ihome24.ru}
 
 # Logging configuration для продакшена
 logging:
