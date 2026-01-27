@@ -42,6 +42,10 @@ public class FileMetadata {
     @Enumerated(EnumType.STRING)
     private FileType fileType;
 
+    @Column(name = "media_size", length = 20)
+    @Enumerated(EnumType.STRING)
+    private MediaSize mediaSize;
+
     @Column(name = "product_id")
     private Long productId;
 
@@ -54,6 +58,13 @@ public class FileMetadata {
     @Column(name = "sort_order")
     @Builder.Default
     private Integer sortOrder = 0;
+
+    @Column(name = "is_main")
+    @Builder.Default
+    private Boolean isMain = false;
+
+    @Column(name = "file_group", length = 100)
+    private String fileGroup;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -75,5 +86,12 @@ public class FileMetadata {
     public enum FileType {
         IMAGE,
         VIDEO
+    }
+
+    public enum MediaSize {
+        ORIGINAL,
+        SMALL,
+        MEDIUM,
+        LARGE
     }
 }

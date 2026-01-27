@@ -4,9 +4,11 @@ import com.ihome24.ihome24.dto.request.category.CategoryRequest;
 import com.ihome24.ihome24.dto.response.category.CategoryResponse;
 import com.ihome24.ihome24.entity.category.Category;
 import com.ihome24.ihome24.repository.category.CategoryRepository;
+import com.ihome24.ihome24.service.storage.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,6 +18,7 @@ import java.util.stream.Collectors;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final FileService fileService;
 
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
@@ -98,6 +101,30 @@ public class CategoryService {
         }
 
         categoryRepository.delete(category);
+    }
+
+    @Transactional
+    public CategoryResponse updateCategoryImage(Long id, MultipartFile file) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Категория не найдена: " + id));
+        try {
+            String imageUrl = fileService.uploadCategoryImage(file, id);
+            category.setImageUrl(imageUrl);
+            Category updatedCategory = categoryRepository.save(category);
+            return mapToResponse(updatedCategory);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Не удалось загрузить изображение категории: " + e.getMessage());
+        }
+    }
+
+    @Transactional
+    public CategoryResponse deleteCategoryImage(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Категория не найдена: " + id));
+        fileService.deleteCategoryImage(id);
+        category.setImageUrl(null);
+        Category updatedCategory = categoryRepository.save(category);
+        return mapToResponse(updatedCategory);
     }
 
     private CategoryResponse mapToResponse(Category category) {

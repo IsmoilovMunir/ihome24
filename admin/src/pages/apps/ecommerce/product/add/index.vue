@@ -50,6 +50,7 @@ const removeCharacteristic = (index) => {
 // ========== MEDIA ==========
 const uploadedImages = ref([])
 const uploadedGalleryImages = ref([])
+const uploadedVideos = ref([])
 const mainImage = ref('')
 const galleryImages = ref([])
 const videoUrl = ref('')
@@ -135,6 +136,20 @@ const handleGalleryImageDeleted = (file) => {
     } else {
       mainImage.value = ''
     }
+  }
+}
+
+const handleVideoUploaded = (files) => {
+  uploadedVideos.value = files
+  if (files.length > 0 && files[0].url) {
+    videoUrl.value = files[0].url
+  }
+}
+
+const handleVideoDeleted = (file) => {
+  uploadedVideos.value = uploadedVideos.value.filter(f => f.id !== file.id)
+  if (uploadedVideos.value.length === 0) {
+    videoUrl.value = ''
   }
 }
 
@@ -477,6 +492,18 @@ const loadProductData = async () => {
     
     // Видео
     videoUrl.value = response.videoUrl || response.product?.media?.video || response.media?.video || ''
+    
+    try {
+      const videosResponse = await $api(`/admin/files/product/${productId.value}/videos`)
+      if (videosResponse && videosResponse.length > 0) {
+        uploadedVideos.value = videosResponse.slice(0, 1)
+        if (uploadedVideos.value[0]?.url) {
+          videoUrl.value = uploadedVideos.value[0].url
+        }
+      }
+    } catch (error) {
+      console.warn('Не удалось загрузить видео из MinIO:', error)
+    }
     
     // Варианты
     if (response.variants && response.variants.length > 0) {
@@ -1553,7 +1580,7 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
                   :product-id="productId"
                   file-type="IMAGE"
                   :multiple="false"
-                  :max-size="5242880"
+                :max-size="10485760"
                   @uploaded="handleImagesUploaded"
                   @deleted="handleImageDeleted"
                 />
@@ -1573,7 +1600,7 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
                   :product-id="productId"
                   file-type="IMAGE"
                   :multiple="true"
-                  :max-size="5242880"
+                  :max-size="10485760"
                   :max-files="4"
                   @uploaded="handleGalleryImagesUploaded"
                   @deleted="handleGalleryImageDeleted"
@@ -1643,10 +1670,23 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
 
               <VCol cols="12">
                 <VDivider class="my-4" />
+                <h6 class="text-h6 mb-4">
+                  Видео товара (опционально)
+                </h6>
+                <FileUploader
+                  v-model="uploadedVideos"
+                  :product-id="productId"
+                  file-type="VIDEO"
+                  :multiple="false"
+                  :max-size="104857600"
+                  @uploaded="handleVideoUploaded"
+                  @deleted="handleVideoDeleted"
+                />
                 <AppTextField
                   v-model="videoUrl"
                   label="Видео (URL)"
-                  placeholder="https://youtube.com/watch?v=..."
+                  placeholder="https://cdn.example.com/product.mp4"
+                  class="mt-4"
                 />
               </VCol>
             </VRow>

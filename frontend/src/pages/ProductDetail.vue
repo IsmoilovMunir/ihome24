@@ -14,8 +14,9 @@
           <div class="product-image-section">
             <div class="product-image-large" v-if="currentImageUrl">
               <img 
-                :src="currentImageUrl" 
+                :src="getSizedImageUrl(currentImageUrl, 'large')" 
                 :alt="product.name"
+                loading="lazy"
                 @error="handleImageError"
                 @load="() => console.log('Main image loaded:', currentImageUrl)"
               />
@@ -31,10 +32,11 @@
               <img 
                 v-for="(img, index) in product.gallery" 
                 :key="`gallery-${index}-${img}`"
-                :src="img" 
+                :src="getSizedImageUrl(img, 'small')" 
                 :alt="`${product.name} - изображение ${index + 1}`"
                 class="gallery-thumb"
                 :class="{ active: index === currentImageIndex }"
+                loading="lazy"
                 @click="selectImage(index)"
                 @error="(e) => { console.error('Gallery image error:', img, e); e.target.style.opacity = '0.3' }"
                 @load="() => console.log('Gallery image loaded:', img)"
@@ -207,6 +209,11 @@ const handleImageError = (event) => {
   event.target.style.display = 'none'
   // Или можно использовать data URL для прозрачного изображения
   // event.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="600" height="400"%3E%3Crect width="600" height="400" fill="%23f0f0f0"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EИзображение не найдено%3C/text%3E%3C/svg%3E'
+}
+
+const getSizedImageUrl = (url, size) => {
+  if (!url) return ''
+  return url.replace(/\/(small|medium|large|original)\//, `/${size}/`)
 }
 
 const selectImage = (index) => {

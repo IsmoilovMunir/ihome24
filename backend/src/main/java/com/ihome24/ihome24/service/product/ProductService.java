@@ -17,6 +17,7 @@ import com.ihome24.ihome24.entity.product.Product;
 import com.ihome24.ihome24.entity.product.ProductImage;
 import com.ihome24.ihome24.repository.category.CategoryRepository;
 import com.ihome24.ihome24.repository.product.ProductRepository;
+import com.ihome24.ihome24.service.storage.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +35,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ObjectMapper objectMapper;
+    private final FileService fileService;
 
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
@@ -364,6 +366,7 @@ public class ProductService {
         if (!productRepository.existsById(id)) {
             throw new IllegalArgumentException("Товар с ID " + id + " не найден");
         }
+        fileService.deleteProductFiles(id);
         productRepository.deleteById(id);
     }
 

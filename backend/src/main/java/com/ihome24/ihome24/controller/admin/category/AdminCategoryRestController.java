@@ -6,8 +6,10 @@ import com.ihome24.ihome24.service.category.CategoryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -41,6 +43,19 @@ public class AdminCategoryRestController {
     public ResponseEntity<CategoryResponse> updateCategory(@PathVariable Long id,
                                                           @Valid @RequestBody CategoryRequest request) {
         CategoryResponse response = categoryService.updateCategory(id, request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<CategoryResponse> uploadCategoryImage(@PathVariable Long id,
+                                                                @RequestParam("file") MultipartFile file) {
+        CategoryResponse response = categoryService.updateCategoryImage(id, file);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{id}/image")
+    public ResponseEntity<CategoryResponse> deleteCategoryImage(@PathVariable Long id) {
+        CategoryResponse response = categoryService.deleteCategoryImage(id);
         return ResponseEntity.ok(response);
     }
 

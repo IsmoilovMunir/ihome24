@@ -2,8 +2,9 @@
   <div class="product-card card">
     <div class="product-image">
       <img 
-        :src="product.imageUrl || '/placeholder.jpg'" 
+        :src="getSizedImageUrl(product.imageUrl, 'small') || '/placeholder.jpg'" 
         :alt="product.name"
+        loading="lazy"
         @error="handleImageError"
       />
     </div>
@@ -50,6 +51,12 @@ const formatPrice = (price) => {
 
 const handleImageError = (event) => {
   event.target.src = 'https://via.placeholder.com/300x200?text=No+Image'
+}
+
+const getSizedImageUrl = (url, size) => {
+  if (!url) return ''
+  const normalized = url.replace(/\/(small|medium|large|original)\//, `/${size}/`)
+  return normalized
 }
 
 const stripHtmlTags = (html) => {

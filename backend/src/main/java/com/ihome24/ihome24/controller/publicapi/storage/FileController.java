@@ -22,28 +22,40 @@ public class FileController {
 
     @GetMapping(value = "/**", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<byte[]> getFile(HttpServletRequest request) {
-        // Получаем путь из request URI, убирая префикс /api/files
         String requestPath = request.getRequestURI();
         String prefix = "/api/files";
-        String filePath = requestPath.startsWith(prefix) 
-            ? requestPath.substring(prefix.length()) 
-            : requestPath;
-        
-        // Убираем ведущий слэш
+        String filePath = requestPath.startsWith(prefix)
+                ? requestPath.substring(prefix.length())
+                : requestPath;
+
         if (filePath.startsWith("/")) {
             filePath = filePath.substring(1);
         }
-        
+
         if (filePath.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
+
         try {
-            InputStream inputStream = fileService.getFile(filePath);
+            String[] parts = filePath.split("/", 2);
+            String bucketName = parts.length > 1 ? parts[0] : null;
+            String objectName = parts.length > 1 ? parts[1] : parts[0];
+
+            InputStream inputStream;
+            if (bucketName != null && parts.length > 1) {
+                try {
+                    inputStream = fileService.getFile(bucketName, objectName);
+                } catch (RuntimeException e) {
+                    inputStream = fileService.getFile(filePath);
+                }
+            } else {
+                inputStream = fileService.getFile(objectName);
+            }
+
             byte[] fileData = inputStream.readAllBytes();
             inputStream.close();
 
-            // Определяем Content-Type на основе расширения файла
-            String contentType = determineContentType(filePath);
+            String contentType = determineContentType(objectName);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.parseMediaType(contentType));
