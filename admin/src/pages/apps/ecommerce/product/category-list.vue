@@ -7,6 +7,12 @@ const {
   execute: fetchCategories,
 } = await useApi(createUrl('/admin/categories'))
 
+const withCacheBuster = url => {
+  if (!url) return url
+  const separator = url.includes('?') ? '&' : '?'
+  return `${url}${separator}t=${Date.now()}`
+}
+
 // Преобразуем данные от бэкенда в формат, ожидаемый фронтендом
 const categoryData = computed(() => {
   if (!categoriesData.value || !Array.isArray(categoriesData.value)) {
@@ -19,7 +25,7 @@ const categoryData = computed(() => {
     description: category.description || '',
     totalProduct: 0, // TODO: Добавить подсчет продуктов по категории
     totalEarning: 0, // TODO: Добавить подсчет доходов по категории
-    image: category.imageUrl || '',
+    image: withCacheBuster(category.imageUrl || ''),
   }))
 })
 

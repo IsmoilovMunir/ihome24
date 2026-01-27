@@ -101,6 +101,56 @@ public class FileService {
     }
 
     @Transactional
+    public String uploadCategoryImage(MultipartFile file, Long categoryId) throws IOException {
+        validateImageFile(file);
+
+        String originalName = file.getOriginalFilename();
+        String extension = normalizeExtension(getFileExtension(originalName), file.getContentType());
+        String baseName = "category_image";
+        String categoryFolder = "categories/" + categoryId;
+        String bucketName = minIOService.getProductImagesBucket();
+
+        byte[] originalBytes = file.getBytes();
+        String originalObjectName = categoryFolder + "/original/" + baseName + extension;
+        minIOService.uploadFile(bucketName, originalObjectName, new ByteArrayInputStream(originalBytes), file.getContentType(), originalBytes.length);
+
+        String variantFormat = getVariantFormat(file.getContentType(), extension);
+        String variantExtension = "." + variantFormat;
+        String variantContentType = resolveImageContentType(variantFormat);
+
+        byte[] smallBytes = resizeToFormat(originalBytes, imageSmallWidth, imageSmallQuality, variantFormat);
+        byte[] mediumBytes = resizeToFormat(originalBytes, imageMediumWidth, imageMediumQuality, variantFormat);
+        byte[] largeBytes = resizeToFormat(originalBytes, imageLargeWidth, imageLargeQuality, variantFormat);
+
+        String smallObjectName = categoryFolder + "/small/" + baseName + variantExtension;
+        String mediumObjectName = categoryFolder + "/medium/" + baseName + variantExtension;
+        String largeObjectName = categoryFolder + "/large/" + baseName + variantExtension;
+
+        minIOService.uploadFile(bucketName, smallObjectName, smallBytes, variantContentType);
+        minIOService.uploadFile(bucketName, mediumObjectName, mediumBytes, variantContentType);
+        minIOService.uploadFile(bucketName, largeObjectName, largeBytes, variantContentType);
+
+        return minIOService.getFileUrl(bucketName, mediumObjectName);
+    }
+
+    @Transactional
+    public void deleteCategoryImage(Long categoryId) {
+        String baseName = "category_image";
+        String categoryFolder = "categories/" + categoryId;
+        String bucketName = minIOService.getProductImagesBucket();
+
+        String[] extensions = { ".png", ".jpg", ".jpeg", ".webp" };
+        String[] sizes = { "original", "small", "medium", "large" };
+
+        for (String size : sizes) {
+            for (String extension : extensions) {
+                String objectName = categoryFolder + "/" + size + "/" + baseName + extension;
+                safeDelete(bucketName, objectName);
+            }
+        }
+    }
+
+    @Transactional
     public void deleteFile(Long fileId, Long userId) {
         FileMetadata metadata = fileMetadataRepository.findById(fileId)
                 .orElseThrow(() -> new IllegalArgumentException("File not found: " + fileId));
@@ -222,6 +272,40 @@ public class FileService {
             String maxSizeMB = String.format("%.2f", maxSize / (1024.0 * 1024.0));
             throw new IllegalArgumentException(
                     String.format("File size exceeds maximum allowed size: %s MB", maxSizeMB));
+        }
+    }
+
+    private void validateImageFile(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("File is empty or null");
+        }
+
+        String contentType = file.getContentType();
+        String originalFilename = file.getOriginalFilename();
+
+        if (contentType == null || originalFilename == null) {
+            throw new IllegalArgumentException("File content type or name is missing");
+        }
+
+        boolean isImage = ALLOWED_IMAGE_TYPES.contains(contentType.toLowerCase(Locale.ROOT)) ||
+                IMAGE_EXTENSIONS.matcher(originalFilename).matches();
+
+        if (!isImage) {
+            throw new IllegalArgumentException("Unsupported file type. Allowed: JPG, JPEG, PNG, WEBP");
+        }
+
+        if (file.getSize() > maxImageSize) {
+            String maxSizeMB = String.format("%.2f", maxImageSize / (1024.0 * 1024.0));
+            throw new IllegalArgumentException(
+                    String.format("File size exceeds maximum allowed size: %s MB", maxSizeMB));
+        }
+    }
+
+    private void safeDelete(String bucketName, String objectName) {
+        try {
+            minIOService.deleteFile(bucketName, objectName);
+        } catch (Exception e) {
+            log.debug("Category image delete skipped for {}: {}", objectName, e.getMessage());
         }
     }
 
