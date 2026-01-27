@@ -13,8 +13,16 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long
     List<FileMetadata> findByProductId(Long productId);
     
     List<FileMetadata> findByProductIdAndFileType(Long productId, FileMetadata.FileType fileType);
+
+    List<FileMetadata> findByProductIdAndFileTypeAndMediaSize(Long productId, FileMetadata.FileType fileType, FileMetadata.MediaSize mediaSize);
     
     Optional<FileMetadata> findByFilePath(String filePath);
     
     List<FileMetadata> findByUserId(Long userId);
+
+    List<FileMetadata> findByFileGroupAndProductIdAndFileType(String fileGroup, Long productId, FileMetadata.FileType fileType);
+
+    Optional<FileMetadata> findFirstByProductIdAndFileTypeAndIsMainTrue(Long productId, FileMetadata.FileType fileType);
+
+    Optional<FileMetadata> findFirstByFileGroupAndProductIdAndFileTypeAndMediaSize(String fileGroup, Long productId, FileMetadata.FileType fileType, FileMetadata.MediaSize mediaSize);
 }

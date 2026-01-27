@@ -1,6 +1,7 @@
 package com.ihome24.ihome24.service.storage;
 
 import io.minio.*;
+import io.minio.http.Method;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,6 +10,8 @@ import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Slf4j
 @Service
@@ -18,12 +21,24 @@ public class MinIOService {
     private final MinioClient minioClient;
 
     @Value("${minio.bucket-name}")
-    private String bucketName;
+    private String defaultBucketName;
+
+    @Value("${minio.product-images-bucket:product-images}")
+    private String productImagesBucket;
+
+    @Value("${minio.product-videos-bucket:product-videos}")
+    private String productVideosBucket;
 
     @Value("${minio.initialize-on-startup:true}")
     private boolean initializeOnStartup;
 
-    private volatile boolean bucketInitialized = false;
+    @Value("${minio.presigned-url-enabled:false}")
+    private boolean presignedUrlEnabled;
+
+    @Value("${minio.presigned-url-expiry-seconds:3600}")
+    private int presignedUrlExpirySeconds;
+
+    private final Set<String> initializedBuckets = ConcurrentHashMap.newKeySet();
 
     @PostConstruct
     private void initializeBucket() {
@@ -33,7 +48,9 @@ public class MinIOService {
         }
 
         try {
-            ensureBucketExists();
+            ensureBucketExists(defaultBucketName);
+            ensureBucketExists(productImagesBucket);
+            ensureBucketExists(productVideosBucket);
         } catch (Exception e) {
             log.warn("Failed to initialize MinIO bucket on startup: {}. Bucket will be created on first use.", e.getMessage());
             // Не бросаем исключение, чтобы приложение могло запуститься
@@ -41,13 +58,13 @@ public class MinIOService {
         }
     }
 
-    private void ensureBucketExists() {
-        if (bucketInitialized) {
+    private void ensureBucketExists(String bucketName) {
+        if (initializedBuckets.contains(bucketName)) {
             return;
         }
 
         synchronized (this) {
-            if (bucketInitialized) {
+            if (initializedBuckets.contains(bucketName)) {
                 return;
             }
 
@@ -63,7 +80,7 @@ public class MinIOService {
                 } else {
                     log.info("Bucket '{}' already exists", bucketName);
                 }
-                bucketInitialized = true;
+                initializedBuckets.add(bucketName);
             } catch (Exception e) {
                 log.error("Error checking/creating bucket: {}", e.getMessage(), e);
                 throw new RuntimeException("Failed to initialize MinIO bucket", e);
@@ -71,8 +88,8 @@ public class MinIOService {
         }
     }
 
-    public void uploadFile(String objectName, InputStream inputStream, String contentType, long size) {
-        ensureBucketExists();
+    public void uploadFile(String bucketName, String objectName, InputStream inputStream, String contentType, long size) {
+        ensureBucketExists(bucketName);
         try {
             minioClient.putObject(PutObjectArgs.builder()
                     .bucket(bucketName)
@@ -87,11 +104,19 @@ public class MinIOService {
         }
     }
 
-    public void uploadFile(String objectName, byte[] data, String contentType) {
-        uploadFile(objectName, new ByteArrayInputStream(data), contentType, data.length);
+    public void uploadFile(String bucketName, String objectName, byte[] data, String contentType) {
+        uploadFile(bucketName, objectName, new ByteArrayInputStream(data), contentType, data.length);
     }
 
-    public InputStream getFile(String objectName) {
+    public void uploadFile(String objectName, InputStream inputStream, String contentType, long size) {
+        uploadFile(defaultBucketName, objectName, inputStream, contentType, size);
+    }
+
+    public void uploadFile(String objectName, byte[] data, String contentType) {
+        uploadFile(defaultBucketName, objectName, data, contentType);
+    }
+
+    public InputStream getFile(String bucketName, String objectName) {
         try {
             return minioClient.getObject(GetObjectArgs.builder()
                     .bucket(bucketName)
@@ -103,7 +128,11 @@ public class MinIOService {
         }
     }
 
-    public void deleteFile(String objectName) {
+    public InputStream getFile(String objectName) {
+        return getFile(defaultBucketName, objectName);
+    }
+
+    public void deleteFile(String bucketName, String objectName) {
         try {
             minioClient.removeObject(RemoveObjectArgs.builder()
                     .bucket(bucketName)
@@ -116,7 +145,11 @@ public class MinIOService {
         }
     }
 
-    public boolean fileExists(String objectName) {
+    public void deleteFile(String objectName) {
+        deleteFile(defaultBucketName, objectName);
+    }
+
+    public boolean fileExists(String bucketName, String objectName) {
         try {
             minioClient.statObject(StatObjectArgs.builder()
                     .bucket(bucketName)
@@ -128,13 +161,39 @@ public class MinIOService {
         }
     }
 
+    public boolean fileExists(String objectName) {
+        return fileExists(defaultBucketName, objectName);
+    }
+
+    public String getFileUrl(String bucketName, String objectName) {
+        if (presignedUrlEnabled) {
+            try {
+                return minioClient.getPresignedObjectUrl(GetPresignedObjectUrlArgs.builder()
+                        .bucket(bucketName)
+                        .object(objectName)
+                        .method(Method.GET)
+                        .expiry(presignedUrlExpirySeconds)
+                        .build());
+            } catch (Exception e) {
+                log.warn("Failed to generate presigned URL for {}: {}", objectName, e.getMessage());
+            }
+        }
+        return "/api/files/" + bucketName + "/" + objectName;
+    }
+
     public String getFileUrl(String objectName) {
-        // В продакшене можно использовать presigned URL
-        // Для разработки возвращаем путь к API endpoint
-        return "/api/files/" + objectName;
+        return getFileUrl(defaultBucketName, objectName);
     }
 
     public String getBucketName() {
-        return bucketName;
+        return defaultBucketName;
+    }
+
+    public String getProductImagesBucket() {
+        return productImagesBucket;
+    }
+
+    public String getProductVideosBucket() {
+        return productVideosBucket;
     }
 }

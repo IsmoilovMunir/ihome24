@@ -294,25 +294,25 @@ const accept = computed(() => {
   if (props.fileType === 'IMAGE') {
     return 'image/png,image/jpeg,image/jpg,image/webp' // PNG приоритетный
   } else if (props.fileType === 'VIDEO') {
-    return 'video/mp4,video/webm,video/x-msvideo'
+    return 'video/mp4,video/webm'
   }
-  return 'image/png,image/jpeg,image/jpg,image/webp,video/mp4,video/webm,video/x-msvideo'
+  return 'image/png,image/jpeg,image/jpg,image/webp,video/mp4,video/webm'
 })
 
 const allowedTypesText = computed(() => {
   if (props.fileType === 'IMAGE') {
     return 'PNG (рекомендуется), JPG, JPEG, WEBP'
   } else if (props.fileType === 'VIDEO') {
-    return 'MP4, WEBM, AVI'
+    return 'MP4, WEBM'
   }
-  return 'PNG, JPG, JPEG, WEBP (фото), MP4, WEBM, AVI (видео)'
+  return 'PNG, JPG, JPEG, WEBP (фото), MP4, WEBM (видео)'
 })
 
 const maxSizeText = computed(() => {
   if (props.maxSize) {
     return formatFileSize(props.maxSize)
   }
-  return props.fileType === 'IMAGE' ? '5 МБ' : '100 МБ'
+  return props.fileType === 'IMAGE' ? '10 МБ' : '100 МБ'
 })
 
 const triggerFileInput = () => {
@@ -465,7 +465,7 @@ const removeFile = async (file, index) => {
 const validateFile = (file) => {
   // Check file type
   const allowedImageTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'] // PNG приоритетный
-  const allowedVideoTypes = ['video/mp4', 'video/webm', 'video/x-msvideo']
+  const allowedVideoTypes = ['video/mp4', 'video/webm']
   
   const isImage = allowedImageTypes.includes(file.type)
   const isVideo = allowedVideoTypes.includes(file.type)
@@ -476,7 +476,7 @@ const validateFile = (file) => {
   }
 
   if (props.fileType === 'VIDEO' && !isVideo) {
-    error.value = 'Разрешены только видео (MP4, WEBM, AVI)'
+    error.value = 'Разрешены только видео (MP4, WEBM)'
     return false
   }
 
@@ -486,7 +486,7 @@ const validateFile = (file) => {
   }
 
   // Check file size (по умолчанию 5 МБ для изображений)
-  const maxSize = props.maxSize || (props.fileType === 'IMAGE' ? 5 * 1024 * 1024 : 100 * 1024 * 1024)
+  const maxSize = props.maxSize || (props.fileType === 'IMAGE' ? 10 * 1024 * 1024 : 100 * 1024 * 1024)
   if (file.size > maxSize) {
     error.value = `Размер файла превышает максимально допустимый: ${formatFileSize(maxSize)}`
     return false

@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: ${SPRING_MAX_FILE_SIZE:20MB}
+      max-request-size: ${SPRING_MAX_REQUEST_SIZE:25MB}
   # PostgreSQL Database Configuration
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/ihome24}
@@ -75,11 +79,20 @@ minio:
   access-key: ${MINIO_ACCESS_KEY:iHome24mino}
   secret-key: ${MINIO_SECRET_KEY:iHome242025mino}
   bucket-name: ${MINIO_BUCKET_NAME:ihome24-media}
+  product-images-bucket: ${MINIO_PRODUCT_IMAGES_BUCKET:product-images}
+  product-videos-bucket: ${MINIO_PRODUCT_VIDEOS_BUCKET:product-videos}
   # Инициализировать bucket при старте приложения (false - создаст при первом использовании)
   initialize-on-startup: ${MINIO_INITIALIZE_ON_STARTUP:false}
+  presigned-url-enabled: ${MINIO_PRESIGNED_URL_ENABLED:false}
+  presigned-url-expiry-seconds: ${MINIO_PRESIGNED_URL_EXPIRY_SECONDS:3600}
   # Максимальные размеры файлов (в байтах)
-  max-image-size: ${MINIO_MAX_IMAGE_SIZE:5242880}  # 5 МБ
+  max-image-size: ${MINIO_MAX_IMAGE_SIZE:10485760}  # 10 МБ
   max-video-size: ${MINIO_MAX_VIDEO_SIZE:104857600}  # 100 МБ
-  # Размер превью для фото (в пикселях)
-  thumbnail-width: ${MINIO_THUMBNAIL_WIDTH:300}
-  thumbnail-height: ${MINIO_THUMBNAIL_HEIGHT:300}
+  # Размеры изображений (в пикселях)
+  image-size-small: ${MINIO_IMAGE_SIZE_SMALL:300}
+  image-size-medium: ${MINIO_IMAGE_SIZE_MEDIUM:600}
+  image-size-large: ${MINIO_IMAGE_SIZE_LARGE:1200}
+  # Качество изображений (0-1)
+  image-quality-small: ${MINIO_IMAGE_QUALITY_SMALL:0.7}
+  image-quality-medium: ${MINIO_IMAGE_QUALITY_MEDIUM:0.75}
+  image-quality-large: ${MINIO_IMAGE_QUALITY_LARGE:0.8}

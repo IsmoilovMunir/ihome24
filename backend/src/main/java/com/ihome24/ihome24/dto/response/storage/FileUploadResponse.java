@@ -20,8 +20,10 @@ public class FileUploadResponse {
     private String contentType;
     private Long fileSize;
     private String fileType;
+    private String mediaSize;
     private String url;
     private String thumbnailUrl;
+    private Boolean isMain;
     private LocalDateTime createdAt;
     private Integer sortOrder;
 }
