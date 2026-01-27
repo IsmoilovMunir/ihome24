@@ -54,6 +54,9 @@ const page = ref(1)
 const searchQuery = ref('')
 const isAddProductDrawerOpen = ref(false)
 const editingCategoryId = ref(null)
+const isDetailsDialogOpen = ref(false)
+const selectedCategory = ref(null)
+const isDeletingCategory = ref(false)
 
 const openEditDrawer = (categoryId) => {
   editingCategoryId.value = categoryId
@@ -67,6 +70,28 @@ const closeDrawer = () => {
 const openAddDrawer = () => {
   editingCategoryId.value = null
   isAddProductDrawerOpen.value = true
+}
+
+const openDetailsDialog = category => {
+  selectedCategory.value = category
+  isDetailsDialogOpen.value = true
+}
+
+const deleteCategory = async categoryId => {
+  if (!categoryId || isDeletingCategory.value) return
+  const confirmed = window.confirm('Удалить категорию?')
+  if (!confirmed) return
+
+  try {
+    isDeletingCategory.value = true
+    await $api(`admin/categories/${categoryId}`, { method: 'DELETE' })
+    await fetchCategories()
+  } catch (error) {
+    console.error('Ошибка при удалении категории:', error)
+    alert('Не удалось удалить категорию')
+  } finally {
+    isDeletingCategory.value = false
+  }
 }
 </script>
 
@@ -117,12 +142,24 @@ const openAddDrawer = () => {
                 size="22"
               />
             </IconBtn>
-            <IconBtn>
-              <VIcon
-                icon="tabler-dots-vertical"
-                size="22"
-              />
-            </IconBtn>
+            <VMenu>
+              <template #activator="{ props }">
+                <IconBtn v-bind="props">
+                  <VIcon
+                    icon="tabler-dots-vertical"
+                    size="22"
+                  />
+                </IconBtn>
+              </template>
+              <VList>
+                <VListItem @click="openDetailsDialog(item)">
+                  <VListItemTitle>Детали</VListItemTitle>
+                </VListItem>
+                <VListItem @click="deleteCategory(item.id)">
+                  <VListItemTitle>Удалить</VListItemTitle>
+                </VListItem>
+              </VList>
+            </VMenu>
           </template>
           <template #item.categoryTitle="{ item }">
             <div class="d-flex gap-x-3 align-center">
@@ -176,6 +213,33 @@ const openAddDrawer = () => {
       @category-created="fetchCategories"
       @drawer-closed="closeDrawer"
     />
+
+    <VDialog v-model="isDetailsDialogOpen" max-width="520">
+      <VCard>
+        <VCardTitle>Детали категории</VCardTitle>
+        <VCardText v-if="selectedCategory">
+          <div class="d-flex flex-column gap-2">
+            <div><strong>ID:</strong> {{ selectedCategory.id }}</div>
+            <div><strong>Название:</strong> {{ selectedCategory.categoryTitle }}</div>
+            <div><strong>Описание:</strong> {{ selectedCategory.description || '—' }}</div>
+            <div v-if="selectedCategory.image">
+              <strong>Фото:</strong>
+              <div class="mt-2">
+                <img
+                  :src="selectedCategory.image"
+                  alt="Фото категории"
+                  style="max-width: 100%; border-radius: 6px;"
+                >
+              </div>
+            </div>
+          </div>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn variant="tonal" @click="isDetailsDialogOpen = false">Закрыть</VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
   </div>
 </template>
 
