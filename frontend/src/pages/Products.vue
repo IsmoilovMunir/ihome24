@@ -1,110 +1,97 @@
 <template>
-  <div class="products-page">
-    <div class="container">
-      <div class="page-header">
-        <h1>Каталог товаров</h1>
-        <div class="search-box">
-          <input 
-            type="text" 
-            v-model="searchQuery" 
-            placeholder="Поиск товаров..."
-            @input="handleSearch"
-            class="search-input"
+  <div class="container mx-auto px-4 py-8 bg-[#3A3331]">
+    <div class="flex flex-col md:flex-row gap-8">
+      <!-- Sidebar -->
+      <aside class="w-full md:w-64">
+        <div class="bg-white rounded-lg shadow-md p-6 sticky top-20">
+          <h3 class="text-lg font-semibold mb-4 text-gray-900">Категории</h3>
+          <ul class="space-y-2">
+            <li>
+              <router-link
+                to="/products"
+                class="block text-gray-700 hover:text-primary-600 transition-colors"
+                :class="{ 'text-primary-600 font-semibold': !selectedCategoryId }"
+              >
+                Все товары
+              </router-link>
+            </li>
+            <li
+              v-for="category in productsStore.categories"
+              :key="category.id"
+            >
+              <router-link
+                :to="`/products?category=${category.id}`"
+                class="block text-gray-700 hover:text-primary-600 transition-colors"
+                :class="{ 'text-primary-600 font-semibold': selectedCategoryId === category.id }"
+              >
+                {{ category.name }}
+              </router-link>
+            </li>
+          </ul>
+        </div>
+      </aside>
+
+      <!-- Products Grid -->
+      <main class="flex-1">
+        <div class="mb-6">
+          <h1 class="text-3xl font-bold text-white mb-2">Каталог товаров</h1>
+          <p v-if="selectedCategory" class="text-gray-300">
+            Категория: {{ selectedCategory.name }}
+          </p>
+        </div>
+
+        <div v-if="productsStore.loading" class="text-center py-12">
+          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+
+        <div v-else-if="productsStore.error" class="text-center py-12 text-red-400">
+          Ошибка загрузки товаров: {{ productsStore.error }}
+        </div>
+
+        <div v-else-if="filteredProducts.length === 0" class="text-center py-12 text-gray-400">
+          Товары не найдены
+        </div>
+
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <ProductCard
+            v-for="product in filteredProducts"
+            :key="product.id"
+            :product="product"
           />
         </div>
-      </div>
-
-      <div v-if="loading" class="loading">
-        Загрузка товаров...
-      </div>
-
-      <div v-if="error" class="error">
-        {{ error }}
-      </div>
-
-      <div v-if="!loading && !error && products.length === 0" class="no-products">
-        <p>Товары не найдены</p>
-      </div>
-
-      <div v-if="!loading && products.length > 0" class="products-grid grid grid-3">
-        <ProductCard 
-          v-for="product in products" 
-          :key="product.id" 
-          :product="product"
-          @click="goToProduct(product.id)"
-        />
-      </div>
+      </main>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
-import { useProductsStore } from '../store/products'
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
+import { useProductsStore } from '../stores/products'
 import ProductCard from '../components/ProductCard.vue'
 
-const router = useRouter()
+const route = useRoute()
 const productsStore = useProductsStore()
 
-const { products, loading, error } = productsStore
-const searchQuery = ref('')
+const selectedCategoryId = computed(() => {
+  const categoryId = route.query.category
+  return categoryId ? Number(categoryId) : null
+})
 
-const goToProduct = (id) => {
-  router.push(`/products/${id}`)
-}
+const selectedCategory = computed(() => {
+  if (!selectedCategoryId.value) return null
+  return productsStore.categories.find(c => c.id === selectedCategoryId.value)
+})
 
-const handleSearch = () => {
-  if (searchQuery.value.trim()) {
-    productsStore.searchProducts(searchQuery.value)
-  } else {
-    productsStore.fetchProducts()
+const filteredProducts = computed(() => {
+  if (!selectedCategoryId.value) {
+    return productsStore.products
   }
-}
+  return productsStore.productsByCategory(selectedCategoryId.value)
+})
 
-onMounted(() => {
-  productsStore.fetchProducts()
+onMounted(async () => {
+  await productsStore.fetchProducts()
+  await productsStore.fetchCategories()
 })
 </script>
-
-<style scoped>
-.products-page {
-  padding: 2rem 0;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-header h1 {
-  font-size: 2rem;
-}
-
-.search-box {
-  flex: 1;
-  max-width: 400px;
-}
-
-.search-input {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 1rem;
-}
-
-.no-products {
-  text-align: center;
-  padding: 3rem;
-  color: #666;
-}
-
-.products-grid {
-  margin-top: 2rem;
-}
-</style>

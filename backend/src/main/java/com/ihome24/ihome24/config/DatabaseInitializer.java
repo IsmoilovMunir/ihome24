@@ -185,9 +185,6 @@ public class DatabaseInitializer implements CommandLineRunner {
 
         if (!adminExists) {
             log.info("Creating default admin user...");
-            log.info("Admin username: {}", adminUsername);
-            log.info("Admin email: {}", adminEmail);
-            log.info("Password change required: {}", adminPasswordChangeRequired);
             
             User admin = User.builder()
                     .username(adminUsername)
@@ -207,17 +204,11 @@ public class DatabaseInitializer implements CommandLineRunner {
 
             userRepository.save(admin);
             
+            log.info("✓ Admin user created successfully");
+            log.info("  Username: {}", adminUsername);
+            log.info("  Email: {}", adminEmail);
             if (adminPasswordChangeRequired) {
-                log.warn("═══════════════════════════════════════════════════════════════");
-                log.warn("⚠️  ВНИМАНИЕ: Администратор создан с временным паролем!");
-                log.warn("⚠️  Username: {}", adminUsername);
-                log.warn("⚠️  Password: {}", adminPassword);
-                log.warn("⚠️  Необходимо сменить пароль при первом входе!");
-                log.warn("═══════════════════════════════════════════════════════════════");
-            } else {
-                log.info("✓ Admin user created successfully");
-                log.info("  Username: {}", adminUsername);
-                log.info("  Email: {}", adminEmail);
+                log.info("  Password change required: true");
             }
         } else {
             log.info("Admin user already exists. Skipping creation.");

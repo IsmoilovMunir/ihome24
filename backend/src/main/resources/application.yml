@@ -3,31 +3,37 @@ spring:
     multipart:
       max-file-size: ${SPRING_MAX_FILE_SIZE:20MB}
       max-request-size: ${SPRING_MAX_REQUEST_SIZE:25MB}
-  # PostgreSQL Database Configuration
+  # Database Configuration
+  # По умолчанию используется H2 для разработки без Docker
+  # Для использования PostgreSQL установите переменные окружения:
+  # SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5434/ihome24
+  # SPRING_DATASOURCE_USERNAME=iHome24db
+  # SPRING_DATASOURCE_PASSWORD=iHome242025db
+  # И измените driver-class-name на org.postgresql.Driver
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5434/ihome24}
-    username: ${SPRING_DATASOURCE_USERNAME:iHome24db}
-    password: ${SPRING_DATASOURCE_PASSWORD:iHome242025db}
-    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:ihome24;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
 
   jpa:
     hibernate:
       ddl-auto: update  # Автоматическое создание таблиц из сущностей
-    show-sql: ${SHOW_SQL:false}
+    show-sql: ${SHOW_SQL:true}
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: ${HIBERNATE_DIALECT:org.hibernate.dialect.H2Dialect}
     defer-datasource-initialization: false
 
-  # H2 Database (только для локальной разработки без Docker)
+  # H2 Database Console (доступна на http://localhost:8080/h2-console)
   h2:
     console:
-      enabled: ${H2_CONSOLE_ENABLED:false}
+      enabled: ${H2_CONSOLE_ENABLED:true}
       path: /h2-console
 
   liquibase:
-    enabled: ${LIQUIBASE_ENABLED:false}
+    enabled: ${LIQUIBASE_ENABLED:false}  # Отключено для H2, используется ddl-auto=update
     change-log: classpath:db/changelog/db.changelog-master.xml
 
   mvc:

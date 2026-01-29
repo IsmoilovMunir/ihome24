@@ -16,9 +16,8 @@ public class AuthController {
     public ResponseEntity<Map<String, String>> loginInfo() {
         Map<String, String> response = new HashMap<>();
         response.put("message", "Для авторизации отправьте POST запрос на /api/auth/login с параметрами username и password");
-        response.put("username", "admin");
-        response.put("password", "admin");
         response.put("loginUrl", "/api/auth/login");
+        response.put("note", "Используйте учетные данные администратора для входа");
         return ResponseEntity.ok(response);
     }
 }

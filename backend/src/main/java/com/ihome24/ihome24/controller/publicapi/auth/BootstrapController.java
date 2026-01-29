@@ -67,13 +67,12 @@ public class BootstrapController {
 
         admin = userRepository.save(admin);
 
-        log.info("✓ First admin created: username=admin, email=ismoilov.munir97@gmail.com, password=admin");
+        log.info("✓ First admin created: username={}, email={}", admin.getUsername(), admin.getEmail());
 
         Map<String, Object> response = new HashMap<>();
         response.put("message", "First admin created successfully");
         response.put("username", admin.getUsername());
         response.put("email", admin.getEmail());
-        response.put("password", "admin");
         response.put("note", "Please change the password after first login");
 
         return ResponseEntity.ok(response);
