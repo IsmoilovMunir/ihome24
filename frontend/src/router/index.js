@@ -6,6 +6,7 @@ import Cart from '../pages/Cart.vue'
 import Checkout from '../pages/Checkout.vue'
 import Login from '../pages/Login.vue'
 import Register from '../pages/Register.vue'
+import Search from '../pages/Search.vue'
 
 const routes = [
   {
@@ -42,6 +43,11 @@ const routes = [
     path: '/register',
     name: 'Register',
     component: Register,
+  },
+  {
+    path: '/search',
+    name: 'Search',
+    component: Search,
   },
 ]
 

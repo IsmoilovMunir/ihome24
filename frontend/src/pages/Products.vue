@@ -167,17 +167,28 @@
               </div>
 
               <div v-else>
-                <!-- Показываем дочерние категории -->
+                <!-- Показываем дочерние категории (уровень 2 или 3) -->
                 <CatalogCategoryGrid
                   :categories="childCategoriesToShow"
                   :special-categories-config="specialCategoriesConfig"
                 />
                 
-                <!-- Показываем товары категории уровня 1 после категорий (если есть) -->
-                <div v-if="isMobile && selectedCategory && !selectedCategory.parentId && categoryLevel1Products.length > 0" class="mt-6">
+                <!-- Когда на уровне 1 показываем категории уровня 3 — показываем товары категорий уровня 2 -->
+                <div v-if="isMobile && selectedCategory && level2ProductsWhenOnLevel1.length > 0" class="mt-6">
                   <div class="grid grid-cols-2 gap-4">
                     <ProductCard
-                      v-for="product in categoryLevel1Products"
+                      v-for="product in level2ProductsWhenOnLevel1"
+                      :key="product.id"
+                      :product="product"
+                    />
+                  </div>
+                </div>
+                
+                <!-- Товары текущей выбранной категории (уровень 1, 2 или 3) -->
+                <div v-if="isMobile && selectedCategory && selectedCategoryProducts.length > 0" class="mt-6">
+                  <div class="grid grid-cols-2 gap-4">
+                    <ProductCard
+                      v-for="product in selectedCategoryProducts"
                       :key="product.id"
                       :product="product"
                     />
@@ -200,7 +211,7 @@
                 Товары не найдены
               </div>
 
-              <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div v-else class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 <ProductCard
                   v-for="product in filteredProducts"
                   :key="product.id"
@@ -302,24 +313,52 @@ const childCategoriesToShow = computed(() => {
     return level2Categories
   }
   
-  // Для категорий уровня 2 и ниже не показываем дочерние категории (показываем товары)
-  return []
-})
-
-// Получить товары категории уровня 1 (для показа между дочерними категориями на мобильных)
-const categoryLevel1Products = computed(() => {
-  if (!selectedCategory.value || !isMobile.value) return []
-  
-  // Только для категорий уровня 1 (без parentId)
-  if (!selectedCategory.value.parentId) {
-    // Получаем товары, которые принадлежат именно этой категории (не дочерним)
-    return productsStore.products.filter(p => {
-      if (!p.category || !p.category.id) return false
-      return p.category.id === selectedCategory.value.id
-    })
+  // На мобильных для категории уровня 2 показываем категории уровня 3
+  if (isMobile.value && selectedCategory.value.parentId) {
+    const parent = productsStore.categories.find(c => c.id === selectedCategory.value.parentId)
+    // Если родитель без parentId — это категория уровня 2
+    if (parent && !parent.parentId) {
+      const level3Categories = productsStore.categories.filter(
+        cat => cat.parentId === selectedCategory.value.id && cat.imageUrl
+      )
+      return level3Categories
+    }
   }
   
   return []
+})
+
+// Товары текущей выбранной категории (для показа вместе с дочерними категориями на 1, 2 и 3 уровне)
+const selectedCategoryProducts = computed(() => {
+  if (!selectedCategory.value || !isMobile.value) return []
+  
+  // Товары, которые принадлежат именно выбранной категории (не дочерним)
+  return productsStore.products.filter(p => {
+    if (!p.category || !p.category.id) return false
+    return p.category.id === selectedCategory.value.id
+  })
+})
+
+// Товары категорий уровня 2 (когда на уровне 1 показываем категории уровня 3 — уровень 2 пропущен, но его товары показываем)
+const level2ProductsWhenOnLevel1 = computed(() => {
+  if (!selectedCategory.value || !isMobile.value) return []
+  
+  // Только когда выбрана категория уровня 1
+  if (selectedCategory.value.parentId) return []
+  
+  // Все категории уровня 2 под этой категорией уровня 1
+  const level2Categories = productsStore.categories.filter(
+    cat => cat.parentId === selectedCategory.value.id
+  )
+  const level2Ids = level2Categories.map(c => c.id)
+  
+  if (level2Ids.length === 0) return []
+  
+  // Товары, принадлежащие любой из категорий уровня 2
+  return productsStore.products.filter(p => {
+    if (!p.category || !p.category.id) return false
+    return level2Ids.includes(p.category.id)
+  })
 })
 
 
@@ -345,16 +384,22 @@ const topLevelCategory = computed(() => {
   return null
 })
 
-// Получить категорию для баннера (показываем баннер для категорий верхнего уровня)
+// Получить категорию для баннера
+// Десктоп: баннер с категорией уровня 1 при любом выбранном уровне (1, 2 или 3)
+// Мобильные: баннер только когда выбрана категория уровня 1
 const bannerCategory = computed(() => {
   if (!selectedCategory.value) return null
   
-  // Баннер показывается когда выбрана категория уровня 1 (верхнего уровня)
-  if (!selectedCategory.value.parentId) {
-    return selectedCategory.value
+  if (isMobile.value) {
+    // На мобильных — баннер только для категории уровня 1
+    if (!selectedCategory.value.parentId) {
+      return selectedCategory.value
+    }
+    return null
   }
   
-  return null
+  // На десктопе — всегда показываем баннер категории уровня 1 при любой выбранной категории
+  return topLevelCategory.value
 })
 
 // Получить изображение категории для баннера
@@ -365,20 +410,33 @@ const bannerCategoryImageUrl = computed(() => {
 
 // Получить название родительской категории для отображения рядом со стрелкой "Назад"
 // Показываем название категории на уровень назад
+// Название категории рядом с кнопкой "Назад" — показываем категорию, куда ведёт "Назад"
+// На мобильных с уровня 3 возвращаемся на уровень 1, поэтому показываем название уровня 1
 const parentCategoryName = computed(() => {
   if (!selectedCategory.value) {
     return 'Каталог'
   }
   
-  // Если у выбранной категории есть родительская категория
-  if (selectedCategory.value.parentId) {
+  // На мобильных с уровня 3 показываем название уровня 1 (куда ведёт "Назад")
+  if (isMobile.value && selectedCategory.value.parentId) {
     const parent = productsStore.categories.find(c => c.id === selectedCategory.value.parentId)
+    if (parent && parent.parentId) {
+      // Мы на уровне 3 — "Назад" ведёт на уровень 1
+      const level1 = productsStore.categories.find(c => c.id === parent.parentId)
+      if (level1 && level1.name) return level1.name
+    }
     if (parent && parent.name) {
+      // Мы на уровне 2 — показываем название уровня 1
       return parent.name
     }
   }
   
-  // Если это категория уровня 1, показываем "Каталог"
+  // Десктоп или уровень 1: показываем родительскую категорию или "Каталог"
+  if (selectedCategory.value.parentId) {
+    const parent = productsStore.categories.find(c => c.id === selectedCategory.value.parentId)
+    if (parent && parent.name) return parent.name
+  }
+  
   return 'Каталог'
 })
 
@@ -550,11 +608,28 @@ const showAllProducts = () => {
 
 // Переход к родительской категории
 const goToParentCategory = () => {
-  if (selectedCategory.value && selectedCategory.value.parentId) {
-    router.push(`/products?category=${selectedCategory.value.parentId}`)
-  } else {
+  if (!selectedCategory.value) {
     router.push('/products')
+    return
   }
+  
+  if (!selectedCategory.value.parentId) {
+    // Уже на уровне 1 — возврат в каталог
+    router.push('/products')
+    return
+  }
+  
+  // На мобильных: с уровня 3 возвращаемся на уровень 1 (уровень 2 пропущен в навигации)
+  if (isMobile.value) {
+    const parent = productsStore.categories.find(c => c.id === selectedCategory.value.parentId)
+    if (parent && parent.parentId) {
+      // Текущая категория — уровень 3, родитель — уровень 2; переходим на уровень 1
+      router.push(`/products?category=${parent.parentId}`)
+      return
+    }
+  }
+  
+  router.push(`/products?category=${selectedCategory.value.parentId}`)
 }
 
 onMounted(async () => {

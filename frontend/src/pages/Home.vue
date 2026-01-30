@@ -1,16 +1,20 @@
 <template>
   <div>
-    <!-- Hero Section -->
-    <section class="bg-gradient-to-r from-primary-600 to-primary-800 text-white py-20">
-      <div class="container mx-auto px-4 text-center">
-        <h1 class="text-4xl md:text-5xl font-bold mb-4">Добро пожаловать в iHome24</h1>
-        <p class="text-xl mb-8">Качественные товары для дома и офиса</p>
-        <router-link
-          to="/products"
-          class="inline-block bg-white text-primary-600 px-8 py-3 rounded-md font-semibold hover:bg-gray-100 transition-colors"
-        >
-          Перейти в каталог
-        </router-link>
+    <!-- Hero Banner -->
+    <section class="home-hero-banner">
+      <div class="home-hero-banner-bg" aria-hidden="true"></div>
+      <div class="home-hero-banner-overlay"></div>
+      <div class="home-hero-banner-content">
+        <div class="container mx-auto px-4 text-center relative z-10">
+          <h1 class="home-hero-banner-title">Добро пожаловать в iHome24</h1>
+          <p class="home-hero-banner-subtitle">Качественные товары для дома и офиса</p>
+          <router-link
+            to="/products"
+            class="home-hero-banner-cta"
+          >
+            Перейти в каталог
+          </router-link>
+        </div>
       </div>
     </section>
 
@@ -234,6 +238,102 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* Hero Banner */
+.home-hero-banner {
+  position: relative;
+  min-height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.home-hero-banner-bg {
+  position: absolute;
+  inset: 0;
+  background-image: url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1600');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.home-hero-banner-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(58, 51, 49, 0.85) 0%, rgba(46, 40, 38, 0.75) 50%, rgba(244, 116, 39, 0.25) 100%);
+  z-index: 1;
+}
+
+.home-hero-banner-content {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: 60px 24px;
+}
+
+.home-hero-banner-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 1rem;
+  font-family: "helvetica", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+.home-hero-banner-subtitle {
+  font-size: 1.25rem;
+  color: rgba(255, 255, 255, 0.95);
+  margin-bottom: 2rem;
+  max-width: 480px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
+.home-hero-banner-cta {
+  display: inline-block;
+  padding: 14px 32px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2E2826;
+  background: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.home-hero-banner-cta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 768px) {
+  .home-hero-banner {
+    min-height: 500px;
+  }
+  .home-hero-banner-title {
+    font-size: 3rem;
+  }
+  .home-hero-banner-subtitle {
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .home-hero-banner {
+    min-height: 360px;
+  }
+  .home-hero-banner-title {
+    font-size: 1.75rem;
+  }
+  .home-hero-banner-subtitle {
+    font-size: 1rem;
+  }
+}
+
 /* Desktop Grid */
 .products-collections-grid.desktop-grid {
   display: grid;

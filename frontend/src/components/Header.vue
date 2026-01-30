@@ -195,24 +195,113 @@
         </div>
       </div>
     </transition>
+
+    <!-- Оверлей поиска -->
+    <Teleport to="body">
+      <Transition name="search-overlay">
+        <div
+          v-if="searchOpen"
+          class="search-overlay"
+          @click.self="closeSearch"
+        >
+          <div class="search-overlay-panel">
+            <div class="search-overlay-header">
+              <input
+                ref="searchInputRef"
+                v-model="searchQuery"
+                type="text"
+                class="search-overlay-input"
+                placeholder="Поиск по названию, категории, описанию..."
+                autofocus
+                @keydown.esc="closeSearch"
+                @keydown.enter.prevent="goToSearchPage"
+              />
+              <button type="button" class="search-overlay-close" @click="closeSearch" aria-label="Закрыть">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div class="search-overlay-results">
+              <div v-if="searchQuery.trim().length < 2" class="search-overlay-hint">
+                Введите минимум 2 символа для поиска
+              </div>
+              <div v-else-if="searchResultsProducts.length === 0 && searchResultsCategories.length === 0" class="search-overlay-empty">
+                Ничего не найдено
+              </div>
+              <template v-else>
+                <div class="search-overlay-all-link-wrap">
+                  <router-link
+                    :to="{ path: '/search', query: { q: searchQuery.trim() } }"
+                    class="search-overlay-all-link"
+                    @click="closeSearch"
+                  >
+                    Все результаты по запросу «{{ searchQuery.trim() }}» →
+                  </router-link>
+                </div>
+                <div v-if="searchResultsCategories.length > 0" class="search-results-group">
+                  <div class="search-results-group-title">Категории</div>
+                  <router-link
+                    v-for="cat in searchResultsCategories"
+                    :key="'cat-' + cat.id"
+                    :to="`/products?category=${cat.id}`"
+                    class="search-result-item search-result-category"
+                    @click="closeSearch"
+                  >
+                    {{ cat.name }}
+                  </router-link>
+                </div>
+                <div v-if="searchResultsProducts.length > 0" class="search-results-group">
+                  <div class="search-results-group-title">Товары</div>
+                  <router-link
+                    v-for="product in searchResultsProducts"
+                    :key="'prod-' + product.id"
+                    :to="`/products/${product.id}`"
+                    class="search-result-item search-result-product"
+                    @click="closeSearch"
+                  >
+                    <img
+                      v-if="getProductSearchImageUrl(product)"
+                      :src="getProductSearchImageUrl(product)"
+                      :alt="product.name"
+                      class="search-result-product-img"
+                    />
+                    <div class="search-result-product-info">
+                      <span class="search-result-product-name">{{ product.name }}</span>
+                      <span v-if="product.category?.name" class="search-result-product-category">{{ product.category.name }}</span>
+                      <span v-if="product.price != null" class="search-result-product-price">{{ formatSearchPrice(product.price) }}</span>
+                    </div>
+                  </router-link>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </header>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
 import { useProductsStore } from '../stores/products'
 import { fileApi } from '../services/api'
 
 const route = useRoute()
+const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 const productsStore = useProductsStore()
 
 const visibleSubmenu = ref(null)
 const submenuTimeout = ref(null)
+
+const searchOpen = ref(false)
+const searchQuery = ref('')
+const searchInputRef = ref(null)
 
 const categories = computed(() => productsStore.categories)
 
@@ -351,13 +440,85 @@ const handleSubmenuClick = () => {
   }
 }
 
-const toggleSearch = () => {
-  // TODO: Реализовать поиск
-  console.log('Search clicked')
+const toggleSearch = async () => {
+  searchOpen.value = true
+  searchQuery.value = ''
+  if (productsStore.products.length === 0) {
+    await productsStore.fetchProducts()
+  }
+  await nextTick()
+  searchInputRef.value?.focus()
+}
+
+const closeSearch = () => {
+  searchOpen.value = false
+  searchQuery.value = ''
+}
+
+const goToSearchPage = () => {
+  const q = searchQuery.value.trim()
+  if (q) {
+    closeSearch()
+    router.push({ path: '/search', query: { q } })
+  }
+}
+
+const normalizeQuery = (q) => (q || '').toLowerCase().trim()
+
+const matchesQuery = (text) => {
+  if (!text) return false
+  return normalizeQuery(String(text)).includes(normalizeQuery(searchQuery.value))
+}
+
+const searchResultsProducts = computed(() => {
+  const q = normalizeQuery(searchQuery.value)
+  if (q.length < 2) return []
+  const products = productsStore.products || []
+  return products.filter((p) => {
+    if (matchesQuery(p.name)) return true
+    if (matchesQuery(p.description)) return true
+    if (p.category?.name && matchesQuery(p.category.name)) return true
+    if (p.sku && matchesQuery(p.sku)) return true
+    if (Array.isArray(p.benefits)) {
+      if (p.benefits.some((b) => matchesQuery(b))) return true
+    }
+    if (Array.isArray(p.characteristics)) {
+      if (p.characteristics.some((c) => matchesQuery(c.name) || matchesQuery(c.value))) return true
+    }
+    return false
+  })
+})
+
+const searchResultsCategories = computed(() => {
+  const q = normalizeQuery(searchQuery.value)
+  if (q.length < 2) return []
+  const cats = productsStore.categories || []
+  return cats.filter((c) => c.name && matchesQuery(c.name))
+})
+
+const getProductSearchImageUrl = (product) => {
+  if (product?.imageUrl) return fileApi.getFileUrl(product.imageUrl)
+  if (product?.images?.[0]?.imageUrl) return fileApi.getFileUrl(product.images[0].imageUrl)
+  if (product?.images?.[0]?.url) return fileApi.getFileUrl(product.images[0].url)
+  return null
+}
+
+const formatSearchPrice = (price) => {
+  if (price == null) return ''
+  return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(price)
+}
+
+const onKeydown = (e) => {
+  if (e.key === 'Escape' && searchOpen.value) closeSearch()
 }
 
 onMounted(async () => {
   await productsStore.fetchCategories()
+  window.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
 })
 </script>
 
@@ -371,7 +532,7 @@ onMounted(async () => {
   flex-flow: column nowrap;
   width: 100%;
   color: #fff;
-  background: rgba(46, 40, 38, 0.7);
+  background: rgba(46, 40, 38, 0.4);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
@@ -384,7 +545,7 @@ onMounted(async () => {
   width: 100%;
   min-height: 60px;
   padding: 6px 100px;
-  background: rgba(46, 40, 38, 0.7);
+  background: rgba(46, 40, 38, 0.4);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
@@ -481,7 +642,7 @@ onMounted(async () => {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
   z-index: 10001; /* Выше подменю, чтобы быть видимым */
-  background: rgba(46, 40, 38, 0.7);
+  background: rgba(46, 40, 38, 0.4);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
@@ -859,6 +1020,181 @@ onMounted(async () => {
 }
 
 .dropdown-menu-leave-to {
+  opacity: 0;
+}
+
+/* Оверлей поиска (Teleport to body — стили без scoped для глобального оверлея) */
+</style>
+
+<style>
+.search-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 80px 16px 24px;
+  overflow-y: auto;
+}
+
+.search-overlay-panel {
+  width: 100%;
+  max-width: 560px;
+  background: #2E2826;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+}
+
+.search-overlay-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-overlay-input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 16px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  outline: none;
+  font-family: inherit;
+}
+
+.search-overlay-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.search-overlay-input:focus {
+  border-color: #F47427;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.search-overlay-close {
+  padding: 8px;
+  color: #fff;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.search-overlay-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.search-overlay-results {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.search-overlay-hint,
+.search-overlay-empty {
+  padding: 24px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 14px;
+}
+
+.search-overlay-all-link-wrap {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 8px;
+}
+
+.search-overlay-all-link {
+  display: inline-block;
+  color: #F47427;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+
+.search-overlay-all-link:hover {
+  opacity: 0.9;
+}
+
+.search-results-group-title {
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.search-result-item {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: #fff;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.search-result-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.search-result-category {
+  font-size: 15px;
+}
+
+.search-result-product {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-result-product-img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.search-result-product-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.search-result-product-name {
+  font-weight: 500;
+  font-size: 15px;
+}
+
+.search-result-product-category {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.search-result-product-price {
+  font-size: 13px;
+  color: #F47427;
+}
+
+.search-overlay-enter-active,
+.search-overlay-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.search-overlay-enter-from,
+.search-overlay-leave-to {
   opacity: 0;
 }
 </style>
