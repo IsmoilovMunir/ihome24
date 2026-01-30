@@ -232,6 +232,9 @@ const featuredProducts = computed(() => {
 const categories = computed(() => productsStore.categories.filter(cat => cat.imageUrl).slice(0, 10))
 
 onMounted(async () => {
+  window.scrollTo(0, 0)
+  document.documentElement.scrollTop = 0
+  document.body.scrollTop = 0
   await productsStore.fetchProducts()
   await productsStore.fetchCategories()
 })
