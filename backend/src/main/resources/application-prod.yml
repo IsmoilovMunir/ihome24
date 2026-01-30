@@ -116,9 +116,9 @@ minio:
   image-quality-medium: ${MINIO_IMAGE_QUALITY_MEDIUM:0.75}
   image-quality-large: ${MINIO_IMAGE_QUALITY_LARGE:0.8}
 
-# CORS Configuration для продакшена
+# CORS Configuration для продакшена (указывайте и http, и https если сайт доступен по обоим)
 cors:
-  allowed-origins: ${CORS_ALLOWED_ORIGINS:https://ihome24.ru,https://www.ihome24.ru,https://admin.ihome24.ru,https://api.ihome24.ru}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://ihome24.ru,http://www.ihome24.ru,https://ihome24.ru,https://www.ihome24.ru,http://admin.ihome24.ru,https://admin.ihome24.ru,http://api.ihome24.ru,https://api.ihome24.ru}
 
 # Logging configuration для продакшена
 logging:
