@@ -34,8 +34,31 @@
           Товары не найдены
         </div>
         <div v-else>
-          <!-- Desktop Grid -->
-          <div class="products-collections-grid desktop-grid">
+          <!-- Desktop Grid: только товары, если нет категорий с картинкой -->
+          <div
+            v-if="categories.length === 0"
+            class="products-collections-grid desktop-grid desktop-grid-products-only"
+          >
+            <div
+              v-for="product in featuredProducts.slice(0, 40)"
+              :key="product.id"
+              class="product-item"
+            >
+              <ProductCard :product="product" />
+            </div>
+            <div
+              v-for="product in featuredProducts.slice(40)"
+              :key="product.id"
+              class="product-item"
+            >
+              <ProductCard :product="product" />
+            </div>
+          </div>
+          <!-- Desktop Grid: коллекции + товары -->
+          <div
+            v-else
+            class="products-collections-grid desktop-grid"
+          >
             <template v-for="cycle in 5" :key="cycle">
               <!-- Индексы для текущего цикла -->
               <template v-if="(cycle - 1) * 2 < categories.length">
@@ -338,7 +361,8 @@ onMounted(async () => {
 }
 
 /* Desktop Grid */
-.products-collections-grid.desktop-grid {
+.products-collections-grid.desktop-grid,
+.products-collections-grid.desktop-grid-products-only {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 24px;
@@ -349,17 +373,14 @@ onMounted(async () => {
   grid-column: span 2;
 }
 
-.products-collections-grid.desktop-grid .product-item {
+.products-collections-grid.desktop-grid .product-item,
+.products-collections-grid.desktop-grid-products-only .product-item {
   grid-column: span 1;
 }
 
 /* Общие стили для коллекций и товаров в циклах */
 .products-collections-grid.desktop-grid .collection-item {
   grid-column: span 2;
-}
-
-.products-collections-grid.desktop-grid .product-item {
-  grid-column: span 1;
 }
 
 /* Mobile Layout - скрыт на desktop */
@@ -384,7 +405,8 @@ onMounted(async () => {
 }
 
 @media (max-width: 1024px) {
-  .products-collections-grid.desktop-grid {
+  .products-collections-grid.desktop-grid,
+  .products-collections-grid.desktop-grid-products-only {
     grid-template-columns: repeat(2, 1fr);
   }
   
@@ -392,15 +414,16 @@ onMounted(async () => {
     grid-column: span 2;
   }
   
-  /* На планшете коллекции занимают всю ширину, товары по 2 в ряд */
-  .products-collections-grid.desktop-grid .product-item {
+  .products-collections-grid.desktop-grid .product-item,
+  .products-collections-grid.desktop-grid-products-only .product-item {
     grid-column: span 1;
   }
 }
 
 @media (max-width: 640px) {
   /* Скрываем desktop grid на мобильных */
-  .products-collections-grid.desktop-grid {
+  .products-collections-grid.desktop-grid,
+  .products-collections-grid.desktop-grid-products-only {
     display: none !important;
   }
   
