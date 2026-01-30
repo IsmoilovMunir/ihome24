@@ -1,22 +1,38 @@
 <template>
   <div class="products-page bg-[#3A3331]">
-    <!-- Баннер категории (показывается для всех категорий, использует родительскую категорию верхнего уровня) -->
-    <div v-if="topLevelCategory" class="category-banner">
+    <!-- Баннер категории (показывается для категорий уровня 2) -->
+    <div v-if="bannerCategory" class="category-banner">
       <div
-        v-if="topLevelCategoryImageUrl"
+        v-if="bannerCategoryImageUrl"
         class="category-banner-image"
-        :style="{ backgroundImage: `url(${topLevelCategoryImageUrl})` }"
+        :style="{ backgroundImage: `url(${bannerCategoryImageUrl})` }"
       ></div>
       <div class="category-banner-overlay"></div>
+      
+      <!-- Кнопка "Назад" с названием категории в верхнем углу баннера (только на мобильных) -->
+      <div v-if="isMobile" class="category-banner-back-button">
+        <button
+          @click="goToParentCategory"
+          class="mobile-back-button text-white hover:text-orange-500 transition-colors flex items-center justify-center"
+        >
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h1 class="mobile-category-title">
+          {{ parentCategoryName || 'Каталог' }}
+        </h1>
+      </div>
+      
       <div class="category-banner-content">
-        <h1 class="category-banner-title">{{ topLevelCategory.name }}</h1>
+        <h1 class="category-banner-title">{{ bannerCategory.name }}</h1>
       </div>
     </div>
 
-    <div class="container mx-auto px-4 py-8">
+    <div :class="['container mx-auto', isMobile ? 'px-2 py-4' : 'px-4 py-8']">
       <div class="flex flex-col md:flex-row gap-8">
-        <!-- Sidebar - показываем только если выбрана категория -->
-        <aside v-if="sidebarCategory" class="w-full md:w-64">
+        <!-- Sidebar - показываем только если выбрана категория и не мобильное устройство -->
+        <aside v-if="sidebarCategory && !isMobile" class="w-full md:w-64">
           <div class="category-sidebar sticky top-[110px]">
             <h3 class="category-sidebar-title">{{ sidebarCategory.name }}</h3>
             <ul class="category-sidebar-list">
@@ -85,28 +101,113 @@
 
         <!-- Products Grid -->
         <main class="flex-1 products-section">
-          <div v-if="!selectedCategory" class="mb-6">
-            <h1 class="text-3xl font-bold text-white mb-2">Каталог товаров</h1>
+          <!-- Если не выбрана категория, показываем карточки категорий верхнего уровня -->
+          <div v-if="!selectedCategory">
+            <!-- Заголовок скрыт на мобильных -->
+            <div v-if="!isMobile" class="mb-6">
+              <h1 class="text-3xl font-bold text-white mb-2">Каталог</h1>
+            </div>
+
+            <div v-if="productsStore.loading" class="text-center py-12">
+              <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+            </div>
+
+            <div v-else-if="categoriesToDisplay.length === 0" class="text-center py-12 text-gray-400">
+              Категории не найдены
+            </div>
+
+            <CatalogCategoryGrid
+              v-else
+              :categories="categoriesToDisplay"
+              :special-categories-config="specialCategoriesConfig"
+            />
           </div>
 
-          <div v-if="productsStore.loading" class="text-center py-12">
-          <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        </div>
+          <!-- Если выбрана категория, показываем дочерние категории или товары -->
+          <div v-else>
+            <!-- Кнопка "Назад" с названием категории для мобильных (когда нет баннера) -->
+            <div v-if="isMobile && !bannerCategory" class="mb-4 flex items-center gap-3 w-full">
+              <button
+                @click="goToParentCategory"
+                class="mobile-back-button text-white hover:text-orange-500 transition-colors flex items-center justify-center"
+              >
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <h1 class="mobile-category-title">
+                {{ parentCategoryName || 'Каталог' }}
+              </h1>
+            </div>
 
-        <div v-else-if="productsStore.error" class="text-center py-12 text-red-400">
-          Ошибка загрузки товаров: {{ productsStore.error }}
-        </div>
+            <!-- Если у выбранной категории есть дочерние категории, показываем их -->
+            <div v-if="childCategoriesToShow.length > 0">
+              <!-- Заголовок и кнопка "Назад" для десктопа -->
+              <div v-if="!isMobile" class="mb-6">
+                <!-- Кнопка "Назад" если есть родительская категория -->
+                <button
+                  v-if="selectedCategory.parentId"
+                  @click="goToParentCategory"
+                  class="mb-4 text-white hover:text-orange-500 transition-colors flex items-center gap-2"
+                >
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Назад
+                </button>
+                <h1 class="text-3xl font-bold text-white mb-2">{{ selectedCategory.name }}</h1>
+              </div>
 
-        <div v-else-if="filteredProducts.length === 0" class="text-center py-12 text-gray-400">
-          Товары не найдены
-        </div>
+              <div v-if="productsStore.loading" class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+              </div>
 
-          <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <ProductCard
-              v-for="product in filteredProducts"
-              :key="product.id"
-              :product="product"
-            />
+              <div v-else-if="childCategoriesToShow.length === 0" class="text-center py-12 text-gray-400">
+                Категории не найдены
+              </div>
+
+              <div v-else>
+                <!-- Показываем дочерние категории -->
+                <CatalogCategoryGrid
+                  :categories="childCategoriesToShow"
+                  :special-categories-config="specialCategoriesConfig"
+                />
+                
+                <!-- Показываем товары категории уровня 1 после категорий (если есть) -->
+                <div v-if="isMobile && selectedCategory && !selectedCategory.parentId && categoryLevel1Products.length > 0" class="mt-6">
+                  <div class="grid grid-cols-2 gap-4">
+                    <ProductCard
+                      v-for="product in categoryLevel1Products"
+                      :key="product.id"
+                      :product="product"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Если дочерних категорий нет, показываем товары -->
+            <div v-else>
+              <div v-if="productsStore.loading" class="text-center py-12">
+                <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+              </div>
+
+              <div v-else-if="productsStore.error" class="text-center py-12 text-red-400">
+                Ошибка загрузки товаров: {{ productsStore.error }}
+              </div>
+
+              <div v-else-if="filteredProducts.length === 0" class="text-center py-12 text-gray-400">
+                Товары не найдены
+              </div>
+
+              <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                <ProductCard
+                  v-for="product in filteredProducts"
+                  :key="product.id"
+                  :product="product"
+                />
+              </div>
+            </div>
           </div>
         </main>
       </div>
@@ -115,11 +216,12 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '../stores/products'
 import { fileApi } from '../services/api'
 import ProductCard from '../components/ProductCard.vue'
+import CatalogCategoryGrid from '../components/CatalogCategoryGrid.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -134,6 +236,92 @@ const selectedCategory = computed(() => {
   if (!selectedCategoryId.value) return null
   return productsStore.categories.find(c => c.id === selectedCategoryId.value)
 })
+
+// Определение мобильного устройства
+const isMobile = ref(false)
+
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
+
+// Получить категории верхнего уровня (без parentId) для отображения карточками
+const topLevelCategories = computed(() => {
+  return productsStore.categories.filter(cat => !cat.parentId && cat.imageUrl)
+})
+
+// Получить все категории для отображения
+// При переходе на /products без выбранной категории всегда показываем только категории верхнего уровня
+const categoriesToDisplay = computed(() => {
+  // Всегда показываем только категории верхнего уровня, если категория не выбрана
+  return topLevelCategories.value
+})
+
+// Получить дочерние категории для выбранной категории
+// Показываем дочерние категории только если выбрана категория верхнего уровня (без parentId)
+// На мобильных: если у категорий уровня 2 есть подкатегории уровня 3, показываем уровень 3 (пропуская уровень 2)
+// На десктопе: показываем товары (не показываем карточки подкатегорий)
+const childCategoriesToShow = computed(() => {
+  if (!selectedCategory.value) return []
+  
+  // На десктопе не показываем карточки подкатегорий, сразу показываем товары
+  if (!isMobile.value) {
+    return []
+  }
+  
+  // На мобильных показываем дочерние категории только для категорий верхнего уровня
+  if (!selectedCategory.value.parentId) {
+    // Получаем прямые дочерние категории выбранной категории (уровень 2)
+    const level2Categories = productsStore.categories.filter(
+      cat => cat.parentId === selectedCategory.value.id && cat.imageUrl
+    )
+    
+    // Проверяем, есть ли у категорий уровня 2 дочерние категории уровня 3
+    const level3Categories = []
+    let hasLevel3Categories = false
+    
+    level2Categories.forEach(level2Cat => {
+      const children = productsStore.categories.filter(
+        cat => cat.parentId === level2Cat.id && cat.imageUrl
+      )
+      if (children.length > 0) {
+        hasLevel3Categories = true
+        level3Categories.push(...children)
+      }
+    })
+    
+    // Если есть категории уровня 3, показываем их (пропуская уровень 2)
+    if (hasLevel3Categories && level3Categories.length > 0) {
+      return level3Categories
+    }
+    
+    // Если нет категорий уровня 3, показываем категории уровня 2
+    return level2Categories
+  }
+  
+  // Для категорий уровня 2 и ниже не показываем дочерние категории (показываем товары)
+  return []
+})
+
+// Получить товары категории уровня 1 (для показа между дочерними категориями на мобильных)
+const categoryLevel1Products = computed(() => {
+  if (!selectedCategory.value || !isMobile.value) return []
+  
+  // Только для категорий уровня 1 (без parentId)
+  if (!selectedCategory.value.parentId) {
+    // Получаем товары, которые принадлежат именно этой категории (не дочерним)
+    return productsStore.products.filter(p => {
+      if (!p.category || !p.category.id) return false
+      return p.category.id === selectedCategory.value.id
+    })
+  }
+  
+  return []
+})
+
 
 // Получить родительскую категорию верхнего уровня для баннера
 // Если выбрана дочерняя категория, находим её родительскую категорию верхнего уровня
@@ -155,6 +343,43 @@ const topLevelCategory = computed(() => {
   }
   
   return null
+})
+
+// Получить категорию для баннера (показываем баннер для категорий верхнего уровня)
+const bannerCategory = computed(() => {
+  if (!selectedCategory.value) return null
+  
+  // Баннер показывается когда выбрана категория уровня 1 (верхнего уровня)
+  if (!selectedCategory.value.parentId) {
+    return selectedCategory.value
+  }
+  
+  return null
+})
+
+// Получить изображение категории для баннера
+const bannerCategoryImageUrl = computed(() => {
+  if (!bannerCategory.value || !bannerCategory.value.imageUrl) return null
+  return fileApi.getFileUrl(bannerCategory.value.imageUrl)
+})
+
+// Получить название родительской категории для отображения рядом со стрелкой "Назад"
+// Показываем название категории на уровень назад
+const parentCategoryName = computed(() => {
+  if (!selectedCategory.value) {
+    return 'Каталог'
+  }
+  
+  // Если у выбранной категории есть родительская категория
+  if (selectedCategory.value.parentId) {
+    const parent = productsStore.categories.find(c => c.id === selectedCategory.value.parentId)
+    if (parent && parent.name) {
+      return parent.name
+    }
+  }
+  
+  // Если это категория уровня 1, показываем "Каталог"
+  return 'Каталог'
 })
 
 // Получить категорию для отображения в боковом меню
@@ -218,11 +443,6 @@ const level2CategoriesWithChildren = computed(() => {
   })
 })
 
-// Получить изображение родительской категории верхнего уровня для баннера
-const topLevelCategoryImageUrl = computed(() => {
-  if (!topLevelCategory.value || !topLevelCategory.value.imageUrl) return null
-  return fileApi.getFileUrl(topLevelCategory.value.imageUrl)
-})
 
 // Получить все дочерние категории рекурсивно (включая уровень 3 и глубже)
 // Если выбрана родительская категория верхнего уровня - показываем все её дочерние
@@ -277,6 +497,40 @@ const filteredProducts = computed(() => {
   })
 })
 
+// Конфигурация для специальных категорий (с несколькими изображениями и логотипами)
+const specialCategoriesConfig = computed(() => {
+  const config = {}
+  
+  // Определяем, какие категории использовать для конфигурации
+  const categoriesForConfig = selectedCategory.value && childCategoriesToShow.value.length > 0
+    ? childCategoriesToShow.value
+    : categoriesToDisplay.value
+  
+  // Применяем конфигурацию ко всем категориям для отображения
+  categoriesForConfig.forEach(category => {
+    // Пример: если у категории есть специальный идентификатор или имя
+    // Можно добавить логику определения специальных категорий
+    if (category.name?.toLowerCase().includes('bork home') || 
+        category.name?.toLowerCase().includes('healthterior') ||
+        category.name?.toLowerCase().includes('interior') ||
+        category.name?.toLowerCase().includes('limited')) {
+      config[category.id] = {
+        isSpecial: true,
+        // Пример: несколько изображений для анимации
+        images: category.imageUrl ? [
+          fileApi.getFileUrl(category.imageUrl),
+          fileApi.getFileUrl(category.imageUrl), // В реальности это будут разные изображения
+          fileApi.getFileUrl(category.imageUrl)
+        ] : null,
+        // Пример: URL логотипа (можно добавить в модель категории)
+        logoUrl: null // category.logoUrl ? fileApi.getFileUrl(category.logoUrl) : null
+      }
+    }
+  })
+  
+  return config
+})
+
 const scrollToProducts = () => {
   // Прокручиваем к товарам
   const productsSection = document.querySelector('.products-section')
@@ -294,7 +548,18 @@ const showAllProducts = () => {
   scrollToProducts()
 }
 
+// Переход к родительской категории
+const goToParentCategory = () => {
+  if (selectedCategory.value && selectedCategory.value.parentId) {
+    router.push(`/products?category=${selectedCategory.value.parentId}`)
+  } else {
+    router.push('/products')
+  }
+}
+
 onMounted(async () => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
   await productsStore.fetchProducts()
   await productsStore.fetchCategories()
 })
@@ -303,6 +568,71 @@ onMounted(async () => {
 <style scoped>
 .products-page {
   min-height: 100vh;
+}
+
+/* Кнопка "Назад" для мобильных */
+.mobile-back-button {
+  padding: 10px;
+  border-radius: 8px;
+  background: rgba(46, 40, 38, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  flex-shrink: 0;
+}
+
+.mobile-back-button:active {
+  background: rgba(46, 40, 38, 1);
+  transform: scale(0.96);
+}
+
+.mobile-category-title {
+  font-family: "helvetica", sans-serif !important;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+  font-size: 14px !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+  display: block !important;
+  color: #ffffff !important;
+  line-height: 1.4;
+  margin: 0;
+  padding: 0;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Мобильные стили для контейнера */
+@media (max-width: 768px) {
+  .products-page .container {
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+  }
+  
+  .products-page .products-section {
+    width: 100%;
+    padding: 0;
+  }
+  
+  /* Убираем отступы у секции с карточками на мобильных */
+  .products-page .products-section > div {
+    margin: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .products-page .container {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
 }
 
 /* Баннер категории */
@@ -336,6 +666,22 @@ onMounted(async () => {
   height: 100%;
   background: rgba(0, 0, 0, 0.5);
   z-index: 1;
+}
+
+.category-banner-back-button {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: calc(100% - 32px);
+  max-width: calc(100% - 32px);
+}
+
+.category-banner-back-button .mobile-category-title {
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .category-banner-content {
