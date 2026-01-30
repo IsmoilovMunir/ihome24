@@ -486,6 +486,12 @@ onMounted(async () => {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
 }
 
+@media screen and (max-width: 768px) {
+  .header-menu {
+    display: none;
+  }
+}
+
 .horizontal-menu {
   display: flex;
   justify-content: center;
