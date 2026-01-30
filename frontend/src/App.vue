@@ -1,27 +1,16 @@
 <template>
-  <div id="app">
+  <div class="min-h-screen flex flex-col bg-[#3A3331]">
     <Header />
-    <main class="main-content">
+    <main class="flex-grow pt-[60px] md:pt-[110px] pb-[70px] md:pb-0">
       <router-view />
     </main>
     <Footer />
+    <MobileBottomMenu />
   </div>
 </template>
 
 <script setup>
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
+import MobileBottomMenu from './components/MobileBottomMenu.vue'
 </script>
-
-<style scoped>
-#app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.main-content {
-  flex: 1;
-  padding: 2rem 0;
-}
-</style>

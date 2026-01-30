@@ -1,187 +1,474 @@
 <template>
-  <div class="product-detail-page">
-    <div class="container">
-      <div v-if="loading" class="loading">
-        Загрузка товара...
-      </div>
+  <div class="container mx-auto px-4 py-8 bg-[#3A3331] product-detail-page">
+    <div v-if="productsStore.loading" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+    </div>
 
-      <div v-if="error" class="error">
-        {{ error }}
-      </div>
+    <div v-else-if="productsStore.error" class="text-center py-12 text-red-400">
+      Ошибка загрузки товара: {{ productsStore.error }}
+    </div>
 
-      <div v-if="!loading && !error && product" class="product-detail">
-        <div class="product-detail-content">
-          <div class="product-image-section">
-            <div class="product-image-large" v-if="currentImageUrl">
-              <img 
-                :src="getSizedImageUrl(currentImageUrl, 'large')" 
-                :alt="product.name"
-                loading="lazy"
-                @error="handleImageError"
-                @load="() => console.log('Main image loaded:', currentImageUrl)"
-              />
-            </div>
-            <div v-else-if="product && (product.gallery?.length > 0 || product.imageUrl)" class="product-image-large" style="display: flex; align-items: center; justify-content: center; background: #f5f5f5;">
-              <p style="color: #999;">Загрузка изображения...</p>
-            </div>
-            <div v-else class="product-image-placeholder">
-              <p>Изображение не найдено</p>
-            </div>
-            <!-- Галерея изображений (если есть) -->
-            <div v-if="product && product.gallery && product.gallery.length > 0" class="product-gallery">
-              <img 
-                v-for="(img, index) in product.gallery" 
-                :key="`gallery-${index}-${img}`"
-                :src="getSizedImageUrl(img, 'small')" 
-                :alt="`${product.name} - изображение ${index + 1}`"
-                class="gallery-thumb"
-                :class="{ active: index === currentImageIndex }"
-                loading="lazy"
-                @click="selectImage(index)"
-                @error="(e) => { console.error('Gallery image error:', img, e); e.target.style.opacity = '0.3' }"
-                @load="() => console.log('Gallery image loaded:', img)"
-              />
-            </div>
-          </div>
-          <div class="product-detail-info">
-            <!-- Категория -->
-            <div v-if="product.category" class="product-category">
-              <span class="category-badge">{{ product.category }}</span>
-            </div>
-            
-            <h1>{{ product.name }}</h1>
-            
-            <!-- SKU -->
-            <div v-if="product.sku" class="product-sku">
-              <span class="label">Артикул:</span>
-              <span class="value">{{ product.sku }}</span>
-            </div>
-            
-            <!-- Описание -->
-            <div v-if="product.description" class="product-description-section">
-              <h3>Описание</h3>
-              <div class="product-description-full" v-html="product.description"></div>
-            </div>
-            
-            <!-- Цена -->
-            <div class="product-price-section">
-              <div v-if="product.oldPrice && product.oldPrice > product.price" class="price-old">
-                {{ formatPrice(product.oldPrice) }}
-              </div>
-              <div class="product-price-large">
-                {{ formatPrice(product.price) }}
-              </div>
-            </div>
-            
-            <!-- Наличие на складе -->
-            <div class="product-stock">
-              <span v-if="product.stockQuantity > 0" class="stock-available">
-                В наличии: {{ product.stockQuantity }} шт.
-              </span>
-              <span v-else class="stock-unavailable">
-                Нет в наличии
-              </span>
-            </div>
-            
-            <!-- Характеристики (если есть) -->
-            <div v-if="product.characteristics && product.characteristics.length > 0" class="product-characteristics">
-              <button 
-                class="btn btn-link characteristics-btn" 
-                @click="showCharacteristicsDrawer = true"
-              >
-                Характеристики
-              </button>
-            </div>
-            
-            <!-- Drawer для характеристик -->
-            <div 
-              v-if="showCharacteristicsDrawer" 
-              class="characteristics-drawer-overlay"
-              @click="showCharacteristicsDrawer = false"
+    <div v-else-if="product" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Images -->
+      <div>
+        <div
+          class="bg-[#26211E] rounded-lg overflow-hidden mb-4 flex items-center justify-center h-96 relative cursor-pointer"
+          @click="openFullscreenGallery"
+        >
+          <img
+            v-if="mainImageUrl"
+            :src="mainImageUrl"
+            :alt="product.name"
+            class="w-[97%] h-[97%] object-contain pointer-events-none"
+          />
+          <div
+            v-else
+            class="w-full h-96 bg-[#26211E] flex items-center justify-center pointer-events-none"
+          >
+            <svg
+              class="w-24 h-24 text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              <div 
-                class="characteristics-drawer"
-                @click.stop
-              >
-                <div class="drawer-header">
-                  <h2>Характеристики</h2>
-                  <button 
-                    class="drawer-close-btn"
-                    @click="showCharacteristicsDrawer = false"
-                  >
-                    ×
-                  </button>
-                </div>
-                <div class="drawer-content">
-                  <table class="characteristics-table">
-                    <tr v-for="(char, index) in product.characteristics" :key="index">
-                      <td class="char-name">{{ char.name }}</td>
-                      <td class="char-value">{{ char.value }}</td>
-                    </tr>
-                  </table>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Действия -->
-            <div class="product-actions">
-              <div class="quantity-selector">
-                <button 
-                  class="btn btn-secondary" 
-                  @click="decreaseQuantity"
-                  :disabled="quantity <= 1"
-                >
-                  -
-                </button>
-                <span class="quantity">{{ quantity }}</span>
-                <button 
-                  class="btn btn-secondary" 
-                  @click="increaseQuantity"
-                  :disabled="quantity >= product.stockQuantity"
-                >
-                  +
-                </button>
-              </div>
-              <button 
-                class="btn btn-primary btn-large" 
-                @click="addToCart"
-                :disabled="product.stockQuantity === 0"
-              >
-                {{ product.stockQuantity > 0 ? 'Добавить в корзину' : 'Нет в наличии' }}
-              </button>
-            </div>
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
           </div>
+          <!-- Стрелки переключения фото (только если больше одного изображения) -->
+          <template v-if="product.images && product.images.length > 1">
+            <button
+              type="button"
+              @click.stop="goToPrevImage"
+              class="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center transition-colors z-10 hover:text-[#C56129] active:text-[#C56129]"
+              aria-label="Предыдущее фото"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              @click.stop="goToNextImage"
+              class="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/50 text-white flex items-center justify-center transition-colors z-10 hover:text-[#C56129] active:text-[#C56129]"
+              aria-label="Следующее фото"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </template>
+        </div>
+        <div v-if="product.images && product.images.length > 1" class="grid grid-cols-4 gap-2">
+          <button
+            v-for="(image, index) in product.images"
+            :key="index"
+            @click="selectedImageIndex = index"
+            class="bg-[#26211E] rounded overflow-hidden hover:opacity-75 transition-opacity aspect-square w-full flex items-center justify-center"
+            :class="{ 'ring-2 ring-[#F37021]': selectedImageIndex === index }"
+          >
+            <img
+              :src="getImageUrl(image.imageUrl || image.url)"
+              :alt="`${product.name} - изображение ${index + 1}`"
+              class="w-[90%] h-[90%] object-cover"
+            />
+          </button>
         </div>
       </div>
+
+      <!-- Product Info -->
+      <div>
+        <h1 class="text-3xl text-white mb-4 product-detail-title">{{ product.name }}</h1>
+        
+        <div class="flex items-center space-x-4 mb-4">
+          <span
+            class="text-2xl font-normal"
+            style="color: #9E9390; font-family: helvetica, sans-serif;"
+          >
+            {{ formatPrice(totalPrice) }}
+          </span>
+          <span
+            v-if="product.oldPrice && product.oldPrice > product.price"
+            class="text-xl text-gray-500 line-through"
+          >
+            {{ formatPrice(product.oldPrice) }}
+          </span>
+        </div>
+
+        <div class="mb-6">
+          <p v-if="product.description" class="text-gray-200 mb-4">
+            {{ product.description }}
+          </p>
+          
+          <div v-if="product.benefits && product.benefits.length > 0" class="mb-4">
+            <h3 class="font-semibold mb-2">Преимущества:</h3>
+            <ul class="list-disc list-inside space-y-1 text-gray-200">
+              <li v-for="benefit in product.benefits" :key="benefit">
+                {{ benefit }}
+              </li>
+            </ul>
+          </div>
+
+          <div v-if="product.characteristics && product.characteristics.length > 0" class="mb-4">
+            <h3 class="font-semibold mb-2">Характеристики:</h3>
+            <dl class="grid grid-cols-2 gap-2 text-sm">
+              <template v-for="char in product.characteristics" :key="char.id">
+                <dt class="font-medium text-gray-200">{{ char.name }}:</dt>
+                <dd class="text-gray-300">{{ char.value }}</dd>
+              </template>
+            </dl>
+          </div>
+
+          <div class="mb-4">
+            <p class="text-sm text-gray-300">
+              <span class="font-semibold">Артикул:</span> {{ product.sku || 'Не указан' }}
+            </p>
+            <p v-if="product.brand" class="text-sm text-gray-300">
+              <span class="font-semibold">Бренд:</span> {{ product.brand }}
+            </p>
+            <p class="text-sm text-gray-300">
+              <span class="font-semibold">Наличие: </span>
+              <span style="color: #C56129;"> {{ isAvailable ? 'В наличии' : 'Нет в наличии' }}</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-4 mb-6">
+          <div class="flex items-center gap-1 rounded border px-1" style="border-color: #9D9390;">
+            <button
+              type="button"
+              @click="decreaseQuantity"
+              class="w-9 h-9 flex items-center justify-center rounded transition-opacity hover:opacity-80"
+              style="color: #9D9390;"
+              aria-label="Уменьшить"
+            >
+              −
+            </button>
+            <input
+              v-model.number="quantity"
+              type="number"
+              min="1"
+              :max="maxQuantity"
+              class="w-12 text-center bg-transparent border-none text-lg focus:outline-none focus:ring-0"
+              style="color: #9D9390; font-family: helvetica, sans-serif;"
+            />
+            <button
+              type="button"
+              @click="increaseQuantity"
+              class="w-9 h-9 flex items-center justify-center rounded transition-opacity hover:opacity-80"
+              style="color: #9D9390;"
+              aria-label="Увеличить"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        <button
+          @click="addToCart"
+          :disabled="!isAvailable"
+          class="w-full py-3 rounded-md text-white font-semibold text-lg border-2 transition-colors duration-1000 bg-[#3A3331] border-[#C56129] hover:bg-[#C56129] disabled:bg-gray-300 disabled:border-gray-400 disabled:cursor-not-allowed"
+        >
+          {{ isAvailable ? 'Добавить в корзину' : 'Нет в наличии' }}
+        </button>
+      </div>
     </div>
+
+    <!-- Полноэкранный просмотр фото -->
+    <Teleport to="body">
+      <div
+        v-if="showFullscreenGallery && product"
+        class="fixed inset-0 z-[11000] flex flex-col"
+        style="background-color: #3A3331;"
+        @click.self="closeFullscreenGallery"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Просмотр изображения"
+      >
+        <button
+          type="button"
+          @click="closeFullscreenGallery"
+          class="absolute top-6 right-6 z-20 w-12 h-12 rounded-full text-white flex items-center justify-center transition-colors border-2 border-white/50 hover:text-[#C56129] active:text-[#C56129] hover:border-[#C56129] active:border-[#C56129]"
+          style="background-color: #26211E;"
+          aria-label="Закрыть (выход из полноэкранного режима)"
+          title="Закрыть"
+        >
+          <span class="text-2xl font-light leading-none" aria-hidden="true">×</span>
+        </button>
+
+        <div
+          class="flex-1 flex items-center justify-center min-h-0 p-4 rounded-lg m-4 overflow-hidden cursor-grab active:cursor-grabbing"
+          style="background-color: #26211E;"
+          @wheel.prevent="onFullscreenWheel"
+          @mousedown="onFullscreenPanStart"
+          @touchstart.prevent="onFullscreenPanStart"
+        >
+          <div
+            v-if="mainImageUrl"
+            class="w-full h-full flex items-center justify-center origin-center select-none touch-none"
+            :style="{
+              transform: `translate(${fullscreenPan.x}px, ${fullscreenPan.y}px) scale(${fullscreenZoom})`,
+              transition: isPanning ? 'none' : 'transform 0.15s ease-out',
+            }"
+          >
+            <img
+              :src="mainImageUrl"
+              :alt="product.name"
+              class="max-w-full max-h-full object-contain select-none pointer-events-none"
+              draggable="false"
+            />
+          </div>
+        </div>
+
+        <div class="absolute top-6 right-20 z-20 flex items-center gap-1 rounded border border-white/30 p-1" style="background-color: #26211E;">
+          <button
+            type="button"
+            @click.stop="fullscreenZoomOut"
+            class="w-9 h-9 rounded text-white flex items-center justify-center transition-colors hover:text-[#C56129] disabled:opacity-50"
+            :disabled="fullscreenZoom <= ZOOM_MIN"
+            aria-label="Уменьшить"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+            </svg>
+          </button>
+          <span class="text-white text-sm min-w-[2.5rem] text-center" style="color: #9E9390;">{{ Math.round(fullscreenZoom * 100) }}%</span>
+          <button
+            type="button"
+            @click.stop="fullscreenZoomIn"
+            class="w-9 h-9 rounded text-white flex items-center justify-center transition-colors hover:text-[#C56129] disabled:opacity-50"
+            :disabled="fullscreenZoom >= ZOOM_MAX"
+            aria-label="Увеличить"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+          </button>
+        </div>
+
+        <template v-if="product.images && product.images.length > 1">
+          <div class="absolute left-2 top-1/2 -translate-y-1/2 z-20">
+            <button
+              type="button"
+              @click.stop="goToPrevImage"
+              class="w-10 h-10 rounded-full text-white flex items-center justify-center transition-colors border border-white/30 hover:text-[#C56129] hover:border-[#C56129] active:text-[#C56129] active:border-[#C56129]"
+              style="background-color: #26211E;"
+              aria-label="Предыдущее фото"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          </div>
+          <div class="absolute right-2 top-1/2 -translate-y-1/2 z-20">
+            <button
+              type="button"
+              @click.stop="goToNextImage"
+              class="w-10 h-10 rounded-full text-white flex items-center justify-center transition-colors border border-white/30 hover:text-[#C56129] hover:border-[#C56129] active:text-[#C56129] active:border-[#C56129]"
+              style="background-color: #26211E;"
+              aria-label="Следующее фото"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="flex justify-center gap-2 pb-6 pt-4 px-4 overflow-x-auto rounded-t-lg" style="background-color: #26211E;">
+            <button
+              v-for="(image, index) in product.images"
+              :key="index"
+              type="button"
+              @click.stop="selectedImageIndex = index"
+              class="flex-shrink-0 w-16 h-16 rounded overflow-hidden border-2 transition-colors hover:opacity-90 flex items-center justify-center"
+              :class="selectedImageIndex === index ? 'border-[#F37021]' : 'border-white/20 opacity-80'"
+              style="background-color: #26211E;"
+            >
+              <img
+                :src="getImageUrl(image.imageUrl || image.url)"
+                :alt="`${product.name} - изображение ${index + 1}`"
+                class="w-[90%] h-[90%] object-cover"
+              />
+            </button>
+          </div>
+        </template>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
-import { storeToRefs } from 'pinia'
-import { useProductsStore } from '../store/products'
-import { useCartStore } from '../store/cart'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useProductsStore } from '../stores/products'
+import { useCartStore } from '../stores/cart'
+import { fileApi } from '../services/api'
 
 const route = useRoute()
+const router = useRouter()
 const productsStore = useProductsStore()
 const cartStore = useCartStore()
 
-const { product, loading, error } = storeToRefs(productsStore)
 const quantity = ref(1)
-const currentImageIndex = ref(0)
-const showCharacteristicsDrawer = ref(false)
+const selectedImageIndex = ref(0)
+const showFullscreenGallery = ref(false)
+const fullscreenZoom = ref(1)
+const fullscreenPan = ref({ x: 0, y: 0 })
+const isPanning = ref(false)
+let panStart = { clientX: 0, clientY: 0, x: 0, y: 0 }
+
+const ZOOM_MIN = 0.5
+const ZOOM_MAX = 4
+const ZOOM_STEP = 0.25
+
+const product = computed(() => productsStore.selectedProduct)
+
+const openFullscreenGallery = () => {
+  fullscreenZoom.value = 1
+  fullscreenPan.value = { x: 0, y: 0 }
+  showFullscreenGallery.value = true
+}
+
+const closeFullscreenGallery = () => {
+  showFullscreenGallery.value = false
+  fullscreenZoom.value = 1
+  fullscreenPan.value = { x: 0, y: 0 }
+}
+
+const onFullscreenPanStart = (e) => {
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY
+  isPanning.value = true
+  panStart = { clientX, clientY, x: fullscreenPan.value.x, y: fullscreenPan.value.y }
+  document.addEventListener('mousemove', onFullscreenPanMove)
+  document.addEventListener('mouseup', onFullscreenPanEnd)
+  document.addEventListener('touchmove', onFullscreenPanMove, { passive: false })
+  document.addEventListener('touchend', onFullscreenPanEnd)
+  document.addEventListener('touchcancel', onFullscreenPanEnd)
+}
+
+const onFullscreenPanMove = (e) => {
+  if (!isPanning.value) return
+  const clientX = e.touches?.length ? e.touches[0].clientX : e.clientX
+  const clientY = e.touches?.length ? e.touches[0].clientY : e.clientY
+  if (e.cancelable) e.preventDefault()
+  fullscreenPan.value = {
+    x: panStart.x + (clientX - panStart.clientX),
+    y: panStart.y + (clientY - panStart.clientY),
+  }
+}
+
+const onFullscreenPanEnd = () => {
+  isPanning.value = false
+  document.removeEventListener('mousemove', onFullscreenPanMove)
+  document.removeEventListener('mouseup', onFullscreenPanEnd)
+  document.removeEventListener('touchmove', onFullscreenPanMove)
+  document.removeEventListener('touchend', onFullscreenPanEnd)
+  document.removeEventListener('touchcancel', onFullscreenPanEnd)
+}
+
+const fullscreenZoomIn = () => {
+  fullscreenZoom.value = Math.min(ZOOM_MAX, fullscreenZoom.value + ZOOM_STEP)
+}
+
+const fullscreenZoomOut = () => {
+  fullscreenZoom.value = Math.max(ZOOM_MIN, fullscreenZoom.value - ZOOM_STEP)
+}
+
+const onFullscreenWheel = (e) => {
+  e.preventDefault()
+  if (e.deltaY < 0) fullscreenZoomIn()
+  else fullscreenZoomOut()
+}
+
+const onFullscreenKeydown = (e) => {
+  if (e.key === 'Escape') {
+    closeFullscreenGallery()
+    return
+  }
+  if (e.key === 'ArrowLeft') {
+    goToPrevImage()
+    return
+  }
+  if (e.key === 'ArrowRight') {
+    goToNextImage()
+    return
+  }
+}
+
+const getImageUrl = (url) => {
+  if (!url) return null
+  const result = fileApi.getFileUrl(url)
+  console.log('ProductDetail getImageUrl:', url, '→', result)
+  return result
+}
+
+const mainImageUrl = computed(() => {
+  if (!product.value) return null
+  
+  // Проверяем images массив (в ProductImageResponse поле называется imageUrl, не url!)
+  if (product.value.images && product.value.images.length > 0) {
+    const img = product.value.images[selectedImageIndex.value]
+    // Проверяем разные возможные поля (imageUrl - правильное поле из ProductImageResponse)
+    const imgUrl = img.imageUrl || img.url || (typeof img === 'string' ? img : null)
+    if (imgUrl) {
+      return getImageUrl(imgUrl)
+    }
+  }
+  
+  // Проверяем imageUrl
+  if (product.value.imageUrl) {
+    return getImageUrl(product.value.imageUrl)
+  }
+  
+  console.log('ProductDetail: No image found for product', product.value)
+  return null
+})
+
+const goToPrevImage = () => {
+  if (!product.value?.images?.length) return
+  const n = product.value.images.length
+  selectedImageIndex.value = selectedImageIndex.value === 0 ? n - 1 : selectedImageIndex.value - 1
+  if (showFullscreenGallery.value) fullscreenPan.value = { x: 0, y: 0 }
+}
+
+const goToNextImage = () => {
+  if (!product.value?.images?.length) return
+  const n = product.value.images.length
+  selectedImageIndex.value = selectedImageIndex.value === n - 1 ? 0 : selectedImageIndex.value + 1
+  if (showFullscreenGallery.value) fullscreenPan.value = { x: 0, y: 0 }
+}
+
+const isAvailable = computed(() => {
+  return product.value?.isActive && 
+         (product.value?.stockQuantity === null || product.value?.stockQuantity > 0)
+})
+
+const maxQuantity = computed(() => {
+  if (!product.value?.stockQuantity) return 999
+  return product.value.stockQuantity
+})
+
+const totalPrice = computed(() => {
+  if (!product.value?.price) return 0
+  return (product.value.price * (quantity.value || 1))
+})
 
 const formatPrice = (price) => {
+  if (!price) return '0 ₽'
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
-    currency: 'RUB'
+    currency: 'RUB',
+    minimumFractionDigits: 0,
   }).format(price)
 }
 
 const increaseQuantity = () => {
-  if (product.value && quantity.value < product.value.stockQuantity) {
+  if (quantity.value < maxQuantity.value) {
     quantity.value++
   }
 }
@@ -193,403 +480,66 @@ const decreaseQuantity = () => {
 }
 
 const addToCart = () => {
-  if (product.value && product.value.stockQuantity > 0) {
-    const maxQuantity = Math.min(quantity.value, product.value.stockQuantity)
-    for (let i = 0; i < maxQuantity; i++) {
-      cartStore.addItem(product.value)
-    }
-    quantity.value = 1
-    alert(`Товар добавлен в корзину! (${maxQuantity} шт.)`)
+  if (isAvailable.value && product.value) {
+    cartStore.addToCart(product.value, quantity.value)
+    router.push('/cart')
   }
 }
 
-const handleImageError = (event) => {
-  console.error('Ошибка загрузки изображения:', event.target.src)
-  // Скрываем изображение при ошибке или используем прозрачный пиксель
-  event.target.style.display = 'none'
-  // Или можно использовать data URL для прозрачного изображения
-  // event.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="600" height="400"%3E%3Crect width="600" height="400" fill="%23f0f0f0"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%23999"%3EИзображение не найдено%3C/text%3E%3C/svg%3E'
-}
-
-const getSizedImageUrl = (url, size) => {
-  if (!url) return ''
-  return url.replace(/\/(small|medium|large|original)\//, `/${size}/`)
-}
-
-const selectImage = (index) => {
-  currentImageIndex.value = index
-}
-
-const currentImageUrl = computed(() => {
-  const prod = product.value
-  if (!prod) {
-    return ''
+watch(showFullscreenGallery, (isOpen) => {
+  if (isOpen) {
+    document.addEventListener('keydown', onFullscreenKeydown)
+  } else {
+    document.removeEventListener('keydown', onFullscreenKeydown)
   }
-  
-  // Проверяем галерею
-  if (prod.gallery && Array.isArray(prod.gallery) && prod.gallery.length > 0) {
-    const index = Math.max(0, Math.min(currentImageIndex.value, prod.gallery.length - 1))
-    const url = prod.gallery[index]
-    if (url && typeof url === 'string' && url.trim()) {
-      return url
-    }
-  }
-  
-  // Используем imageUrl как fallback
-  if (prod.imageUrl && typeof prod.imageUrl === 'string' && prod.imageUrl.trim()) {
-    return prod.imageUrl
-  }
-  
-  return ''
 })
 
 onMounted(async () => {
+  window.scrollTo(0, 0)
+  document.documentElement.scrollTop = 0
+  document.body.scrollTop = 0
+  const productId = Number(route.params.id)
   try {
-    await productsStore.fetchProductById(route.params.id)
-    // Сбрасываем индекс при загрузке нового товара
-    currentImageIndex.value = 0
-    await nextTick()
-    console.log('Product loaded:', product.value)
-    console.log('Gallery:', product.value?.gallery)
-    console.log('Current image URL:', currentImageUrl.value)
-  } catch (err) {
-    console.error('Error loading product:', err)
+    await productsStore.fetchProductById(productId)
+  } catch (error) {
+    router.push('/products')
   }
+})
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onFullscreenKeydown)
+  document.removeEventListener('mousemove', onFullscreenPanMove)
+  document.removeEventListener('mouseup', onFullscreenPanEnd)
+  document.removeEventListener('touchmove', onFullscreenPanMove)
+  document.removeEventListener('touchend', onFullscreenPanEnd)
+  document.removeEventListener('touchcancel', onFullscreenPanEnd)
 })
 </script>
 
 <style scoped>
-.product-detail-page {
-  padding: 2rem 0;
+/* Все шрифты на странице товара явно прописаны */
+.product-detail-page,
+.product-detail-page h1,
+.product-detail-page h2,
+.product-detail-page h3,
+.product-detail-page p,
+.product-detail-page span,
+.product-detail-page div,
+.product-detail-page ul,
+.product-detail-page li,
+.product-detail-page dt,
+.product-detail-page dd,
+.product-detail-page label,
+.product-detail-page button,
+.product-detail-page a,
+.product-detail-page input {
+  font-family: helvetica, sans-serif;
+  font-weight: 400;
+  text-transform: uppercase;
 }
 
-.product-detail {
-  background: white;
-  border-radius: 8px;
-  padding: 2rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.product-detail-content {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
-}
-
-.product-image-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.product-image-large {
-  width: 100%;
-  height: 500px;
-  overflow: hidden;
-  border-radius: 8px;
-  background: #f5f5f5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.product-image-large img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  background: white;
-}
-
-.product-image-placeholder {
-  width: 100%;
-  height: 500px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f5f5f5;
-  border-radius: 8px;
-  color: #999;
-}
-
-.product-gallery {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.gallery-thumb {
-  width: 80px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 4px;
-  cursor: pointer;
-  border: 2px solid transparent;
-  transition: border-color 0.3s;
-}
-
-.gallery-thumb:hover {
-  border-color: #007bff;
-}
-
-.gallery-thumb.active {
-  border-color: #007bff;
-  border-width: 3px;
-}
-
-.product-category {
-  margin-bottom: 1rem;
-}
-
-.category-badge {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background: #f0f0f0;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.product-sku {
-  margin-bottom: 1rem;
-  color: #666;
-  font-size: 0.9rem;
-}
-
-.product-sku .label {
-  font-weight: bold;
-  margin-right: 0.5rem;
-}
-
-.product-description-section {
-  margin-bottom: 2rem;
-}
-
-.product-description-section h3 {
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: #333;
-}
-
-.product-detail-info h1 {
-  font-size: 2rem;
-  margin-bottom: 1rem;
-}
-
-.product-description-full {
-  color: #666;
-  font-size: 1.1rem;
-  line-height: 1.5;
-  margin-bottom: 2rem;
-}
-
-.product-description-full :deep(p) {
-  margin-bottom: 0;
-  margin-top: 0;
-  padding: 0;
-}
-
-.product-description-full :deep(p + p) {
-  margin-top: 0.5rem;
-}
-
-.product-price-section {
-  margin-bottom: 2rem;
-}
-
-.price-old {
-  font-size: 1.5rem;
-  color: #999;
-  text-decoration: line-through;
-  margin-bottom: 0.5rem;
-}
-
-.product-price-large {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: #007bff;
-}
-
-.product-stock {
-  margin-bottom: 2rem;
-  font-size: 1rem;
-}
-
-.stock-available {
-  color: #28a745;
-  font-weight: bold;
-}
-
-.stock-unavailable {
-  color: #dc3545;
-  font-weight: bold;
-}
-
-.product-characteristics {
-  margin-bottom: 2rem;
-}
-
-.characteristics-btn {
-  background: none;
-  border: none;
-  color: #007bff;
-  text-decoration: underline;
-  cursor: pointer;
-  font-size: 1rem;
-  padding: 0;
-}
-
-.characteristics-btn:hover {
-  color: #0056b3;
-}
-
-.characteristics-drawer-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 1000;
-  display: flex;
-  justify-content: flex-end;
-  animation: fadeIn 0.3s ease;
-}
-
-.characteristics-drawer {
-  width: 500px;
-  max-width: 90vw;
-  height: 100%;
-  background: white;
-  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  animation: slideInRight 0.3s ease;
-}
-
-.drawer-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #eee;
-}
-
-.drawer-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  color: #333;
-}
-
-.drawer-close-btn {
-  background: none;
-  border: none;
-  font-size: 2rem;
-  color: #666;
-  cursor: pointer;
-  padding: 0;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 4px;
-  transition: background-color 0.2s;
-}
-
-.drawer-close-btn:hover {
-  background-color: #f5f5f5;
-}
-
-.drawer-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 1.5rem;
-}
-
-.characteristics-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.characteristics-table tr {
-  border-bottom: 1px solid #eee;
-}
-
-.characteristics-table td {
-  padding: 0.75rem 0;
-}
-
-.char-name {
-  font-weight: bold;
-  color: #666;
-  width: 40%;
-}
-
-.char-value {
-  color: #333;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    transform: translateX(100%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-@media (max-width: 768px) {
-  .characteristics-drawer {
-    width: 100%;
-    max-width: 100vw;
-  }
-}
-
-.product-actions {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.quantity-selector {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.quantity-selector button {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.quantity {
-  font-size: 1.25rem;
-  font-weight: bold;
-  min-width: 40px;
-  text-align: center;
-}
-
-.btn-large {
-  padding: 1rem 2rem;
-  font-size: 1.1rem;
-}
-
-@media (max-width: 768px) {
-  .product-detail-content {
-    grid-template-columns: 1fr;
-  }
+.product-detail-title {
+  font-family: helvetica, sans-serif;
+  font-weight: 400;
 }
 </style>

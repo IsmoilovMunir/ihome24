@@ -1,134 +1,190 @@
 <template>
-  <div class="product-card card">
-    <div class="product-image">
-      <img 
-        :src="getSizedImageUrl(product.imageUrl, 'small') || '/placeholder.jpg'" 
-        :alt="product.name"
-        loading="lazy"
-        @error="handleImageError"
-      />
-    </div>
-    <div class="product-info">
-      <h3 class="product-name">{{ product.name }}</h3>
-      <p class="product-description">{{ stripHtmlTags(product.description) }}</p>
-      <div class="product-footer">
-        <span class="product-price">{{ formatPrice(product.price) }}</span>
-        <button 
-          class="btn btn-primary" 
-          @click="addToCart"
+  <div class="product-tile rounded-lg overflow-hidden relative">
+    <router-link :to="`/products/${product.id}`">
+      <div class="product-card-image-container w-full h-[410px] relative flex items-center justify-center overflow-hidden group rounded-xl" style="background-color: var(--product-tile-background);">
+        <img
+          v-if="imageUrl"
+          :src="imageUrl"
+          :alt="product.name"
+          class="w-[90%] h-[90%] object-contain transition-transform duration-300 ease-in-out group-hover:scale-[1.20]"
+        />
+        <div
+          v-else
+          class="w-full h-full flex items-center justify-center"
+          style="background-color: var(--product-tile-background);"
         >
-          В корзину
-        </button>
+          <svg
+            class="w-16 h-16 text-gray-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+        
+        <!-- Бейдж "Хит продаж" -->
+        <div
+          v-if="product.isFeatured"
+          class="absolute top-2 left-2 bg-primary-600 text-white px-2 py-1 rounded text-xs font-semibold z-10"
+        >
+          Хит продаж
+        </div>
+      </div>
+    </router-link>
+    
+    <!-- Кнопка "В корзину" или иконка корзины (вне router-link, чтобы не открывать товар) -->
+    <div class="absolute top-2 right-2 z-20">
+      <!-- Иконка корзины, если товар уже в корзине -->
+      <button
+        v-if="isInCart"
+        @click.stop="goToCart"
+        class="bg-[#F37021] text-white p-2.5 rounded-md hover:bg-[#E0651D] transition-colors z-20 flex items-center justify-center"
+        title="Товар в корзине. Перейти в корзину"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+          />
+        </svg>
+      </button>
+      
+      <!-- Кнопка "В корзину", если товара нет в корзине -->
+      <button
+        v-else
+        @click.stop="addToCart"
+        :disabled="!isAvailable"
+        class="bg-[#F37021] text-white px-3 py-1.5 rounded-md hover:bg-[#E0651D] disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors text-sm font-semibold z-20"
+      >
+        {{ isAvailable ? 'В корзину' : 'Нет' }}
+      </button>
+    </div>
+    
+    <!-- Текст внизу картинки -->
+    <div class="px-0 py-0 mt-4" style="background-color: var(--siteBg);">
+      <router-link :to="`/products/${product.id}`">
+        <h3 class="text-sm mb-0 hover:opacity-90 transition-opacity pl-0 product-name" style="color: var(--product-tile-title-color);">
+          {{ product.name }}
+        </h3>
+      </router-link>
+      
+      <div class="flex items-center justify-between px-0">
+        <div class="flex items-center space-x-2">
+          <span class="text-sm product-price" style="color: var(--product-tile-price-color);">
+            {{ formatPrice(product.price) }}
+          </span>
+          <span
+            v-if="product.oldPrice && product.oldPrice > product.price"
+            class="text-sm line-through opacity-70 product-price"
+            style="color: var(--product-tile-price-color);"
+          >
+            {{ formatPrice(product.oldPrice) }}
+          </span>
+        </div>
+        <span
+          v-if="product.stockQuantity !== null && product.stockQuantity <= 10"
+          class="text-xs font-semibold"
+          style="color: var(--product-tile-title-color);"
+        >
+          Осталось: {{ product.stockQuantity }}
+        </span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { useCartStore } from '../store/cart'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useCartStore } from '../stores/cart'
+import { fileApi } from '../services/api'
 
 const props = defineProps({
   product: {
     type: Object,
-    required: true
-  }
+    required: true,
+  },
 })
 
-const cartStore = useCartStore()
 const router = useRouter()
+const cartStore = useCartStore()
 
-const addToCart = () => {
-  cartStore.addItem(props.product)
-}
+const imageUrl = computed(() => {
+  // Проверяем imageUrl
+  if (props.product.imageUrl) {
+    const url = fileApi.getFileUrl(props.product.imageUrl)
+    console.log('ProductCard imageUrl:', props.product.imageUrl, '→', url)
+    return url
+  }
+  
+  // Проверяем images массив (в ProductImageResponse поле называется imageUrl, не url!)
+  if (props.product.images && props.product.images.length > 0) {
+    const img = props.product.images[0]
+    // Проверяем разные возможные поля (imageUrl - правильное поле из ProductImageResponse)
+    const imgUrl = img.imageUrl || img.url || (typeof img === 'string' ? img : null)
+    if (imgUrl) {
+      const url = fileApi.getFileUrl(imgUrl)
+      console.log('ProductCard images[0]:', img, '→', imgUrl, '→', url)
+      return url
+    }
+  }
+  
+  console.log('ProductCard: No image found for product', props.product.id, props.product)
+  return null
+})
+
+const isAvailable = computed(() => {
+  return props.product.isActive && 
+         (props.product.stockQuantity === null || props.product.stockQuantity > 0)
+})
+
+const isInCart = computed(() => {
+  return cartStore.items.some(item => item.product.id === props.product.id)
+})
 
 const formatPrice = (price) => {
+  if (!price) return '0 ₽'
   return new Intl.NumberFormat('ru-RU', {
     style: 'currency',
-    currency: 'RUB'
+    currency: 'RUB',
+    minimumFractionDigits: 0,
   }).format(price)
 }
 
-const handleImageError = (event) => {
-  event.target.src = 'https://via.placeholder.com/300x200?text=No+Image'
+const addToCart = () => {
+  if (isAvailable.value) {
+    cartStore.addToCart(props.product, 1)
+  }
 }
 
-const getSizedImageUrl = (url, size) => {
-  if (!url) return ''
-  const normalized = url.replace(/\/(small|medium|large|original)\//, `/${size}/`)
-  return normalized
-}
-
-const stripHtmlTags = (html) => {
-  if (!html) return ''
-  // Удаляем все HTML теги
-  const tmp = document.createElement('DIV')
-  tmp.innerHTML = html
-  return tmp.textContent || tmp.innerText || ''
+const goToCart = () => {
+  router.push('/cart')
 }
 </script>
 
 <style scoped>
-.product-card {
-  display: flex;
-  flex-direction: column;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  cursor: pointer;
-}
-
-.product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.product-image {
-  width: 100%;
-  height: 200px;
-  overflow: hidden;
-  border-radius: 4px 4px 0 0;
-}
-
-.product-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.product-info {
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.product-name {
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-  color: #333;
-}
-
-.product-description {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 1rem;
-  flex: 1;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-height: 1.4;
-}
-
-.product-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: auto;
-}
-
+.product-name,
 .product-price {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #007bff;
+  font-family: "helvetica", sans-serif;
+  font-weight: 400;
+}
+
+@media (max-width: 640px) {
+  .product-card-image-container {
+    height: 266px !important; /* 410px - 15% - 15% - 10% = 266px */
+  }
 }
 </style>
