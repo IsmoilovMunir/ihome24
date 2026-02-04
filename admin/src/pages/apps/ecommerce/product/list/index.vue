@@ -169,6 +169,13 @@ const resolveCategory = category => {
     }
 }
 
+const truncateWords = (text, maxWords = 10) => {
+  if (!text || typeof text !== 'string') return ''
+  const words = text.trim().split(/\s+/)
+  if (words.length <= maxWords) return text
+  return words.slice(0, maxWords).join(' ') + '...'
+}
+
 const resolveStatus = statusMsg => {
   if (statusMsg === 'Scheduled')
     return {
@@ -382,9 +389,9 @@ const deleteProduct = async id => {
               rounded
               :image="item.image"
             />
-            <div class="d-flex flex-column">
-              <span class="text-body-1 font-weight-medium text-high-emphasis">{{ item.productName }}</span>
-              <span class="text-body-2">{{ item.productBrand }}</span>
+            <div class="d-flex flex-column min-w-0" style="max-width: 280px;">
+              <span class="text-body-1 font-weight-medium text-high-emphasis" :title="item.productName">{{ truncateWords(item.productName, 3) }}</span>
+              <span class="text-body-2 text-truncate" :title="item.productBrand">{{ truncateWords(item.productBrand, 3) }}</span>
             </div>
           </div>
         </template>
