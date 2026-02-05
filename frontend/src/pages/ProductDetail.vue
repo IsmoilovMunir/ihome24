@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto px-4 py-8 pb-40 lg:pb-8 bg-[#3A3331] product-detail-page">
+  <div class="container mx-auto px-4 py-8 pb-48 lg:pb-8 bg-[#3A3331] product-detail-page">
     <div v-if="productsStore.loading" class="text-center py-12">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
     </div>
@@ -121,19 +121,72 @@
       <div>
         <h1 class="hidden lg:block text-3xl text-white mb-4 product-detail-title">{{ product.name }}</h1>
         
-        <div class="hidden lg:flex items-center space-x-4 mb-4">
-          <span
-            class="text-2xl font-normal"
-            style="color: #9E9390; font-family: helvetica, sans-serif;"
+        <div ref="priceBlockRef" class="hidden lg:flex items-center justify-center gap-4 mb-6 flex-wrap">
+          <div class="flex items-center space-x-4">
+            <span
+              class="text-2xl font-normal"
+              style="color: #9E9390; font-family: helvetica, sans-serif;"
+            >
+              {{ formatPrice(totalPrice) }}
+            </span>
+            <span
+              v-if="product.oldPrice && product.oldPrice > product.price"
+              class="text-xl text-gray-500 line-through"
+            >
+              {{ formatPrice(product.oldPrice) }}
+            </span>
+          </div>
+          <!-- Кнопка корзины рядом с ценой (десктоп) -->
+          <div
+            v-if="isAvailable"
+            class="flex rounded-md overflow-hidden border-2 flex-shrink-0"
+            style="border-color: #C56129;"
           >
-            {{ formatPrice(totalPrice) }}
-          </span>
-          <span
-            v-if="product.oldPrice && product.oldPrice > product.price"
-            class="text-xl text-gray-500 line-through"
+            <button
+              v-if="!isInCart"
+              type="button"
+              @click="addToCart"
+              class="py-3 px-6 text-white font-semibold text-lg transition-colors duration-1000 bg-[#3A3331] hover:bg-[#C56129]"
+            >
+              Добавить в корзину
+            </button>
+            <template v-else>
+              <button
+                type="button"
+                @click="router.push('/cart')"
+                class="py-3 px-6 text-white font-semibold text-lg transition-colors bg-[#C56129] hover:bg-[#d97235]"
+              >
+                В корзину
+              </button>
+              <div
+                class="flex items-center gap-0 border-l px-2"
+                style="border-color: #C56129; background-color: #3A3331;"
+              >
+                <button
+                  type="button"
+                  @click="decreaseCartQuantity"
+                  class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
+                >
+                  −
+                </button>
+                <span class="w-8 text-center text-white font-semibold">{{ cartQuantity }}</span>
+                <button
+                  type="button"
+                  @click="increaseCartQuantity"
+                  class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
+                >
+                  +
+                </button>
+              </div>
+            </template>
+          </div>
+          <button
+            v-else
+            disabled
+            class="py-3 px-6 rounded-md text-white font-semibold text-lg border-2 bg-gray-300 border-gray-400 cursor-not-allowed"
           >
-            {{ formatPrice(product.oldPrice) }}
-          </span>
+            Нет в наличии
+          </button>
         </div>
 
         <div class="mb-6">
@@ -218,65 +271,76 @@
           </div>
         </div>
 
-        <!-- Кнопка: одна целая «Добавить» или разделённая «В корзину» + количество -->
-        <div
-          v-if="isAvailable"
-          class="hidden lg:flex rounded-md overflow-hidden border-2"
-          style="border-color: #C56129;"
+      </div>
+    </div>
+
+    <!-- Плавающая панель: название, цена, кнопка (десктоп, когда цена вне видимости) -->
+    <div
+      v-if="product && !productsStore.loading && !productsStore.error && showFloatingBar"
+      class="hidden lg:flex fixed top-32 right-4 z-50 items-center gap-4 px-4 py-3 rounded-lg shadow-lg transition-opacity"
+      style="background-color: #26211E; border: 1px solid rgba(197, 97, 41, 0.5);"
+    >
+      <div class="flex flex-col min-w-0 max-w-[200px]">
+        <span class="text-white font-medium text-sm truncate">{{ product.name }}</span>
+        <span class="text-base" style="color: #9E9390; font-family: helvetica, sans-serif;">{{ formatPrice(totalPrice) }}</span>
+      </div>
+      <div
+        v-if="isAvailable"
+        class="flex rounded-md overflow-hidden border-2 flex-shrink-0"
+        style="border-color: #C56129;"
+      >
+        <button
+          v-if="!isInCart"
+          type="button"
+          @click="addToCart"
+          class="py-2 px-4 text-white font-semibold text-sm transition-colors bg-[#3A3331] hover:bg-[#C56129]"
         >
+          Добавить в корзину
+        </button>
+        <template v-else>
           <button
-            v-if="!isInCart"
             type="button"
-            @click="addToCart"
-            class="flex-1 py-3 text-white font-semibold text-lg transition-colors duration-1000 bg-[#3A3331] hover:bg-[#C56129]"
+            @click="router.push('/cart')"
+            class="py-2 px-4 text-white font-semibold text-sm transition-colors bg-[#C56129] hover:bg-[#d97235]"
           >
-            Добавить в корзину
+            В корзину
           </button>
-          <template v-else>
+          <div
+            class="flex items-center gap-0 border-l px-1"
+            style="border-color: #C56129; background-color: #3A3331;"
+          >
             <button
               type="button"
-              @click="router.push('/cart')"
-              class="flex-1 py-3 text-white font-semibold text-lg transition-colors bg-[#C56129] hover:bg-[#d97235]"
+              @click="decreaseCartQuantity"
+              class="w-8 h-8 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors text-sm"
             >
-              В корзину
+              −
             </button>
-            <div
-              class="flex items-center gap-0 border-l px-2"
-              style="border-color: #C56129; background-color: #3A3331;"
+            <span class="w-6 text-center text-white font-semibold text-sm">{{ cartQuantity }}</span>
+            <button
+              type="button"
+              @click="increaseCartQuantity"
+              class="w-8 h-8 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors text-sm"
             >
-              <button
-                type="button"
-                @click="decreaseCartQuantity"
-                class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
-              >
-                −
-              </button>
-              <span class="w-8 text-center text-white font-semibold">{{ cartQuantity }}</span>
-              <button
-                type="button"
-                @click="increaseCartQuantity"
-                class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
-              >
-                +
-              </button>
-            </div>
-          </template>
-        </div>
-        <button
-          v-else
-          disabled
-          class="hidden lg:block w-full py-3 rounded-md text-white font-semibold text-lg border-2 bg-gray-300 border-gray-400 cursor-not-allowed"
-        >
-          Нет в наличии
-        </button>
+              +
+            </button>
+          </div>
+        </template>
       </div>
+      <button
+        v-else
+        disabled
+        class="py-2 px-4 rounded-md text-white font-semibold text-sm border-2 bg-gray-300 border-gray-400 cursor-not-allowed"
+      >
+        Нет в наличии
+      </button>
     </div>
 
     <!-- Прикреплённая кнопка внизу экрана (мобильный) — над нижним меню -->
     <div
       v-if="product && !productsStore.loading && !productsStore.error"
       class="lg:hidden fixed left-0 right-0 z-[9999] p-4 pb-2"
-      style="bottom: 75px; background-color: #3A3331; box-shadow: 0 -4px 12px rgba(0,0,0,0.3);"
+      style="bottom: 78px; background-color: #3A3331; box-shadow: 0 -4px 12px rgba(0,0,0,0.3);"
     >
       <div
         v-if="isAvailable"
@@ -469,6 +533,8 @@ const quantity = ref(1)
 const selectedImageIndex = ref(0)
 const galleryRef = ref(null)
 const mainImageContainerRef = ref(null)
+const priceBlockRef = ref(null)
+const showFloatingBar = ref(false)
 const showFullscreenGallery = ref(false)
 
 // Pinch-to-zoom для основного изображения (мобильный)
@@ -768,6 +834,8 @@ watch(selectedImageIndex, () => {
   scrollThumbnailIntoView()
 })
 
+let priceObserver = null
+let priceEl = null
 onMounted(async () => {
   window.scrollTo(0, 0)
   document.documentElement.scrollTop = 0
@@ -775,12 +843,28 @@ onMounted(async () => {
   const productId = Number(route.params.id)
   try {
     await productsStore.fetchProductById(productId)
+    nextTick(() => {
+      priceEl = priceBlockRef.value
+      if (priceEl && typeof IntersectionObserver !== 'undefined') {
+        priceObserver = new IntersectionObserver(
+          ([entry]) => {
+            showFloatingBar.value = !entry.isIntersecting
+          },
+          { threshold: 0, rootMargin: '-80px 0px 0px 0px' }
+        )
+        priceObserver.observe(priceEl)
+      }
+    })
   } catch (error) {
     router.push('/products')
   }
 })
 
 onUnmounted(() => {
+  if (priceObserver && priceEl) {
+    priceObserver.unobserve(priceEl)
+    priceObserver = null
+  }
   document.removeEventListener('keydown', onFullscreenKeydown)
   document.removeEventListener('mousemove', onFullscreenPanMove)
   document.removeEventListener('mouseup', onFullscreenPanEnd)
