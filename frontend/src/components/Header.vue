@@ -97,8 +97,8 @@
       </nav>
     </div>
     
-    <!-- Нижний слой: горизонтальное меню (скрыто на странице корзины) -->
-    <div v-if="route.path !== '/cart'" class="header-menu">
+    <!-- Нижний слой: горизонтальное меню -->
+    <div class="header-menu">
       <div class="horizontal-menu">
         <ul class="menu-list">
           <li class="menu-item">
@@ -124,10 +124,10 @@
       </div>
     </div>
     
-    <!-- Большое подменю с картинками (скрыто на странице корзины) -->
+    <!-- Большое подменю с картинками -->
     <transition name="dropdown-menu">
       <div
-        v-if="route.path !== '/cart' && visibleSubmenu && getCurrentCategoryData()"
+        v-if="visibleSubmenu && getCurrentCategoryData()"
         class="dropdown-menu"
         @mouseenter="keepSubmenuVisible"
         @mouseleave="hideSubmenu"

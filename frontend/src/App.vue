@@ -1,7 +1,7 @@
 <template>
-  <div class="min-h-screen flex flex-col" :class="$route.path === '/cart' || $route.path === '/checkout' ? 'bg-[#2E2826]' : 'bg-[#3A3331]'">
+  <div class="min-h-screen flex flex-col bg-[#3A3331]">
     <Header />
-    <main class="flex-grow" :class="$route.path === '/cart' ? 'pt-[60px] md:pt-[60px] pb-24 md:pb-0' : 'pt-[60px] md:pt-[110px] pb-24 md:pb-0'">
+    <main class="flex-grow pt-[60px] md:pt-[110px] pb-[70px] md:pb-0">
       <router-view />
     </main>
     <Footer />
