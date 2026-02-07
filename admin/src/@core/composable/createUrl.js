@@ -5,7 +5,11 @@ export const createUrl = (url, options) => computed(() => {
     return toValue(url)
   const _url = toValue(url)
   const _query = toValue(options?.query)
-  const queryObj = Object.fromEntries(Object.entries(_query).map(([key, val]) => [key, toValue(val)]))
+  const queryObj = Object.fromEntries(
+    Object.entries(_query)
+      .map(([key, val]) => [key, toValue(val)])
+      .filter(([, val]) => val !== undefined && val !== null && val !== '')
+  )
   
-  return `${_url}${queryObj ? `?${stringifyQuery(queryObj)}` : ''}`
+  return `${_url}${Object.keys(queryObj).length ? `?${stringifyQuery(queryObj)}` : ''}`
 })

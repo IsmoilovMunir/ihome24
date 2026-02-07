@@ -10,6 +10,7 @@ import com.ihome24.ihome24.dto.request.product.VariantRequest;
 import com.ihome24.ihome24.dto.response.category.CategoryResponse;
 import com.ihome24.ihome24.dto.response.product.CharacteristicResponse;
 import com.ihome24.ihome24.dto.response.product.ProductImageResponse;
+import com.ihome24.ihome24.dto.response.product.ProductListResponse;
 import com.ihome24.ihome24.dto.response.product.ProductResponse;
 import com.ihome24.ihome24.dto.response.product.VariantResponse;
 import com.ihome24.ihome24.entity.category.Category;
@@ -19,6 +20,10 @@ import com.ihome24.ihome24.repository.category.CategoryRepository;
 import com.ihome24.ihome24.repository.product.ProductRepository;
 import com.ihome24.ihome24.service.storage.FileService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -198,11 +203,76 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
+    public ProductListResponse getProductsPaginated(String q, Long categoryId, String categoryName,
+                                                    Boolean stockInStock, String statusFilter,
+                                                    Integer page, Integer itemsPerPage, String sortBy, String orderBy) {
+        int pageNum = (page != null && page > 0) ? page - 1 : 0;
+        int pageSize = (itemsPerPage != null && itemsPerPage > 0) ? Math.min(itemsPerPage, 100) : 10;
+        Sort.Direction direction = "desc".equalsIgnoreCase(orderBy) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        String sortField = sortBy != null && !sortBy.isEmpty() ? mapSortField(sortBy) : "createdAt";
+        Pageable pageable = PageRequest.of(pageNum, pageSize, Sort.by(direction, sortField));
+
+        Long catId = categoryId;
+        String catName = categoryName;
+        if (catId == null && catName != null && !catName.isEmpty()) {
+            try {
+                catId = Long.parseLong(catName);
+                catName = null;
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        Page<Product> productPage = productRepository.findAllWithSearch(q, catId, catName, stockInStock, statusFilter, pageable);
+        List<ProductResponse> products = productPage.getContent().stream()
+                .map(product -> {
+                    product.getImages().size();
+                    return mapToResponse(product);
+                })
+                .collect(Collectors.toList());
+
+        return ProductListResponse.builder()
+                .products(products)
+                .total(productPage.getTotalElements())
+                .build();
+    }
+
+    private String mapSortField(String sortBy) {
+        return switch (sortBy) {
+            case "product", "productName", "name" -> "name";
+            case "category" -> "category.name";
+            case "price" -> "price";
+            case "sku" -> "sku";
+            case "stock", "qty" -> "stockQuantity";
+            case "status" -> "isActive";
+            default -> "createdAt";
+        };
+    }
+
+    @Transactional(readOnly = true)
     public List<ProductResponse> getActiveProducts() {
         List<Product> products = productRepository.findByIsActiveTrue();
         return products.stream()
                 .map(product -> {
                     // Инициализируем lazy коллекцию изображений
+                    product.getImages().size();
+                    return mapToResponse(product);
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Возвращает только активные товары по списку ID.
+     * Используется для валидации корзины — несуществующие или неактивные товары не попадут в результат.
+     */
+    @Transactional(readOnly = true)
+    public List<ProductResponse> getActiveProductsByIds(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<Long> distinctIds = ids.stream().distinct().toList();
+        List<Product> products = productRepository.findByIdInAndIsActiveTrue(distinctIds);
+        return products.stream()
+                .map(product -> {
                     product.getImages().size();
                     return mapToResponse(product);
                 })

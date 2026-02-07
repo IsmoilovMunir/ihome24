@@ -1,6 +1,7 @@
 package com.ihome24.ihome24.controller.admin.product;
 
 import com.ihome24.ihome24.dto.request.product.ProductRequest;
+import com.ihome24.ihome24.dto.response.product.ProductListResponse;
 import com.ihome24.ihome24.dto.response.product.ProductResponse;
 import com.ihome24.ihome24.service.product.ProductService;
 import jakarta.validation.Valid;
@@ -8,8 +9,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/admin/products")
@@ -26,9 +25,19 @@ public class AdminProductRestController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductResponse>> getAllProducts() {
-        List<ProductResponse> products = productService.getAllProducts();
-        return ResponseEntity.ok(products);
+    public ResponseEntity<ProductListResponse> getProducts(
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) Boolean stock,
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer itemsPerPage,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String orderBy) {
+        ProductListResponse response = productService.getProductsPaginated(
+                q, categoryId, category, stock, status, page, itemsPerPage, sortBy, orderBy);
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")

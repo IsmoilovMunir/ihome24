@@ -1,18 +1,39 @@
 package com.ihome24.ihome24.controller.publicapi.order;
 
+import com.ihome24.ihome24.dto.request.order.CreateOrderRequest;
 import com.ihome24.ihome24.dto.response.order.OrderListResponse;
+import com.ihome24.ihome24.dto.response.order.OrderResponse;
 import com.ihome24.ihome24.service.order.OrderService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/apps/ecommerce/orders")
+@RequestMapping("/api/apps/ecommerce/orders")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class OrderRestController {
 
     private final OrderService orderService;
+
+    @PostMapping
+    public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
+        OrderResponse order = orderService.createOrder(request);
+        return ResponseEntity.ok(order);
+    }
+
+    @GetMapping("/{idOrOrderNumber}")
+    public ResponseEntity<OrderResponse> getOrderById(@PathVariable String idOrOrderNumber) {
+        Long id;
+        try {
+            id = Long.parseLong(idOrOrderNumber);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Invalid order id: " + idOrOrderNumber);
+        }
+        OrderResponse order = orderService.getOrderByIdOrOrderNumber(id);
+        return ResponseEntity.ok(order);
+    }
 
     @GetMapping
     public ResponseEntity<OrderListResponse> getOrders(

@@ -1,4 +1,6 @@
 <script setup>
+import * as XLSX from 'xlsx'
+
 const widgetData = ref([
   {
     title: 'Продажи в магазине',
@@ -87,32 +89,7 @@ const status = ref([
   },
 ])
 
-const categories = ref([
-  {
-    title: 'Аксессуары',
-    value: 'Accessories',
-  },
-  {
-    title: 'Декор для дома',
-    value: 'Home Decor',
-  },
-  {
-    title: 'Электроника',
-    value: 'Electronics',
-  },
-  {
-    title: 'Обувь',
-    value: 'Shoes',
-  },
-  {
-    title: 'Офис',
-    value: 'Office',
-  },
-  {
-    title: 'Игры',
-    value: 'Games',
-  },
-])
+const categories = ref([])
 
 const stockStatus = ref([
   {
@@ -137,36 +114,15 @@ const updateOptions = options => {
 }
 
 const resolveCategory = category => {
-  if (category === 'Accessories')
-    return {
-      color: 'error',
-      icon: 'tabler-device-watch',
-    }
-  if (category === 'Home Decor')
-    return {
-      color: 'info',
-      icon: 'tabler-home',
-    }
-  if (category === 'Electronics')
-    return {
-      color: 'primary',
-      icon: 'tabler-device-imac',
-    }
-  if (category === 'Shoes')
-    return {
-      color: 'success',
-      icon: 'tabler-shoe',
-    }
-  if (category === 'Office')
-    return {
-      color: 'warning',
-      icon: 'tabler-briefcase',
-    }
-  if (category === 'Games')
-    return {
-      color: 'primary',
-      icon: 'tabler-device-gamepad-2',
-    }
+  const map = {
+    'Accessories': { color: 'error', icon: 'tabler-device-watch' },
+    'Home Decor': { color: 'info', icon: 'tabler-home' },
+    'Electronics': { color: 'primary', icon: 'tabler-device-imac' },
+    'Shoes': { color: 'success', icon: 'tabler-shoe' },
+    'Office': { color: 'warning', icon: 'tabler-briefcase' },
+    'Games': { color: 'primary', icon: 'tabler-device-gamepad-2' },
+  }
+  return map[category] ?? { color: 'secondary', icon: 'tabler-tag' }
 }
 
 const truncateWords = (text, maxWords = 10) => {
@@ -201,7 +157,7 @@ const {
   query: {
     q: searchQuery,
     stock: selectedStock,
-    category: selectedCategory,
+    categoryId: selectedCategory,
     status: selectedStatus,
     page,
     itemsPerPage,
@@ -210,13 +166,33 @@ const {
   },
 }))
 
+onMounted(async () => {
+  try {
+    const data = await $api('/admin/categories')
+    categories.value = (data ?? []).map(c => ({ title: c.name, value: c.id }))
+  } catch {
+    categories.value = []
+  }
+})
+
+watch([searchQuery, selectedCategory, selectedStock, selectedStatus], () => {
+  page.value = 1
+})
+
+const debouncedFetch = useDebounceFn(() => fetchProducts(), 300)
+
+watch([searchQuery, selectedCategory, selectedStock, selectedStatus, page, itemsPerPage, sortBy, orderBy], () => {
+  debouncedFetch()
+}, { immediate: true })
+
 // Преобразуем данные от бэкенда в формат, ожидаемый фронтендом
 const products = computed(() => {
-  if (!productsData.value || !Array.isArray(productsData.value)) {
+  const list = productsData.value?.products ?? productsData.value
+  if (!list || !Array.isArray(list)) {
     return []
   }
   
-  return productsData.value.map(product => {
+  return list.map(product => {
     // Форматируем цену (BigDecimal -> строка с 2 знаками после запятой)
     let priceFormatted = '₽0'
     if (product.price) {
@@ -242,10 +218,10 @@ const products = computed(() => {
 })
 
 const totalProduct = computed(() => {
-  if (!productsData.value || !Array.isArray(productsData.value)) {
-    return 0
-  }
-  return productsData.value.length
+  const data = productsData.value
+  if (data?.total != null) return Number(data.total)
+  if (Array.isArray(data)) return data.length
+  return 0
 })
 
 const deleteProduct = async id => {
@@ -253,7 +229,7 @@ const deleteProduct = async id => {
     await $api(`admin/products/${ id }`, { method: 'DELETE' })
 
     // Delete from selectedRows
-    const index = selectedRows.value.findIndex(row => row === id)
+    const index = selectedRows.value.findIndex(row => (typeof row === 'object' ? row?.id : row) === id)
     if (index !== -1)
       selectedRows.value.splice(index, 1)
 
@@ -261,7 +237,65 @@ const deleteProduct = async id => {
     fetchProducts()
   } catch (error) {
     console.error('Ошибка при удалении товара:', error)
-    // Можно добавить уведомление об ошибке
+  }
+}
+
+const productToRow = p => ({
+  'ID': p.id,
+  'Название': p.name ?? p.productName ?? '',
+  'Описание': p.description ?? p.productBrand ?? '',
+  'Бренд': p.brand ?? '',
+  'Категория': (p.category?.name ?? p.category ?? '') || 'Uncategorized',
+  'Артикул': p.sku ?? '',
+  'Цена': p.price != null ? (typeof p.price === 'number' ? p.price : parseFloat(String(p.price).replace(/[^\d.-]/g, '') || 0)) : '',
+  'Старая цена': p.oldPrice != null ? parseFloat(p.oldPrice) : '',
+  'Количество': p.stockQuantity ?? p.qty ?? 0,
+  'В наличии': (p.stockQuantity ?? p.qty ?? 0) > 0 ? 'Да' : 'Нет',
+  'Статус': (p.isActive === true || p.status === 'Published') ? 'Опубликовано' : ((p.isActive === false || p.status === 'Inactive') ? 'Неактивно' : (p.status ?? '')),
+  'URL изображения': p.imageUrl ?? p.image ?? '',
+  'Дата создания': p.createdAt ? new Date(p.createdAt).toLocaleString('ru-RU') : '',
+})
+
+const exportToExcel = async () => {
+  try {
+    let rows = []
+    if (selectedRows.value?.length > 0) {
+      const items = selectedRows.value.map(r => (typeof r === 'object' ? r : products.value.find(p => p.id === r))).filter(Boolean)
+      rows = items.map(item => {
+        const raw = productsData.value?.products?.find(p => p.id === item.id)
+        return productToRow(raw ? { ...raw, ...item } : item)
+      })
+    } else {
+      const params = new URLSearchParams()
+      if (searchQuery.value) params.set('q', searchQuery.value)
+      if (selectedCategory.value) params.set('categoryId', selectedCategory.value)
+      if (selectedStock.value != null) params.set('stock', selectedStock.value)
+      if (selectedStatus.value) params.set('status', selectedStatus.value)
+      params.set('itemsPerPage', '100')
+      let list = []
+      for (let pageNum = 1; ; pageNum++) {
+        params.set('page', String(pageNum))
+        const data = await $api(`/admin/products?${params}`)
+        const chunk = data?.products ?? data ?? []
+        list = list.concat(chunk)
+        if (chunk.length < 100)
+          break
+      }
+      rows = list.map(p => productToRow(p))
+    }
+    if (rows.length === 0) {
+      // eslint-disable-next-line no-alert
+      alert('Нет данных для экспорта. Выберите товары или убедитесь, что список не пуст.')
+      return
+    }
+    const ws = XLSX.utils.json_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Товары')
+    XLSX.writeFile(wb, `товары_${new Date().toISOString().slice(0, 10)}.xlsx`)
+  } catch (error) {
+    console.error('Ошибка экспорта:', error)
+    // eslint-disable-next-line no-alert
+    alert('Ошибка при экспорте. Проверьте консоль.')
   }
 }
 </script>
@@ -290,6 +324,8 @@ const deleteProduct = async id => {
               v-model="selectedStatus"
               placeholder="Статус"
               :items="status"
+              item-value="value"
+              item-title="title"
               clearable
               clear-icon="tabler-x"
             />
@@ -304,6 +340,8 @@ const deleteProduct = async id => {
               v-model="selectedCategory"
               placeholder="Категория"
               :items="categories"
+              item-value="value"
+              item-title="title"
               clearable
               clear-icon="tabler-x"
             />
@@ -318,6 +356,8 @@ const deleteProduct = async id => {
               v-model="selectedStock"
               placeholder="Наличие"
               :items="stockStatus"
+              item-value="value"
+              item-title="title"
               clearable
               clear-icon="tabler-x"
             />
@@ -341,14 +381,18 @@ const deleteProduct = async id => {
         <VSpacer />
         <div class="d-flex gap-4 flex-wrap align-center">
           <AppSelect
-            v-model="itemsPerPage"
-            :items="[5, 10, 20, 25, 50]"
+            :model-value="itemsPerPage"
+            :items="[5, 10, 20, 25, 50].map(n => ({ value: n, title: String(n) }))"
+            item-value="value"
+            item-title="title"
+            @update:model-value="itemsPerPage = Number($event)"
           />
           <!-- 👉 Export button -->
           <VBtn
             variant="tonal"
             color="secondary"
-            prepend-icon="tabler-upload"
+            prepend-icon="tabler-file-export"
+            @click="exportToExcel"
           >
             Экспорт
           </VBtn>

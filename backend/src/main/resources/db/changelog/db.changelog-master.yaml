@@ -31,3 +31,5 @@ databaseChangeLog:
       file: db/changelog/changeset/company_settings_V001__initial.sql
   - include:
       file: db/changelog/changeset/orders_V001__initial.sql
+  - include:
+      file: db/changelog/changeset/orders_V002__add_order_items.sql

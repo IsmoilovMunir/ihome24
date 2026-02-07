@@ -108,8 +108,11 @@ const deleteCategory = async categoryId => {
 
           <div class="d-flex align-center flex-wrap gap-4">
             <AppSelect
-              v-model="itemsPerPage"
-              :items="[5, 10, 15]"
+              :model-value="itemsPerPage"
+              :items="[5, 10, 15].map(n => ({ value: n, title: String(n) }))"
+              item-value="value"
+              item-title="title"
+              @update:model-value="itemsPerPage = Number($event)"
               style="max-inline-size: 100px; min-inline-size: 100px;"
             />
             <VBtn

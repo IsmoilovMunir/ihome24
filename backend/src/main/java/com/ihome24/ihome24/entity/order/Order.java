@@ -8,6 +8,8 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "orders")
@@ -29,6 +31,18 @@ public class Order {
 
     @Column(nullable = false)
     private String email;
+
+    @Column(name = "phone")
+    private String phone;
+
+    @Column(name = "address", columnDefinition = "TEXT")
+    private String address;
+
+    @Column(name = "delivery_method")
+    private String deliveryMethod;
+
+    @Column(name = "comment", columnDefinition = "TEXT")
+    private String comment;
 
     @Column(name = "avatar_url")
     private String avatarUrl;
@@ -60,6 +74,10 @@ public class Order {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<OrderItem> items = new ArrayList<>();
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -82,14 +100,16 @@ public class Order {
     }
 
     public enum OrderStatus {
-        DELIVERED,
+        PENDING,
+        DISPATCHED,
         OUT_FOR_DELIVERY,
         READY_TO_PICKUP,
-        DISPATCHED
+        DELIVERED
     }
 
     public enum PaymentMethod {
         PAYPAL,
-        MASTERCARD
+        MASTERCARD,
+        CASH
     }
 }

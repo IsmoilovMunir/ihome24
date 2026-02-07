@@ -20,7 +20,7 @@ export default [
         title: 'Заказы',
         children: [
           { title: 'Список', to: 'apps-ecommerce-order-list' },
-          { title: 'Детали', to: { name: 'apps-ecommerce-order-details-id', params: { id: '9042' } } },
+          { title: 'Детали', to: { name: 'apps-ecommerce-order-details-id', params: { id: '1' } } },
         ],
       },
       {

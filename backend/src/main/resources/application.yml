@@ -48,7 +48,7 @@ spring:
     password: ov6t4gpce10
     properties:
       mail:
-        debug: ${MAIL_DEBUG:true}  # Включаем детальное логирование SMTP
+        debug: ${MAIL_DEBUG:false}  # true — для отладки SMTP
         smtp:
           auth: ${MAIL_SMTP_AUTH:true}
           ssl:

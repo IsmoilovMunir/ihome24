@@ -78,6 +78,37 @@ const updateOptions = options => {
   orderBy.value = options.sortBy[0]?.order
 }
 
+// Загрузка заказов — ручной fetch без блокировки рендера
+const ordersData = ref({ orders: [], total: 0 })
+const isLoading = ref(false)
+
+const fetchOrders = useDebounceFn(async () => {
+  isLoading.value = true
+  try {
+    const params = new URLSearchParams()
+    if (searchQuery.value) params.set('q', searchQuery.value)
+    params.set('page', String(page.value))
+    params.set('itemsPerPage', String(itemsPerPage.value))
+    if (sortBy.value) params.set('sortBy', sortBy.value)
+    if (orderBy.value) params.set('orderBy', orderBy.value)
+    const data = await $api(`/apps/ecommerce/orders?${params}`)
+    ordersData.value = { orders: data?.orders ?? [], total: data?.total ?? 0 }
+  } catch (e) {
+    console.error('Ошибка загрузки заказов:', e)
+    ordersData.value = { orders: [], total: 0 }
+  } finally {
+    isLoading.value = false
+  }
+}, 150)
+
+onMounted(() => {
+  fetchOrders()
+})
+
+watch([searchQuery, page, itemsPerPage, sortBy, orderBy], () => {
+  fetchOrders()
+})
+
 const resolvePaymentStatus = status => {
   if (status === 1)
     return {
@@ -102,6 +133,11 @@ const resolvePaymentStatus = status => {
 }
 
 const resolveStatus = status => {
+  if (status === 'Pending')
+    return {
+      text: 'Ожидает',
+      color: 'warning',
+    }
   if (status === 'Delivered')
     return {
       text: 'Доставлено',
@@ -124,21 +160,8 @@ const resolveStatus = status => {
     }
 }
 
-const {
-  data: ordersData,
-  execute: fetchOrders,
-} = await useApi(createUrl('/apps/ecommerce/orders', {
-  query: {
-    q: searchQuery,
-    page,
-    itemsPerPage,
-    sortBy,
-    orderBy,
-  },
-}))
-
-const orders = computed(() => ordersData.value.orders)
-const totalOrder = computed(() => ordersData.value.total)
+const orders = computed(() => ordersData.value?.orders ?? [])
+const totalOrder = computed(() => ordersData.value?.total ?? 0)
 
 const deleteOrder = async id => {
   await $api(`/apps/ecommerce/orders/${ id }`, { method: 'DELETE' })
@@ -225,9 +248,12 @@ const deleteOrder = async id => {
 
           <div class="d-flex gap-x-4 align-center">
             <AppSelect
-              v-model="itemsPerPage"
+              :model-value="itemsPerPage"
               style="min-inline-size: 6.25rem;"
-              :items="[5, 10, 20, 50, 100]"
+              :items="[5, 10, 20, 50, 100].map(n => ({ value: n, title: String(n) }))"
+              item-value="value"
+              item-title="title"
+              @update:model-value="itemsPerPage = Number($event)"
             />
             <VBtn
               variant="tonal"
@@ -249,6 +275,7 @@ const deleteOrder = async id => {
         :headers="headers"
         :items="orders"
         :items-length="totalOrder"
+        :loading="isLoading"
         show-select
         class="text-no-wrap"
         @update:options="updateOptions"
@@ -270,8 +297,8 @@ const deleteOrder = async id => {
           <div class="d-flex align-center gap-x-3">
             <VAvatar
               size="34"
-              :color="!item.avatar.length ? 'primary' : ''"
-              :variant="!item.avatar.length ? 'tonal' : undefined"
+              :color="!item.avatar?.length ? 'primary' : ''"
+              :variant="!item.avatar?.length ? 'tonal' : undefined"
             >
               <VImg
                 v-if="item.avatar"
@@ -327,14 +354,21 @@ const deleteOrder = async id => {
 
         <!-- Method -->
         <template #item.method="{ item }">
-          <div class="d-flex align-center">
+          <div class="d-flex align-center gap-x-2">
             <img
-              :src="item.method === 'mastercard' ? mastercard : paypal"
+              v-if="item.method === 'mastercard'"
+              :src="mastercard"
               height="18"
             >
-            <div class="text-body-1">
-              ...{{ item.method === 'mastercard' ? item.methodNumber : '@gmail.com' }}
-            </div>
+            <img
+              v-else-if="item.method === 'paypalLogo'"
+              :src="paypal"
+              height="18"
+            >
+            <span v-else class="text-body-1">Наличные</span>
+            <span class="text-body-1">
+              {{ item.method === 'mastercard' ? '...' + (item.methodNumber || '') : item.method === 'paypalLogo' ? '@gmail.com' : '' }}
+            </span>
           </div>
         </template>
 

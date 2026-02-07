@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { cartApi } from '../services/api'
 
 export const useCartStore = defineStore('cart', {
   state: () => ({
@@ -44,7 +45,8 @@ export const useCartStore = defineStore('cart', {
         if (quantity <= 0) {
           this.removeFromCart(productId)
         } else {
-          item.quantity = quantity
+          const maxQty = item.product?.stockQuantity ?? 999999
+          item.quantity = Math.min(quantity, maxQty)
           this.saveCart()
         }
       }
@@ -53,6 +55,24 @@ export const useCartStore = defineStore('cart', {
     clearCart() {
       this.items = []
       this.saveCart()
+    },
+
+    /**
+     * Валидирует корзину с бэкендом: убирает удалённые/неактивные товары,
+     * обновляет цены и данные. Вызывать при открытии страницы корзины.
+     */
+    async validateCart() {
+      if (this.items.length === 0) return
+      try {
+        const { data } = await cartApi.validate(this.items)
+        this.items = (data.validItems || []).map(item => ({
+          product: item.product,
+          quantity: item.quantity,
+        }))
+        this.saveCart()
+      } catch (err) {
+        console.warn('Cart validation failed:', err)
+      }
     },
 
     saveCart() {
