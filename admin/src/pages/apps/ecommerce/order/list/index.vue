@@ -29,6 +29,9 @@ const mastercard = useGenerateImageVariant(masterCardLight, masterCardDark)
 const paypal = useGenerateImageVariant(paypalLight, paypalDark)
 const searchQuery = ref('')
 
+const router = useRouter()
+const activeTab = ref('active')
+
 // Data table options
 const itemsPerPage = ref(10)
 const page = ref(1)
@@ -89,6 +92,7 @@ const fetchOrders = useDebounceFn(async () => {
     params.set('itemsPerPage', String(itemsPerPage.value))
     if (sortBy.value) params.set('sortBy', sortBy.value)
     if (orderBy.value) params.set('orderBy', orderBy.value)
+    params.set('completed', activeTab.value === 'completed' ? 'true' : 'false')
     const data = await $api(`/apps/ecommerce/orders?${params}`)
     ordersData.value = { orders: data?.orders ?? [], total: data?.total ?? 0 }
   } catch (e) {
@@ -104,8 +108,18 @@ onMounted(() => {
   fetchOrderStats()
 })
 
-watch([searchQuery, page, itemsPerPage, sortBy, orderBy], () => {
+watch([searchQuery, activeTab], () => {
+  page.value = 1
+})
+watch([searchQuery, page, itemsPerPage, sortBy, orderBy, activeTab], () => {
   fetchOrders()
+})
+
+// При клике на "Завершённые" — перейти на отдельную страницу
+watch(activeTab, tab => {
+  if (tab === 'completed') {
+    router.push({ name: 'apps-ecommerce-order-completed' })
+  }
 })
 
 const resolvePaymentStatus = status => {
@@ -136,6 +150,11 @@ const resolveStatus = status => {
     return {
       text: 'Ожидает',
       color: 'warning',
+    }
+  if (status === 'In Processing')
+    return {
+      text: 'В обработке',
+      color: 'info',
     }
   if (status === 'Delivered')
     return {
@@ -237,6 +256,27 @@ const deleteOrder = async id => {
     </VCard>
 
     <VCard>
+      <!-- 👉 Вкладки: Активные / Завершённые -->
+      <VTabs
+        v-model="activeTab"
+        class="px-4 pt-4"
+      >
+        <VTab value="active">
+          <VIcon
+            icon="tabler-clock"
+            start
+          />
+          Активные заказы
+        </VTab>
+        <VTab value="completed">
+          <VIcon
+            icon="tabler-checks"
+            start
+          />
+          Завершённые
+        </VTab>
+      </VTabs>
+
       <!-- 👉 Filters -->
       <VCardText>
         <div class="d-flex justify-sm-space-between justify-start flex-wrap gap-4">

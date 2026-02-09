@@ -10,6 +10,7 @@ import com.ihome24.ihome24.entity.order.OrderItem;
 import com.ihome24.ihome24.entity.product.Product;
 import com.ihome24.ihome24.exception.ResourceNotFoundException;
 import com.ihome24.ihome24.repository.order.OrderRepository;
+import com.ihome24.ihome24.service.email.EmailService;
 import com.ihome24.ihome24.repository.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -32,6 +33,7 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+    private final EmailService emailService;
 
     @Transactional(readOnly = true)
     public OrderStatsResponse getOrderStats() {
@@ -44,16 +46,21 @@ public class OrderService {
     }
 
     @Transactional(readOnly = true)
-    public OrderListResponse getOrders(String searchQuery, Integer page, Integer itemsPerPage, String sortBy, String orderBy) {
-        // Create pageable with sorting
+    public OrderListResponse getOrders(String searchQuery, Integer page, Integer itemsPerPage,
+                                       String sortBy, String orderBy, Boolean completed) {
         Sort.Direction direction = "desc".equalsIgnoreCase(orderBy) ? Sort.Direction.DESC : Sort.Direction.ASC;
         String sortField = getSortField(sortBy);
         Pageable pageable = PageRequest.of(page - 1, itemsPerPage, Sort.by(direction, sortField));
 
-        // Get orders with search
-        Page<Order> orderPage = orderRepository.findOrdersWithSearch(searchQuery, pageable);
+        Page<Order> orderPage;
+        if (completed != null) {
+            orderPage = orderRepository.findOrdersWithSearchAndCompleted(
+                    searchQuery != null ? searchQuery.trim() : null, completed, pageable);
+        } else {
+            orderPage = orderRepository.findOrdersWithSearch(
+                    searchQuery != null ? searchQuery.trim() : null, pageable);
+        }
 
-        // Map to response
         List<OrderResponse> orderResponses = orderPage.getContent().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -85,6 +92,30 @@ public class OrderService {
             throw new ResourceNotFoundException("Заказ не найден: " + id);
         }
         orderRepository.deleteById(id);
+    }
+
+    @Transactional
+    public OrderResponse updateOrderStatus(Long id, String statusStr) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Заказ не найден: " + id));
+
+        Order.OrderStatus newStatus = parseOrderStatus(statusStr);
+        order.setStatus(newStatus);
+        order = orderRepository.save(order);
+
+        return mapToResponse(order);
+    }
+
+    private Order.OrderStatus parseOrderStatus(String statusStr) {
+        if (statusStr == null || statusStr.isBlank()) {
+            throw new IllegalArgumentException("Некорректный статус: " + statusStr);
+        }
+        try {
+            return Order.OrderStatus.valueOf(statusStr.toUpperCase().replace(" ", "_"));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Недопустимый статус: " + statusStr +
+                    ". Допустимые: PENDING, IN_PROCESSING, DISPATCHED, OUT_FOR_DELIVERY, READY_TO_PICKUP, DELIVERED");
+        }
     }
 
     @Transactional
@@ -144,6 +175,14 @@ public class OrderService {
             order.getItems().add(item);
         }
         order = orderRepository.save(order);
+
+        // Отправляем письмо клиенту о принятии заказа
+        try {
+            String totalStr = totalSpent != null ? String.format("%.2f ₽", totalSpent) : "";
+            emailService.sendOrderConfirmation(order.getEmail(), order.getCustomer(), order.getOrderNumber(), totalStr);
+        } catch (Exception e) {
+            // Заказ создан, письмо не критично — не прерываем
+        }
 
         return mapToResponse(order);
     }
@@ -219,6 +258,7 @@ public class OrderService {
         if (status == null) return "Delivered";
         switch (status) {
             case PENDING: return "Pending";
+            case IN_PROCESSING: return "In Processing";
             case DELIVERED: return "Delivered";
             case OUT_FOR_DELIVERY: return "Out for Delivery";
             case READY_TO_PICKUP: return "Ready to Pickup";

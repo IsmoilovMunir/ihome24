@@ -1,12 +1,21 @@
 <script setup>
-import amazonEchoDot from '@images/eCommerce/amazon-echo-dot.png'
-import appleWatch from '@images/eCommerce/apple-watch.png'
-import headphone from '@images/eCommerce/headphone.png'
-import iphone from '@images/eCommerce/iphone.png'
-import nike from '@images/eCommerce/nike.png'
-import sonyDualsense from '@images/eCommerce/sony-dualsense.png'
+const dashboardData = inject('dashboardData')
 
-const popularProducts = []
+const popularProducts = computed(() => {
+  const list = dashboardData?.value?.popularProducts ?? []
+  return list.map(p => ({
+    id: p.productId,
+    title: p.productName,
+    subtitle: `${p.totalQuantity} продаж`,
+    stats: p.totalQuantity,
+    avatarImg: p.imageUrl || null,
+  }))
+})
+
+const totalVisitors = computed(() => {
+  const list = dashboardData?.value?.popularProducts ?? []
+  return list.reduce((sum, p) => sum + (p.totalQuantity || 0), 0)
+})
 
 const moreList = [
   {
@@ -27,7 +36,7 @@ const moreList = [
 <template>
   <VCard
     title="Популярные товары"
-    subtitle="Всего 0 посетителей"
+    :subtitle="`Всего ${totalVisitors} продаж`"
   >
     <template #append>
       <div class="mt-n4 me-n2">
@@ -50,6 +59,7 @@ const moreList = [
               rounded
               class="me-1"
               :image="product.avatarImg"
+              :icon="product.avatarImg ? undefined : 'tabler-package'"
             />
           </template>
 

@@ -7,13 +7,23 @@ import { hexToRgb } from '@layouts/utils'
 
 const vuetifyTheme = useTheme()
 const display = useDisplay()
+const dashboardData = inject('dashboardData')
 
-const series = [
-  0,
-  0,
-  0,
-  0,
-]
+const totalLeads = computed(() => {
+  const products = dashboardData?.value?.popularProducts ?? []
+  return products.reduce((s, p) => s + (p.totalQuantity || 0), 0)
+})
+
+
+const chartLabels = computed(() => {
+  const products = dashboardData?.value?.popularProducts ?? []
+  return products.length > 0 ? products.map(p => p.productName) : ['Нет данных']
+})
+
+const chartSeries = computed(() => {
+  const products = dashboardData?.value?.popularProducts ?? []
+  return products.length > 0 ? products.map(p => p.totalQuantity) : [0]
+})
 
 const chartOptions = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors
@@ -35,18 +45,13 @@ const chartOptions = computed(() => {
       parentHeightOffset: 0,
       type: 'donut',
     },
-    labels: [
-      'Электроника',
-      'Спорт',
-      'Декор',
-      'Мода',
-    ],
+    labels: chartLabels.value,
     colors: [
       chartColors.donut.series1,
       chartColors.donut.series2,
       chartColors.donut.series3,
       chartColors.donut.series4,
-    ],
+    ].slice(0, Math.max(1, chartLabels.value.length)),
     stroke: { width: 0 },
     dataLabels: {
       enabled: false,
@@ -92,8 +97,8 @@ const chartOptions = computed(() => {
               fontSize: '.8125rem',
               label: 'Всего',
               fontFamily: 'Public Sans',
-              formatter() {
-                return '0'
+              formatter(_w, opts) {
+                return opts.globals.seriesTotals.reduce((a, b) => a + b, 0)
               },
             },
           },
@@ -105,8 +110,8 @@ const chartOptions = computed(() => {
         breakpoint: display.thresholds.value.lg,
         options: {
           chart: {
-            width: 200,
-            height: 160,
+            width: 100,
+            height: 90,
           },
         },
       },
@@ -114,8 +119,8 @@ const chartOptions = computed(() => {
         breakpoint: 420,
         options: {
           chart: {
-            width: 150,
-            height: 120,
+            width: 80,
+            height: 80,
           },
         },
       },
@@ -125,8 +130,8 @@ const chartOptions = computed(() => {
 </script>
 
 <template>
-  <VCard class="overflow-visible">
-    <VCardText class="d-flex justify-space-between">
+  <VCard>
+    <VCardText class="d-flex justify-space-between overflow-hidden">
       <div class="d-flex flex-column">
         <div class="mb-auto">
           <h5 class="text-h5 text-no-wrap">
@@ -139,7 +144,7 @@ const chartOptions = computed(() => {
 
         <div>
           <h3 class="text-h3">
-            0
+            {{ totalLeads }}
           </h3>
           <div>
             <VIcon
@@ -151,12 +156,12 @@ const chartOptions = computed(() => {
           </div>
         </div>
       </div>
-      <div>
+      <div class="overflow-hidden flex-shrink-0">
         <VueApexCharts
           :options="chartOptions"
-          :series="series"
-          :height="120"
-          :width="120"
+          :series="chartSeries"
+          :height="90"
+          :width="90"
         />
       </div>
     </VCardText>

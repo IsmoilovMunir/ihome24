@@ -165,4 +165,62 @@ public class EmailService {
             throw new RuntimeException(errorMsg, e);
         }
     }
+
+    /**
+     * Отправляет клиенту письмо о принятии заказа.
+     * Текст: заказ принят, обрабатывается, скоро с вами свяжется менеджер.
+     */
+    public void sendOrderConfirmation(String toEmail, String customerName, Long orderNumber, String totalAmount) {
+        if (mailUsername == null || mailUsername.isEmpty()) {
+            log.warn("Email не настроен. Письмо о заказе #{} не отправлено.", orderNumber);
+            return;
+        }
+        try {
+            String fromEmail = mailUsername;
+            String subject = "Ваш заказ #" + orderNumber + " принят — iHome24";
+
+            String plainText = String.format(
+                "Здравствуйте, %s!\n\n" +
+                "Ваш заказ #%d успешно принят и начинает обрабатываться.\n\n" +
+                "Сумма заказа: %s\n\n" +
+                "Скоро с вами свяжется наш менеджер для уточнения деталей доставки.\n" +
+                "Пожалуйста, будьте на связи по указанному телефону.\n\n" +
+                "С уважением,\n" +
+                "Команда iHome24\n" +
+                "https://ihome24.ru",
+                customerName != null ? customerName : "Клиент",
+                orderNumber,
+                totalAmount != null ? totalAmount : ""
+            );
+
+            String htmlBody = String.format(
+                "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body style=\"font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;\">" +
+                "<div style=\"background-color: #f8f9fa; padding: 20px; border-radius: 5px;\">" +
+                "<h2 style=\"color: #2c3e50;\">Заказ #%d принят</h2>" +
+                "<p>Здравствуйте, %s!</p>" +
+                "<p>Ваш заказ успешно принят и <strong>начинает обрабатываться</strong>.</p>" +
+                "<p><strong>Сумма заказа:</strong> %s</p>" +
+                "<p>Скоро с вами свяжется наш менеджер для уточнения деталей доставки. Пожалуйста, будьте на связи.</p>" +
+                "</div>" +
+                "<p style=\"color: #7f8c8d; font-size: 12px;\">С уважением,<br>Команда iHome24<br><a href=\"https://ihome24.ru\">ihome24.ru</a></p>" +
+                "</body></html>",
+                orderNumber,
+                customerName != null ? customerName : "Клиент",
+                totalAmount != null ? totalAmount : ""
+            );
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(fromEmail, "iHome24");
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(plainText, htmlBody);
+
+            mailSender.send(mimeMessage);
+            log.info("Письмо о заказе #{} отправлено на {}", orderNumber, toEmail);
+        } catch (Exception e) {
+            log.error("Ошибка отправки письма о заказе #{}: {}", orderNumber, e.getMessage());
+            // Не бросаем исключение - заказ уже создан, письмо не критично
+        }
+    }
 }

@@ -42,6 +42,8 @@ const resolvePaymentStatus = payment => {
 const resolveStatus = status => {
   if (status === 'Pending')
     return { text: 'Ожидает', color: 'warning' }
+  if (status === 'In Processing')
+    return { text: 'В обработке', color: 'info' }
   if (status === 'Delivered')
     return { text: 'Доставлено', color: 'success' }
   if (status === 'Out for Delivery')
@@ -50,6 +52,46 @@ const resolveStatus = status => {
     return { text: 'Готово к выдаче', color: 'info' }
   if (status === 'Dispatched')
     return { text: 'Отправлено', color: 'warning' }
+  return { text: String(status || ''), color: 'secondary' }
+}
+
+// API принимает: PENDING, IN_PROCESSING, DISPATCHED, OUT_FOR_DELIVERY, READY_TO_PICKUP, DELIVERED
+const statusDisplayToApi = {
+  Pending: 'PENDING',
+  'In Processing': 'IN_PROCESSING',
+  Dispatched: 'DISPATCHED',
+  'Out for Delivery': 'OUT_FOR_DELIVERY',
+  'Ready to Pickup': 'READY_TO_PICKUP',
+  Delivered: 'DELIVERED',
+}
+const statusOptions = [
+  { value: 'PENDING', title: 'Ожидает' },
+  { value: 'IN_PROCESSING', title: 'В обработке' },
+  { value: 'DISPATCHED', title: 'Отправлено' },
+  { value: 'OUT_FOR_DELIVERY', title: 'В доставке' },
+  { value: 'READY_TO_PICKUP', title: 'Готово к выдаче' },
+  { value: 'DELIVERED', title: 'Доставлено' },
+]
+const selectedStatus = computed(() => {
+  const s = orderData.value?.status
+  if (!s) return 'PENDING'
+  return statusDisplayToApi[s] || 'PENDING'
+})
+const isStatusUpdating = ref(false)
+const handleStatusChange = async newStatus => {
+  if (!orderData.value?.id || !newStatus) return
+  isStatusUpdating.value = true
+  try {
+    const data = await $api(`/apps/ecommerce/orders/${orderData.value.id}/status`, {
+      method: 'PATCH',
+      body: { status: newStatus },
+    })
+    orderData.value = { ...orderData.value, ...data }
+  } catch (e) {
+    console.error('Ошибка смены статуса:', e)
+  } finally {
+    isStatusUpdating.value = false
+  }
 }
 
 const orderDetail = computed(() => {
@@ -240,6 +282,26 @@ const handleDeleteOrder = async () => {
       </VCol>
 
       <VCol cols="12" md="4">
+        <VCard class="mb-6">
+          <VCardItem>
+            <VCardTitle>Статус заказа</VCardTitle>
+          </VCardItem>
+          <VCardText>
+            <AppSelect
+              :model-value="selectedStatus"
+              :items="statusOptions"
+              item-value="value"
+              item-title="title"
+              :loading="isStatusUpdating"
+              placeholder="Выберите статус"
+              @update:model-value="handleStatusChange"
+            />
+            <p class="text-body-2 text-medium-emphasis mt-2 mb-0">
+              Ожидает → В обработке → Отправлено → Доставлено
+            </p>
+          </VCardText>
+        </VCard>
+
         <VCard class="mb-6">
           <VCardText class="d-flex flex-column gap-y-6">
             <h5 class="text-h5">Данные клиента</h5>

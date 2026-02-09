@@ -92,13 +92,14 @@ services:
       SHOW_SQL: ${SHOW_SQL:-false}
       SERVER_PORT: 8080
       LIQUIBASE_ENABLED: ${LIQUIBASE_ENABLED:-true}
-      # Email Configuration (опционально)
-      MAIL_HOST: ${MAIL_HOST:-}
-      MAIL_PORT: ${MAIL_PORT:-465}
+      # Email Configuration (Timeweb: порт 587 + STARTTLS)
+      MAIL_HOST: ${MAIL_HOST:-smtp.timeweb.ru}
+      MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
-      MAIL_SMTP_SSL_ENABLE: ${MAIL_SMTP_SSL_ENABLE:-true}
-      MAIL_SMTP_STARTTLS_ENABLE: ${MAIL_SMTP_STARTTLS_ENABLE:-false}
+      MAIL_SMTP_SSL_ENABLE: ${MAIL_SMTP_SSL_ENABLE:-false}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
+      MAIL_SMTP_SSL_TRUST: ${MAIL_SMTP_SSL_TRUST:-smtp.timeweb.ru}
       APP_EMAIL_FROM: ${APP_EMAIL_FROM:-}
     # Пробрасываем порт только на localhost для nginx reverse proxy
     ports:

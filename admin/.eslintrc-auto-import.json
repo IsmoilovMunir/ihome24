@@ -361,6 +361,7 @@
     "watchTriggerable": true,
     "watchWithFilter": true,
     "whenever": true,
-    "useBackendReady": true
+    "useBackendReady": true,
+    "useDashboard": true
   }
 }

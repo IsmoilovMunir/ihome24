@@ -43,10 +43,10 @@ const invoiceData = ref({
 const paymentTerms = ref(true)
 const clientNotes = ref(false)
 const paymentStub = ref(false)
-const selectedPaymentMethod = ref('Bank Account')
+const selectedPaymentMethod = ref('Банковский счёт')
 
 const paymentMethods = [
-  'Bank Account',
+  'Банковский счёт',
   'PayPal',
   'UPI Transfer',
 ]
@@ -90,7 +90,7 @@ const removeProduct = id => {
             class="mb-4"
             @click="isSendPaymentSidebarVisible = true"
           >
-            Send Invoice
+            Отправить счёт
           </VBtn>
 
           <!-- 👉 Preview -->
@@ -101,7 +101,7 @@ const removeProduct = id => {
             class="mb-4"
             :to="{ name: 'apps-invoice-preview-id', params: { id: '5036' } }"
           >
-            Preview
+            Предпросмотр
           </VBtn>
 
           <!-- 👉 Save -->
@@ -110,7 +110,7 @@ const removeProduct = id => {
             color="secondary"
             variant="tonal"
           >
-            Save
+            Сохранить
           </VBtn>
         </VCardText>
       </VCard>
@@ -120,14 +120,14 @@ const removeProduct = id => {
         id="payment-method"
         v-model="selectedPaymentMethod"
         :items="paymentMethods"
-        label="Accept Payment Via"
+        label="Способ оплаты"
         class="mb-6"
       />
 
       <!-- 👉 Payment Terms -->
       <div class="d-flex align-center justify-space-between">
         <VLabel for="payment-terms">
-          Payment Terms
+          Условия оплаты
         </VLabel>
         <div>
           <VSwitch
@@ -140,7 +140,7 @@ const removeProduct = id => {
       <!-- 👉  Client Notes -->
       <div class="d-flex align-center justify-space-between">
         <VLabel for="client-notes">
-          Client Notes
+          Заметки клиента
         </VLabel>
         <div>
           <VSwitch
@@ -153,7 +153,7 @@ const removeProduct = id => {
       <!-- 👉  Payment Stub -->
       <div class="d-flex align-center justify-space-between">
         <VLabel for="payment-stub">
-          Payment Stub
+          Платёжная квитанция
         </VLabel>
         <div>
           <VSwitch

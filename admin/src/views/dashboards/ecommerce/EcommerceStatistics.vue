@@ -1,40 +1,42 @@
 <script setup>
-const statistics = [
-  {
-    title: 'Продажи',
-    stats: '0',
-    icon: 'tabler-chart-pie-2',
-    color: 'primary',
-  },
-  {
-    title: 'Клиенты',
-    stats: '0',
-    icon: 'tabler-users',
-    color: 'info',
-  },
-  {
-    title: 'Товары',
-    stats: '0',
-    icon: 'tabler-shopping-cart',
-    color: 'error',
-  },
-  {
-    title: 'Доход',
-    stats: '₽0',
-    icon: 'tabler-currency-ruble',
-    color: 'success',
-  },
-]
+import { useDashboard } from '@/composables/useDashboard'
+
+const { formatRevenue } = useDashboard()
+const dashboardData = inject('dashboardData')
+
+const statistics = computed(() => {
+  const d = dashboardData?.value?.stats
+  return [
+    { title: 'Продажи', stats: String(d?.sales ?? 0), icon: 'tabler-chart-pie-2', color: 'primary' },
+    { title: 'Клиенты', stats: String(d?.customers ?? 0), icon: 'tabler-users', color: 'info' },
+    { title: 'Товары', stats: String(d?.products ?? 0), icon: 'tabler-shopping-cart', color: 'error' },
+    { title: 'Доход', stats: formatRevenue(d?.revenue), icon: 'tabler-currency-ruble', color: 'success' },
+  ]
+})
+
+const isLoading = computed(() => !dashboardData?.value)
+const lastUpdated = ref(null)
+watch(dashboardData, d => {
+  if (d?.value) lastUpdated.value = new Date()
+}, { immediate: true })
 </script>
 
 <template>
-  <VCard title="Статистика">
+  <VCard
+    title="Статистика"
+    :loading="isLoading"
+  >
     <template #append>
-      <span class="text-sm text-disabled">Обновлено месяц назад</span>
+      <span class="text-sm text-disabled">
+        {{ lastUpdated ? `Обновлено ${lastUpdated.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })}` : 'Загрузка...' }}
+      </span>
     </template>
 
     <VCardText>
-      <VRow>
+      <div v-if="isLoading" class="d-flex justify-center py-8">
+        <VProgressCircular indeterminate />
+      </div>
+      <VRow v-else>
         <VCol
           v-for="item in statistics"
           :key="item.title"

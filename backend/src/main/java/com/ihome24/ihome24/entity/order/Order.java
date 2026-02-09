@@ -100,11 +100,12 @@ public class Order {
     }
 
     public enum OrderStatus {
-        PENDING,
-        DISPATCHED,
-        OUT_FOR_DELIVERY,
-        READY_TO_PICKUP,
-        DELIVERED
+        PENDING,           // Новый заказ, в очереди
+        IN_PROCESSING,     // Менеджер обрабатывает (звонит, уточняет)
+        DISPATCHED,        // Отправлено
+        OUT_FOR_DELIVERY,  // В доставке
+        READY_TO_PICKUP,   // Готово к выдаче
+        DELIVERED          // Доставлено / завершено
     }
 
     public enum PaymentMethod {
