@@ -5,27 +5,25 @@ import paypalDark from '@images/icons/payments/img/paypal-dark.png'
 import paypalLight from '@images/icons/payments/img/paypal-light.png'
 
 const widgetData = ref([
-  {
-    title: 'Ожидает оплаты',
-    value: 56,
-    icon: 'tabler-calendar-stats',
-  },
-  {
-    title: 'Завершено',
-    value: 12689,
-    icon: 'tabler-checks',
-  },
-  {
-    title: 'Возвращено',
-    value: 124,
-    icon: 'tabler-wallet',
-  },
-  {
-    title: 'Неудачно',
-    value: 32,
-    icon: 'tabler-alert-octagon',
-  },
+  { title: 'Ожидает оплаты', value: 0, icon: 'tabler-calendar-stats', key: 'awaitingPayment' },
+  { title: 'Завершено', value: 0, icon: 'tabler-checks', key: 'completed' },
+  { title: 'Возвращено', value: 0, icon: 'tabler-wallet', key: 'returned' },
+  { title: 'Неудачно', value: 0, icon: 'tabler-alert-octagon', key: 'failed' },
 ])
+
+const fetchOrderStats = async () => {
+  try {
+    const data = await $api('/apps/ecommerce/orders/stats')
+    widgetData.value = [
+      { title: 'Ожидает оплаты', value: data?.awaitingPayment ?? 0, icon: 'tabler-calendar-stats', key: 'awaitingPayment' },
+      { title: 'Завершено', value: data?.completed ?? 0, icon: 'tabler-checks', key: 'completed' },
+      { title: 'Возвращено', value: data?.returned ?? 0, icon: 'tabler-wallet', key: 'returned' },
+      { title: 'Неудачно', value: data?.failed ?? 0, icon: 'tabler-alert-octagon', key: 'failed' },
+    ]
+  } catch (e) {
+    console.error('Ошибка загрузки статистики заказов:', e)
+  }
+}
 
 const mastercard = useGenerateImageVariant(masterCardLight, masterCardDark)
 const paypal = useGenerateImageVariant(paypalLight, paypalDark)
@@ -103,6 +101,7 @@ const fetchOrders = useDebounceFn(async () => {
 
 onMounted(() => {
   fetchOrders()
+  fetchOrderStats()
 })
 
 watch([searchQuery, page, itemsPerPage, sortBy, orderBy], () => {
@@ -171,8 +170,9 @@ const deleteOrder = async id => {
   if (index !== -1)
     selectedRows.value.splice(index, 1)
 
-  // Refetch Orders
+  // Refetch Orders and stats
   fetchOrders()
+  fetchOrderStats()
 }
 </script>
 

@@ -33,4 +33,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
            "LOWER(o.email) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
            "CAST(o.orderNumber AS string) LIKE CONCAT('%', :searchQuery, '%'))")
     Page<Order> findOrdersWithSearch(@Param("searchQuery") String searchQuery, Pageable pageable);
+
+    long countByPayment(Order.PaymentStatus payment);
+
+    long countByStatus(Order.OrderStatus status);
 }

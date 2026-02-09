@@ -4,6 +4,7 @@ import com.ihome24.ihome24.dto.request.order.CreateOrderRequest;
 import com.ihome24.ihome24.dto.response.order.OrderItemResponse;
 import com.ihome24.ihome24.dto.response.order.OrderListResponse;
 import com.ihome24.ihome24.dto.response.order.OrderResponse;
+import com.ihome24.ihome24.dto.response.order.OrderStatsResponse;
 import com.ihome24.ihome24.entity.order.Order;
 import com.ihome24.ihome24.entity.order.OrderItem;
 import com.ihome24.ihome24.entity.product.Product;
@@ -31,6 +32,16 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
+
+    @Transactional(readOnly = true)
+    public OrderStatsResponse getOrderStats() {
+        return OrderStatsResponse.builder()
+                .awaitingPayment(orderRepository.countByPayment(Order.PaymentStatus.PENDING))
+                .completed(orderRepository.countByStatus(Order.OrderStatus.DELIVERED))
+                .returned(orderRepository.countByPayment(Order.PaymentStatus.CANCELLED))
+                .failed(orderRepository.countByPayment(Order.PaymentStatus.FAILED))
+                .build();
+    }
 
     @Transactional(readOnly = true)
     public OrderListResponse getOrders(String searchQuery, Integer page, Integer itemsPerPage, String sortBy, String orderBy) {

@@ -3,6 +3,7 @@ package com.ihome24.ihome24.controller.publicapi.order;
 import com.ihome24.ihome24.dto.request.order.CreateOrderRequest;
 import com.ihome24.ihome24.dto.response.order.OrderListResponse;
 import com.ihome24.ihome24.dto.response.order.OrderResponse;
+import com.ihome24.ihome24.dto.response.order.OrderStatsResponse;
 import com.ihome24.ihome24.service.order.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,11 @@ public class OrderRestController {
         }
         OrderResponse order = orderService.getOrderByIdOrOrderNumber(id);
         return ResponseEntity.ok(order);
+    }
+
+    @GetMapping("/stats")
+    public ResponseEntity<OrderStatsResponse> getOrderStats() {
+        return ResponseEntity.ok(orderService.getOrderStats());
     }
 
     @GetMapping

@@ -41,9 +41,8 @@ export default defineConfig({
 
     // Docs: https://github.com/vuetifyjs/vuetify-loader/tree/master/packages/vite-plugin
     vuetify({
-      styles: {
-        configFile: 'src/assets/styles/variables/_vuetify.scss',
-      },
+      styles: 'sass',
+      configFile: 'src/assets/styles/variables/_vuetify.scss',
     }),
 
     // Docs: https://github.com/dishait/vite-plugin-vue-meta-layouts?tab=readme-ov-file
