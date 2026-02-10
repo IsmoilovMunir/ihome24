@@ -74,11 +74,10 @@ browser_data_interactive/
 .env.production
 *.env.prod
 *.env.production
-# Но оставляем примеры
+**/env.prod.example
+# Примеры env не коммитим (каждый настраивает локально)
 !.env.example
-!env.prod.example
 !**/.env.example
-!**/env.prod.example
 
 # Logs
 *.log

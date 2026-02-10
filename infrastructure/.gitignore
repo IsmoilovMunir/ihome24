@@ -4,9 +4,9 @@
 .env.production
 *.env.prod
 *.env.production
-# Но оставляем примеры
+env.prod.example
+# Пример для копирования храните локально, в репозиторий не коммитим
 !.env.example
-!env.prod.example
 
 # Logs
 *.log
