@@ -165,4 +165,57 @@ public class EmailService {
             throw new RuntimeException(errorMsg, e);
         }
     }
+
+    /**
+     * Отправка письма подтверждения заказа. Не бросает исключение при ненастроенной почте —
+     * заказ всё равно создаётся, письмо просто не отправляется.
+     */
+    public void sendOrderConfirmation(String toEmail, String customerName, Long orderNumber, String totalAmount,
+                                      java.util.List<String> orderLines) {
+        if (mailUsername == null || mailUsername.isEmpty()) {
+            log.warn("Email не настроен — письмо подтверждения заказа #{} не отправлено. Укажите MAIL_USERNAME и MAIL_PASSWORD в .env.prod", orderNumber);
+            return;
+        }
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            String fromEmail = mailUsername;
+            message.setFrom(fromEmail);
+            message.setTo(toEmail);
+            message.setSubject("Подтверждение заказа #" + orderNumber + " — iHome24");
+            String lines = orderLines != null && !orderLines.isEmpty()
+                    ? String.join("\n", orderLines) : "—";
+            String body = String.format(
+                    "Здравствуйте, %s!\n\nВаш заказ #%s принят.\nСумма: %s\n\nСостав заказа:\n%s\n\nС уважением,\niHome24",
+                    customerName != null ? customerName : "", orderNumber, totalAmount != null ? totalAmount : "", lines);
+            message.setText(body);
+            mailSender.send(message);
+            log.info("Письмо подтверждения заказа #{} отправлено на {}", orderNumber, toEmail);
+        } catch (Exception e) {
+            log.error("Не удалось отправить письмо подтверждения заказа #{}: {}", orderNumber, e.getMessage());
+            // Не пробрасываем — заказ уже создан, не ломаем ответ 500
+        }
+    }
+
+    /**
+     * Уведомление об изменении статуса заказа. Не бросает исключение при ненастроенной почте.
+     */
+    public void sendOrderStatusChange(String toEmail, String customerName, Long orderNumber, String newStatusDisplay) {
+        if (mailUsername == null || mailUsername.isEmpty()) {
+            log.warn("Email не настроен — уведомление о статусе заказа #{} не отправлено.", orderNumber);
+            return;
+        }
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom(mailUsername);
+            message.setTo(toEmail);
+            message.setSubject("Статус заказа #" + orderNumber + " — iHome24");
+            message.setText(String.format(
+                    "Здравствуйте, %s!\n\nСтатус вашего заказа #%s: %s\n\nС уважением,\niHome24",
+                    customerName != null ? customerName : "", orderNumber, newStatusDisplay != null ? newStatusDisplay : "—"));
+            mailSender.send(message);
+            log.info("Уведомление о статусе заказа #{} отправлено на {}", orderNumber, toEmail);
+        } catch (Exception e) {
+            log.error("Не удалось отправить уведомление о статусе заказа #{}: {}", orderNumber, e.getMessage());
+        }
+    }
 }
