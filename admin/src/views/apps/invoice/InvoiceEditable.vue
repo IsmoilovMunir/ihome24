@@ -37,10 +37,10 @@ fetchClients()
 // 👉 Add item function
 const addItem = () => {
   emit('push', {
-    title: 'App Design',
+    title: 'Дизайн приложения',
     cost: 24,
     hours: 1,
-    description: 'Designed UI kit & app pages.',
+    description: 'Дизайн UI kit и страниц приложения.',
   })
 }
 
@@ -84,7 +84,7 @@ const removeProduct = id => {
           <span
             class="text-high-emphasis text-sm-end"
             style="inline-size: 5.625rem ;"
-          >Invoice:</span>
+          >Счёт:</span>
           <span>
             <AppTextField
               id="invoice-id"
@@ -101,7 +101,7 @@ const removeProduct = id => {
           <span
             class="text-high-emphasis text-sm-end"
             style="inline-size: 5.625rem;"
-          >Date Issued:</span>
+          >Дата выдачи:</span>
 
           <span style="inline-size: 9.5rem;">
             <AppDateTimePicker
@@ -118,7 +118,7 @@ const removeProduct = id => {
           <span
             class="text-high-emphasis text-sm-end"
             style="inline-size: 5.625rem;"
-          >Due Date:</span>
+          >Срок оплаты:</span>
           <span style="min-inline-size: 9.5rem;">
             <AppDateTimePicker
               id="due-date"
@@ -135,7 +135,7 @@ const removeProduct = id => {
     <VRow>
       <VCol class="text-no-wrap">
         <h6 class="text-h6 mb-4">
-          Invoice To:
+          Платёж получателю:
         </h6>
 
         <VSelect
@@ -144,7 +144,7 @@ const removeProduct = id => {
           :items="clients"
           item-title="name"
           item-value="name"
-          placeholder="Select Client"
+          placeholder="Выберите клиента"
           return-object
           class="mb-4"
           style="inline-size: 11.875rem;"
@@ -171,26 +171,26 @@ const removeProduct = id => {
 
       <VCol class="text-no-wrap">
         <h6 class="text-h6 mb-4">
-          Bill To:
+          Реквизиты оплаты:
         </h6>
 
         <table>
           <tbody>
             <tr>
               <td class="pe-4">
-                Total Due:
+                К оплате:
               </td>
               <td>{{ props.data.paymentDetails.totalDue }}</td>
             </tr>
             <tr>
               <td class="pe-4">
-                Bank Name:
+                Банк:
               </td>
               <td>{{ props.data.paymentDetails.bankName }}</td>
             </tr>
             <tr>
               <td class="pe-4">
-                Country:
+                Страна:
               </td>
               <td>{{ props.data.paymentDetails.country }}</td>
             </tr>
@@ -206,7 +206,7 @@ const removeProduct = id => {
             </tr>
             <tr>
               <td class="pe-4">
-                SWIFT Code:
+                SWIFT-код:
               </td>
               <td>{{ props.data.paymentDetails.swiftCode }}</td>
             </tr>
@@ -235,7 +235,7 @@ const removeProduct = id => {
         prepend-icon="tabler-plus"
         @click="addItem"
       >
-        Add Item
+        Добавить позицию
       </VBtn>
     </div>
 
@@ -246,20 +246,20 @@ const removeProduct = id => {
       <div class="mb-6 mb-sm-0">
         <div class="d-flex align-center mb-4">
           <h6 class="text-h6 me-2">
-            Salesperson:
+            Менеджер:
           </h6>
           <AppTextField
             id="salesperson"
             v-model="salesperson"
             style="inline-size: 8rem;"
-            placeholder="John Doe"
+            placeholder="Имя менеджера"
           />
         </div>
 
         <AppTextField
           id="thanks-note"
           v-model="thanksNote"
-          placeholder="Thanks for your business"
+          placeholder="Благодарим за покупку"
         />
       </div>
 
@@ -268,7 +268,7 @@ const removeProduct = id => {
           <tbody>
             <tr>
               <td class="pe-16">
-                Subtotal:
+                Подитог:
               </td>
               <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
                 <h6 class="text-h6">
@@ -278,7 +278,7 @@ const removeProduct = id => {
             </tr>
             <tr>
               <td class="pe-16">
-                Discount:
+                Скидка:
               </td>
               <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
                 <h6 class="text-h6">
@@ -288,7 +288,7 @@ const removeProduct = id => {
             </tr>
             <tr>
               <td class="pe-16">
-                Tax:
+                НДС:
               </td>
               <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
                 <h6 class="text-h6">
@@ -305,7 +305,7 @@ const removeProduct = id => {
           <tbody>
             <tr>
               <td class="pe-16">
-                Total:
+                Итого:
               </td>
               <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
                 <h6 class="text-h6">
@@ -322,12 +322,12 @@ const removeProduct = id => {
 
     <div>
       <h6 class="text-h6 mb-2">
-        Note:
+        Примечание:
       </h6>
       <VTextarea
         id="note"
         v-model="note"
-        placeholder="Write note here..."
+        placeholder="Введите примечание..."
         :rows="2"
       />
     </div>

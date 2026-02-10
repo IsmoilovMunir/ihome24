@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto px-4 py-8 bg-[#3A3331] product-detail-page">
+  <div class="container mx-auto px-4 py-8 pb-40 lg:pb-8 bg-[#3A3331] product-detail-page">
     <div v-if="productsStore.loading" class="text-center py-12">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
     </div>
@@ -12,15 +12,25 @@
       <!-- Images -->
       <div>
         <div
-          class="bg-[#26211E] rounded-lg overflow-hidden mb-4 flex items-center justify-center h-96 relative cursor-pointer"
-          @click="openFullscreenGallery"
+          ref="mainImageContainerRef"
+          class="bg-[#26211E] rounded-lg overflow-hidden mb-4 flex items-center justify-center h-96 relative cursor-pointer touch-none"
+          @click="onMainImageClick"
+          @touchstart="onMainImageTouchStart"
+          @touchmove="onMainImageTouchMove"
+          @touchend="onMainImageTouchEnd"
         >
-          <img
+          <div
             v-if="mainImageUrl"
-            :src="mainImageUrl"
-            :alt="product.name"
-            class="w-[97%] h-[97%] object-contain pointer-events-none"
-          />
+            class="main-image-zoom-wrapper flex items-center justify-center w-full h-full"
+            :style="mainImageTransformStyle"
+          >
+            <img
+              :src="mainImageUrl"
+              :alt="product.name"
+              class="max-w-[97%] max-h-[97%] w-auto h-auto object-contain select-none"
+              draggable="false"
+            />
+          </div>
           <div
             v-else
             class="w-full h-96 bg-[#26211E] flex items-center justify-center pointer-events-none"
@@ -63,12 +73,17 @@
             </button>
           </template>
         </div>
-        <div v-if="product.images && product.images.length > 1" class="grid grid-cols-4 gap-2">
+        <div
+          ref="galleryRef"
+          v-if="product.images && product.images.length > 1"
+          class="product-images-gallery flex gap-2 overflow-x-auto pb-1 w-full"
+        >
           <button
             v-for="(image, index) in product.images"
             :key="index"
+            :data-index="index"
             @click="selectedImageIndex = index"
-            class="bg-[#26211E] rounded overflow-hidden hover:opacity-75 transition-opacity aspect-square w-full flex items-center justify-center"
+            class="flex-shrink-0 w-[80px] h-[80px] sm:w-[178px] sm:h-[178px] rounded overflow-hidden hover:opacity-75 transition-opacity flex items-center justify-center bg-[#26211E]"
             :class="{ 'ring-2 ring-[#F37021]': selectedImageIndex === index }"
           >
             <img
@@ -78,13 +93,35 @@
             />
           </button>
         </div>
+
+        <!-- Мобильный блок цены под фото -->
+        <div
+          class="lg:hidden mt-4 p-4 rounded-lg flex flex-col gap-4"
+          style="background-color: #26211E;"
+        >
+          <div class="flex items-center space-x-4">
+            <span
+              class="text-2xl font-normal"
+              style="color: #9E9390; font-family: helvetica, sans-serif;"
+            >
+              {{ formatPrice(totalPrice) }}
+            </span>
+            <span
+              v-if="product.oldPrice && product.oldPrice > product.price"
+              class="text-xl text-gray-500 line-through"
+            >
+              {{ formatPrice(product.oldPrice) }}
+            </span>
+          </div>
+          <h1 class="text-lg text-white font-bold product-detail-title">{{ product.name }}</h1>
+        </div>
       </div>
 
       <!-- Product Info -->
       <div>
-        <h1 class="text-3xl text-white mb-4 product-detail-title">{{ product.name }}</h1>
+        <h1 class="hidden lg:block text-3xl text-white mb-4 product-detail-title">{{ product.name }}</h1>
         
-        <div class="flex items-center space-x-4 mb-4">
+        <div class="hidden lg:flex items-center space-x-4 mb-4">
           <span
             class="text-2xl font-normal"
             style="color: #9E9390; font-family: helvetica, sans-serif;"
@@ -100,82 +137,197 @@
         </div>
 
         <div class="mb-6">
-          <p v-if="product.description" class="text-gray-200 mb-4">
+          <p v-if="product.description" class="text-gray-200 mb-4 font-medium" style="text-transform: lowercase;">
             {{ product.description }}
           </p>
           
-          <div v-if="product.benefits && product.benefits.length > 0" class="mb-4">
-            <h3 class="font-semibold mb-2">Преимущества:</h3>
-            <ul class="list-disc list-inside space-y-1 text-gray-200">
-              <li v-for="benefit in product.benefits" :key="benefit">
-                {{ benefit }}
+          <div v-if="product.benefits && product.benefits.length > 0" class="mb-4 p-4 rounded-lg" style="background-color: #26211E;">
+            <h3 class="mb-3 text-white text-lg" style="font-weight: 700; font-family: Arial, 'Helvetica Neue', sans-serif;">Преимущества</h3>
+            <ul class="space-y-3">
+              <li
+                v-for="benefit in product.benefits"
+                :key="benefit"
+                class="flex gap-3 text-gray-200 text-sm leading-relaxed"
+              >
+                <span class="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center mt-0.5" style="background-color: #C56129;">
+                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                  </svg>
+                </span>
+                <span>
+                  <template v-if="benefit.includes(':')">
+                    <span style="font-weight: 700; font-family: Arial, 'Helvetica Neue', sans-serif;">{{ benefit.split(':')[0] }}: </span>
+                    <span class="font-normal" style="text-transform: lowercase;">{{ benefit.split(':').slice(1).join(':').trim() }}</span>
+                  </template>
+                  <template v-else>
+                    {{ benefit }}
+                  </template>
+                </span>
               </li>
             </ul>
           </div>
 
           <div v-if="product.characteristics && product.characteristics.length > 0" class="mb-4">
-            <h3 class="font-semibold mb-2">Характеристики:</h3>
-            <dl class="grid grid-cols-2 gap-2 text-sm">
-              <template v-for="char in product.characteristics" :key="char.id">
-                <dt class="font-medium text-gray-200">{{ char.name }}:</dt>
-                <dd class="text-gray-300">{{ char.value }}</dd>
-              </template>
-            </dl>
+            <h3 class="mb-3 text-white text-lg" style="font-weight: 700; font-family: Arial, 'Helvetica Neue', sans-serif;">Характеристики</h3>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm">
+                <tbody>
+                  <tr
+                    v-for="(char, index) in product.characteristics"
+                    :key="char.id || index"
+                    class="border-b border-white/10"
+                  >
+                    <td class="py-2 pr-4 text-gray-200 lowercase">{{ char.key || '—' }}</td>
+                    <td class="py-2 pr-4 text-gray-200 lowercase">{{ char.name || '—' }}</td>
+                    <td class="py-2 text-gray-200 lowercase">{{ char.value || '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
 
-          <div class="mb-4">
-            <p class="text-sm text-gray-300">
-              <span class="font-semibold">Артикул:</span> {{ product.sku || 'Не указан' }}
-            </p>
-            <p v-if="product.brand" class="text-sm text-gray-300">
-              <span class="font-semibold">Бренд:</span> {{ product.brand }}
-            </p>
-            <p class="text-sm text-gray-300">
-              <span class="font-semibold">Наличие: </span>
-              <span style="color: #C56129;"> {{ isAvailable ? 'В наличии' : 'Нет в наличии' }}</span>
-            </p>
+          <div class="mb-4 p-4 rounded-lg space-y-3" style="background-color: #26211E;">
+            <div class="flex justify-between items-center py-2 border-b border-white/10">
+              <span class="text-gray-400 text-sm font-medium capitalize">Артикул</span>
+              <div class="flex items-center gap-2">
+                <button
+                  v-if="product.sku"
+                  type="button"
+                  @click="copyArticle(product.sku)"
+                  class="p-1.5 rounded hover:bg-white/10 transition-colors text-gray-400 hover:text-[#C56129]"
+                  :title="articleCopied ? 'Скопировано!' : 'Копировать артикул'"
+                >
+                  <svg v-if="!articleCopied" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <svg v-else class="w-4 h-4 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </button>
+                <span class="text-gray-200 text-sm capitalize">{{ product.sku || 'Не указан' }}</span>
+              </div>
+            </div>
+            <div v-if="product.brand" class="flex justify-between items-center py-2 border-b border-white/10">
+              <span class="text-gray-400 text-sm font-medium capitalize">Бренд</span>
+              <span class="text-gray-200 text-sm capitalize">{{ product.brand }}</span>
+            </div>
+            <div class="flex justify-between items-center py-2">
+              <span class="text-gray-400 text-sm font-medium capitalize">Наличие</span>
+              <span class="text-sm capitalize" :style="{ color: isAvailable ? '#C56129' : '#9d9390' }">{{ isAvailable ? 'В наличии' : 'Нет в наличии' }}</span>
+            </div>
           </div>
         </div>
 
-        <div class="flex items-center space-x-4 mb-6">
-          <div class="flex items-center gap-1 rounded border px-1" style="border-color: #9D9390;">
+        <!-- Кнопка: одна целая «Добавить» или разделённая «В корзину» + количество -->
+        <div
+          v-if="isAvailable"
+          class="hidden lg:flex rounded-md overflow-hidden border-2"
+          style="border-color: #C56129;"
+        >
+          <button
+            v-if="!isInCart"
+            type="button"
+            @click="addToCart"
+            class="flex-1 py-3 text-white font-semibold text-lg transition-colors duration-1000 bg-[#3A3331] hover:bg-[#C56129]"
+          >
+            Добавить в корзину
+          </button>
+          <template v-else>
             <button
               type="button"
-              @click="decreaseQuantity"
-              class="w-9 h-9 flex items-center justify-center rounded transition-opacity hover:opacity-80"
-              style="color: #9D9390;"
-              aria-label="Уменьшить"
+              @click="router.push('/cart')"
+              class="flex-1 py-3 text-white font-semibold text-lg transition-colors bg-[#C56129] hover:bg-[#d97235]"
+            >
+              В корзину
+            </button>
+            <div
+              class="flex items-center gap-0 border-l px-2"
+              style="border-color: #C56129; background-color: #3A3331;"
+            >
+              <button
+                type="button"
+                @click="decreaseCartQuantity"
+                class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
+              >
+                −
+              </button>
+              <span class="w-8 text-center text-white font-semibold">{{ cartQuantity }}</span>
+              <button
+                type="button"
+                @click="increaseCartQuantity"
+                class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
+              >
+                +
+              </button>
+            </div>
+          </template>
+        </div>
+        <button
+          v-else
+          disabled
+          class="hidden lg:block w-full py-3 rounded-md text-white font-semibold text-lg border-2 bg-gray-300 border-gray-400 cursor-not-allowed"
+        >
+          Нет в наличии
+        </button>
+      </div>
+    </div>
+
+    <!-- Прикреплённая кнопка внизу экрана (мобильный) — над нижним меню -->
+    <div
+      v-if="product && !productsStore.loading && !productsStore.error"
+      class="lg:hidden fixed left-0 right-0 z-[9999] p-4 pb-2"
+      style="bottom: 75px; background-color: #3A3331; box-shadow: 0 -4px 12px rgba(0,0,0,0.3);"
+    >
+      <div
+        v-if="isAvailable"
+        class="container mx-auto flex rounded-md overflow-hidden border-2"
+        style="border-color: #C56129;"
+      >
+        <button
+          v-if="!isInCart"
+          type="button"
+          @click="addToCart"
+          class="flex-1 py-3 text-white font-semibold text-lg transition-colors duration-1000 bg-[#3A3331] hover:bg-[#C56129]"
+        >
+          Добавить в корзину
+        </button>
+        <template v-else>
+          <button
+            type="button"
+            @click="router.push('/cart')"
+            class="flex-1 py-3 text-white font-semibold text-lg transition-colors bg-[#C56129] hover:bg-[#d97235]"
+          >
+            В корзину
+          </button>
+          <div
+            class="flex items-center gap-0 border-l px-2"
+            style="border-color: #C56129; background-color: #3A3331;"
+          >
+            <button
+              type="button"
+              @click="decreaseCartQuantity"
+              class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
             >
               −
             </button>
-            <input
-              v-model.number="quantity"
-              type="number"
-              min="1"
-              :max="maxQuantity"
-              class="w-12 text-center bg-transparent border-none text-lg focus:outline-none focus:ring-0"
-              style="color: #9D9390; font-family: helvetica, sans-serif;"
-            />
+            <span class="w-8 text-center text-white font-semibold">{{ cartQuantity }}</span>
             <button
               type="button"
-              @click="increaseQuantity"
-              class="w-9 h-9 flex items-center justify-center rounded transition-opacity hover:opacity-80"
-              style="color: #9D9390;"
-              aria-label="Увеличить"
+              @click="increaseCartQuantity"
+              class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
             >
               +
             </button>
           </div>
-        </div>
-
-        <button
-          @click="addToCart"
-          :disabled="!isAvailable"
-          class="w-full py-3 rounded-md text-white font-semibold text-lg border-2 transition-colors duration-1000 bg-[#3A3331] border-[#C56129] hover:bg-[#C56129] disabled:bg-gray-300 disabled:border-gray-400 disabled:cursor-not-allowed"
-        >
-          {{ isAvailable ? 'Добавить в корзину' : 'Нет в наличии' }}
-        </button>
+        </template>
       </div>
+      <button
+        v-else
+        disabled
+        class="w-full py-3 rounded-md text-white font-semibold text-lg border-2 bg-gray-300 border-gray-400 cursor-not-allowed"
+      >
+        Нет в наличии
+      </button>
     </div>
 
     <!-- Полноэкранный просмотр фото -->
@@ -224,7 +376,7 @@
           </div>
         </div>
 
-        <div class="absolute top-6 right-20 z-20 flex items-center gap-1 rounded border border-white/30 p-1" style="background-color: #26211E;">
+        <div class="hidden sm:flex absolute top-6 right-20 z-20 items-center gap-1 rounded border border-white/30 p-1" style="background-color: #26211E;">
           <button
             type="button"
             @click.stop="fullscreenZoomOut"
@@ -302,7 +454,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '../stores/products'
 import { useCartStore } from '../stores/cart'
@@ -315,7 +467,16 @@ const cartStore = useCartStore()
 
 const quantity = ref(1)
 const selectedImageIndex = ref(0)
+const galleryRef = ref(null)
+const mainImageContainerRef = ref(null)
 const showFullscreenGallery = ref(false)
+
+// Pinch-to-zoom для основного изображения (мобильный)
+const mainImageZoom = ref(1)
+const mainImagePan = ref({ x: 0, y: 0 })
+let pinchStart = { distance: 0, zoom: 0, centerX: 0, centerY: 0 }
+let panStartMain = { x: 0, y: 0, panX: 0, panY: 0 }
+let mainImageHadGesture = false
 const fullscreenZoom = ref(1)
 const fullscreenPan = ref({ x: 0, y: 0 })
 const isPanning = ref(false)
@@ -326,6 +487,72 @@ const ZOOM_MAX = 4
 const ZOOM_STEP = 0.25
 
 const product = computed(() => productsStore.selectedProduct)
+
+
+const mainImageTransformStyle = computed(() => ({
+  transform: `translate(${mainImagePan.value.x}px, ${mainImagePan.value.y}px) scale(${mainImageZoom.value})`,
+}))
+
+const getTouchDistance = (t1, t2) => {
+  return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
+}
+
+const getTouchCenter = (t1, t2) => ({
+  x: (t1.clientX + t2.clientX) / 2,
+  y: (t1.clientY + t2.clientY) / 2,
+})
+
+const onMainImageTouchStart = (e) => {
+  mainImageHadGesture = false
+  if (e.touches.length === 2) {
+    pinchStart = {
+      distance: getTouchDistance(e.touches[0], e.touches[1]),
+      zoom: mainImageZoom.value,
+      centerX: getTouchCenter(e.touches[0], e.touches[1]).x,
+      centerY: getTouchCenter(e.touches[0], e.touches[1]).y,
+    }
+  } else if (e.touches.length === 1 && mainImageZoom.value > 1) {
+    panStartMain = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+      panX: mainImagePan.value.x,
+      panY: mainImagePan.value.y,
+    }
+  }
+}
+
+const onMainImageTouchMove = (e) => {
+  if (e.touches.length === 2) {
+    if (e.cancelable) e.preventDefault()
+    mainImageHadGesture = true
+    const distance = getTouchDistance(e.touches[0], e.touches[1])
+    const scale = distance / pinchStart.distance
+    mainImageZoom.value = Math.min(4, Math.max(0.5, pinchStart.zoom * scale))
+  } else if (e.touches.length === 1 && mainImageZoom.value > 1) {
+    mainImageHadGesture = true
+    mainImagePan.value = {
+      x: panStartMain.panX + (e.touches[0].clientX - panStartMain.x),
+      y: panStartMain.panY + (e.touches[0].clientY - panStartMain.y),
+    }
+  }
+}
+
+const onMainImageTouchEnd = () => {
+  pinchStart = { distance: 0, zoom: 0, centerX: 0, centerY: 0 }
+}
+
+const onMainImageClick = (e) => {
+  if (mainImageHadGesture) {
+    mainImageHadGesture = false
+    return
+  }
+  openFullscreenGallery()
+}
+
+const resetMainImageZoom = () => {
+  mainImageZoom.value = 1
+  mainImagePan.value = { x: 0, y: 0 }
+}
 
 const openFullscreenGallery = () => {
   fullscreenZoom.value = 1
@@ -429,6 +656,13 @@ const mainImageUrl = computed(() => {
   return null
 })
 
+const scrollThumbnailIntoView = () => {
+  nextTick(() => {
+    const el = galleryRef.value?.querySelector(`[data-index="${selectedImageIndex.value}"]`)
+    el?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' })
+  })
+}
+
 const goToPrevImage = () => {
   if (!product.value?.images?.length) return
   const n = product.value.images.length
@@ -441,6 +675,31 @@ const goToNextImage = () => {
   const n = product.value.images.length
   selectedImageIndex.value = selectedImageIndex.value === n - 1 ? 0 : selectedImageIndex.value + 1
   if (showFullscreenGallery.value) fullscreenPan.value = { x: 0, y: 0 }
+}
+
+const isInCart = computed(() => {
+  if (!product.value?.id) return false
+  return cartStore.items.some(item => item.product.id === product.value.id)
+})
+
+const cartQuantity = computed(() => {
+  if (!product.value?.id) return 0
+  const item = cartStore.items.find(item => item.product.id === product.value.id)
+  return item?.quantity ?? 0
+})
+
+const decreaseCartQuantity = () => {
+  if (product.value?.id && cartQuantity.value > 1) {
+    cartStore.updateQuantity(product.value.id, cartQuantity.value - 1)
+  } else if (product.value?.id && cartQuantity.value === 1) {
+    cartStore.removeFromCart(product.value.id)
+  }
+}
+
+const increaseCartQuantity = () => {
+  if (product.value?.id && cartQuantity.value < maxQuantity.value) {
+    cartStore.updateQuantity(product.value.id, cartQuantity.value + 1)
+  }
 }
 
 const isAvailable = computed(() => {
@@ -482,7 +741,17 @@ const decreaseQuantity = () => {
 const addToCart = () => {
   if (isAvailable.value && product.value) {
     cartStore.addToCart(product.value, quantity.value)
-    router.push('/cart')
+  }
+}
+
+const articleCopied = ref(false)
+const copyArticle = async (text) => {
+  try {
+    await navigator.clipboard.writeText(text)
+    articleCopied.value = true
+    setTimeout(() => { articleCopied.value = false }, 2000)
+  } catch (err) {
+    console.error('Ошибка копирования:', err)
   }
 }
 
@@ -492,6 +761,11 @@ watch(showFullscreenGallery, (isOpen) => {
   } else {
     document.removeEventListener('keydown', onFullscreenKeydown)
   }
+})
+
+watch(selectedImageIndex, () => {
+  resetMainImageZoom()
+  scrollThumbnailIntoView()
 })
 
 onMounted(async () => {
@@ -541,5 +815,24 @@ onUnmounted(() => {
 .product-detail-title {
   font-family: helvetica, sans-serif;
   font-weight: 400;
+}
+
+/* Галерея миниатюр — одна строка, незаметный горизонтальный скролл */
+.product-images-gallery {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(158, 147, 144, 0.4) transparent;
+}
+.product-images-gallery::-webkit-scrollbar {
+  height: 4px;
+}
+.product-images-gallery::-webkit-scrollbar-track {
+  background: transparent;
+}
+.product-images-gallery::-webkit-scrollbar-thumb {
+  background: rgba(158, 147, 144, 0.4);
+  border-radius: 2px;
+}
+.product-images-gallery::-webkit-scrollbar-thumb:hover {
+  background: rgba(158, 147, 144, 0.6);
 }
 </style>

@@ -1,10 +1,18 @@
 <script setup>
 import { useTheme } from 'vuetify'
 import { hexToRgb } from '@layouts/utils'
+import { useDashboard } from '@/composables/useDashboard'
 
 const vuetifyTheme = useTheme()
+const { formatRevenue } = useDashboard()
+const dashboardData = inject('dashboardData')
 
-const series = [{
+const profit = computed(() => {
+  const d = dashboardData?.value?.stats
+  return d?.revenue ?? 0
+})
+
+const series = computed(() => [{
   data: [
     0,
     0,
@@ -13,7 +21,7 @@ const series = [{
     0,
     0,
   ],
-}]
+}])
 
 const chartOptions = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors
@@ -95,7 +103,7 @@ const chartOptions = computed(() => {
 
       <div class="d-flex align-center justify-space-between gap-x-2 mt-3">
         <h4 class="text-h4 text-center font-weight-medium">
-          0
+          {{ formatRevenue(profit) }}
         </h4>
         <span class="text-sm text-success">
           0%

@@ -9,10 +9,10 @@ const props = defineProps({
     type: Object,
     required: true,
     default: () => ({
-      title: 'App Design',
+      title: 'Дизайн приложения',
       cost: 24,
       hours: 1,
-      description: 'Designed UI kit & app pages.',
+      description: 'Дизайн UI kit и страниц приложения.',
     }),
   },
 })
@@ -24,32 +24,32 @@ const emit = defineEmits([
 
 const itemsOptions = [
   {
-    title: 'App Design',
+    title: 'Дизайн приложения',
     cost: 24,
     hours: 1,
-    description: 'Designed UI kit & app pages.',
+    description: 'Дизайн UI kit и страниц приложения.',
   },
   {
-    title: 'App Customization',
+    title: 'Кастомизация',
     cost: 26,
     hours: 1,
-    description: 'Customization & Bug Fixes.',
+    description: 'Доработка и исправление ошибок.',
   },
   {
-    title: 'ABC Template',
+    title: 'Шаблон',
     cost: 28,
     hours: 1,
-    description: 'Vuetify admin template.',
+    description: 'Админ-шаблон.',
   },
   {
-    title: 'App Development',
+    title: 'Разработка приложения',
     cost: 32,
     hours: 1,
-    description: 'Native App Development.',
+    description: 'Создание нативного приложения.',
   },
 ]
 
-const selectedItem = ref('App Customization')
+const selectedItem = ref('Кастомизация')
 const localProductData = ref(structuredClone(toRaw(props.data)))
 
 watch(selectedItem, () => {
@@ -80,7 +80,7 @@ watch(totalPrice, () => {
         md="6"
       >
         <h6 class="text-h6">
-          Item
+          Товар
         </h6>
       </VCol>
       <VCol
@@ -88,7 +88,7 @@ watch(totalPrice, () => {
         md="2"
       >
         <h6 class="text-h6 ps-2">
-          Cost
+          Стоимость
         </h6>
       </VCol>
       <VCol
@@ -96,7 +96,7 @@ watch(totalPrice, () => {
         md="2"
       >
         <h6 class="text-h6 ps-2">
-          Hours
+          Часы
         </h6>
       </VCol>
       <VCol
@@ -104,7 +104,7 @@ watch(totalPrice, () => {
         md="2"
       >
         <h6 class="text-h6">
-          Price
+          Цена
         </h6>
       </VCol>
     </VRow>
@@ -128,7 +128,7 @@ watch(totalPrice, () => {
             :items="itemsOptions"
             item-title="title"
             item-value="title"
-            placeholder="Select Item"
+            placeholder="Выберите товар"
             class="mb-6"
           />
 
@@ -136,7 +136,7 @@ watch(totalPrice, () => {
             id="item-description"
             v-model="localProductData.description"
             rows="2"
-            placeholder="Item description"
+            placeholder="Описание товара"
             persistent-placeholder
           />
         </VCol>
@@ -149,22 +149,22 @@ watch(totalPrice, () => {
             id="item-cost"
             v-model="localProductData.cost"
             type="number"
-            placeholder="Cost"
+            placeholder="Стоимость"
             class="mb-6"
           />
 
           <div class="text-high-emphasis text-no-wrap mt-4">
             <p class="mb-1">
-              Discount
+              Скидка
             </p>
             <span>0%</span>
             <span class="mx-2">
               0%
-              <VTooltip activator="parent">Tax 1</VTooltip>
+              <VTooltip activator="parent">НДС 1</VTooltip>
             </span>
             <span>
               0%
-              <VTooltip activator="parent">Tax 2</VTooltip>
+              <VTooltip activator="parent">НДС 2</VTooltip>
             </span>
           </div>
         </VCol>
@@ -186,7 +186,7 @@ watch(totalPrice, () => {
           sm="4"
         >
           <p class="my-2">
-            <span class="d-inline d-md-none">Price: </span>
+            <span class="d-inline d-md-none">Цена: </span>
             <span class="text-high-emphasis">${{ totalPrice }}</span>
           </p>
         </VCol>

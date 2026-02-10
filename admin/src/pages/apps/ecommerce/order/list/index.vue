@@ -5,31 +5,32 @@ import paypalDark from '@images/icons/payments/img/paypal-dark.png'
 import paypalLight from '@images/icons/payments/img/paypal-light.png'
 
 const widgetData = ref([
-  {
-    title: 'Ожидает оплаты',
-    value: 56,
-    icon: 'tabler-calendar-stats',
-  },
-  {
-    title: 'Завершено',
-    value: 12689,
-    icon: 'tabler-checks',
-  },
-  {
-    title: 'Возвращено',
-    value: 124,
-    icon: 'tabler-wallet',
-  },
-  {
-    title: 'Неудачно',
-    value: 32,
-    icon: 'tabler-alert-octagon',
-  },
+  { title: 'Ожидает оплаты', value: 0, icon: 'tabler-calendar-stats', key: 'awaitingPayment' },
+  { title: 'Завершено', value: 0, icon: 'tabler-checks', key: 'completed' },
+  { title: 'Возвращено', value: 0, icon: 'tabler-wallet', key: 'returned' },
+  { title: 'Неудачно', value: 0, icon: 'tabler-alert-octagon', key: 'failed' },
 ])
+
+const fetchOrderStats = async () => {
+  try {
+    const data = await $api('/apps/ecommerce/orders/stats')
+    widgetData.value = [
+      { title: 'Ожидает оплаты', value: data?.awaitingPayment ?? 0, icon: 'tabler-calendar-stats', key: 'awaitingPayment' },
+      { title: 'Завершено', value: data?.completed ?? 0, icon: 'tabler-checks', key: 'completed' },
+      { title: 'Возвращено', value: data?.returned ?? 0, icon: 'tabler-wallet', key: 'returned' },
+      { title: 'Неудачно', value: data?.failed ?? 0, icon: 'tabler-alert-octagon', key: 'failed' },
+    ]
+  } catch (e) {
+    console.error('Ошибка загрузки статистики заказов:', e)
+  }
+}
 
 const mastercard = useGenerateImageVariant(masterCardLight, masterCardDark)
 const paypal = useGenerateImageVariant(paypalLight, paypalDark)
 const searchQuery = ref('')
+
+const router = useRouter()
+const activeTab = ref('active')
 
 // Data table options
 const itemsPerPage = ref(10)
@@ -78,6 +79,49 @@ const updateOptions = options => {
   orderBy.value = options.sortBy[0]?.order
 }
 
+// Загрузка заказов — ручной fetch без блокировки рендера
+const ordersData = ref({ orders: [], total: 0 })
+const isLoading = ref(false)
+
+const fetchOrders = useDebounceFn(async () => {
+  isLoading.value = true
+  try {
+    const params = new URLSearchParams()
+    if (searchQuery.value) params.set('q', searchQuery.value)
+    params.set('page', String(page.value))
+    params.set('itemsPerPage', String(itemsPerPage.value))
+    if (sortBy.value) params.set('sortBy', sortBy.value)
+    if (orderBy.value) params.set('orderBy', orderBy.value)
+    params.set('completed', activeTab.value === 'completed' ? 'true' : 'false')
+    const data = await $api(`/apps/ecommerce/orders?${params}`)
+    ordersData.value = { orders: data?.orders ?? [], total: data?.total ?? 0 }
+  } catch (e) {
+    console.error('Ошибка загрузки заказов:', e)
+    ordersData.value = { orders: [], total: 0 }
+  } finally {
+    isLoading.value = false
+  }
+}, 150)
+
+onMounted(() => {
+  fetchOrders()
+  fetchOrderStats()
+})
+
+watch([searchQuery, activeTab], () => {
+  page.value = 1
+})
+watch([searchQuery, page, itemsPerPage, sortBy, orderBy, activeTab], () => {
+  fetchOrders()
+})
+
+// При клике на "Завершённые" — перейти на отдельную страницу
+watch(activeTab, tab => {
+  if (tab === 'completed') {
+    router.push({ name: 'apps-ecommerce-order-completed' })
+  }
+})
+
 const resolvePaymentStatus = status => {
   if (status === 1)
     return {
@@ -102,6 +146,16 @@ const resolvePaymentStatus = status => {
 }
 
 const resolveStatus = status => {
+  if (status === 'Pending')
+    return {
+      text: 'Ожидает',
+      color: 'warning',
+    }
+  if (status === 'In Processing')
+    return {
+      text: 'В обработке',
+      color: 'info',
+    }
   if (status === 'Delivered')
     return {
       text: 'Доставлено',
@@ -124,21 +178,8 @@ const resolveStatus = status => {
     }
 }
 
-const {
-  data: ordersData,
-  execute: fetchOrders,
-} = await useApi(createUrl('/apps/ecommerce/orders', {
-  query: {
-    q: searchQuery,
-    page,
-    itemsPerPage,
-    sortBy,
-    orderBy,
-  },
-}))
-
-const orders = computed(() => ordersData.value.orders)
-const totalOrder = computed(() => ordersData.value.total)
+const orders = computed(() => ordersData.value?.orders ?? [])
+const totalOrder = computed(() => ordersData.value?.total ?? 0)
 
 const deleteOrder = async id => {
   await $api(`/apps/ecommerce/orders/${ id }`, { method: 'DELETE' })
@@ -148,8 +189,9 @@ const deleteOrder = async id => {
   if (index !== -1)
     selectedRows.value.splice(index, 1)
 
-  // Refetch Orders
+  // Refetch Orders and stats
   fetchOrders()
+  fetchOrderStats()
 }
 </script>
 
@@ -214,6 +256,27 @@ const deleteOrder = async id => {
     </VCard>
 
     <VCard>
+      <!-- 👉 Вкладки: Активные / Завершённые -->
+      <VTabs
+        v-model="activeTab"
+        class="px-4 pt-4"
+      >
+        <VTab value="active">
+          <VIcon
+            icon="tabler-clock"
+            start
+          />
+          Активные заказы
+        </VTab>
+        <VTab value="completed">
+          <VIcon
+            icon="tabler-checks"
+            start
+          />
+          Завершённые
+        </VTab>
+      </VTabs>
+
       <!-- 👉 Filters -->
       <VCardText>
         <div class="d-flex justify-sm-space-between justify-start flex-wrap gap-4">
@@ -225,9 +288,12 @@ const deleteOrder = async id => {
 
           <div class="d-flex gap-x-4 align-center">
             <AppSelect
-              v-model="itemsPerPage"
+              :model-value="itemsPerPage"
               style="min-inline-size: 6.25rem;"
-              :items="[5, 10, 20, 50, 100]"
+              :items="[5, 10, 20, 50, 100].map(n => ({ value: n, title: String(n) }))"
+              item-value="value"
+              item-title="title"
+              @update:model-value="itemsPerPage = Number($event)"
             />
             <VBtn
               variant="tonal"
@@ -249,6 +315,7 @@ const deleteOrder = async id => {
         :headers="headers"
         :items="orders"
         :items-length="totalOrder"
+        :loading="isLoading"
         show-select
         class="text-no-wrap"
         @update:options="updateOptions"
@@ -270,8 +337,8 @@ const deleteOrder = async id => {
           <div class="d-flex align-center gap-x-3">
             <VAvatar
               size="34"
-              :color="!item.avatar.length ? 'primary' : ''"
-              :variant="!item.avatar.length ? 'tonal' : undefined"
+              :color="!item.avatar?.length ? 'primary' : ''"
+              :variant="!item.avatar?.length ? 'tonal' : undefined"
             >
               <VImg
                 v-if="item.avatar"
@@ -327,14 +394,21 @@ const deleteOrder = async id => {
 
         <!-- Method -->
         <template #item.method="{ item }">
-          <div class="d-flex align-center">
+          <div class="d-flex align-center gap-x-2">
             <img
-              :src="item.method === 'mastercard' ? mastercard : paypal"
+              v-if="item.method === 'mastercard'"
+              :src="mastercard"
               height="18"
             >
-            <div class="text-body-1">
-              ...{{ item.method === 'mastercard' ? item.methodNumber : '@gmail.com' }}
-            </div>
+            <img
+              v-else-if="item.method === 'paypalLogo'"
+              :src="paypal"
+              height="18"
+            >
+            <span v-else class="text-body-1">Наличные</span>
+            <span class="text-body-1">
+              {{ item.method === 'mastercard' ? '...' + (item.methodNumber || '') : item.method === 'paypalLogo' ? '@gmail.com' : '' }}
+            </span>
           </div>
         </template>
 

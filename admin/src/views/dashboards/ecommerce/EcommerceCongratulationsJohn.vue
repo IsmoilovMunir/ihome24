@@ -1,5 +1,13 @@
 <script setup>
+import { useDashboard } from '@/composables/useDashboard'
 import congoImg from '@images/illustrations/congo-illustration.png'
+
+const { formatRevenue } = useDashboard()
+const dashboardData = inject('dashboardData')
+const revenue = computed(() => {
+  const d = dashboardData?.value?.stats
+  return d ? formatRevenue(d.revenue) : '₽0'
+})
 </script>
 
 <template>
@@ -14,9 +22,11 @@ import congoImg from '@images/illustrations/congo-illustration.png'
             Лучший продавец месяца
           </p>
           <h4 class="text-h4 text-primary mb-1">
-            ₽0
+            {{ revenue }}
           </h4>
-          <VBtn>Просмотр продаж</VBtn>
+          <VBtn :to="{ name: 'apps-ecommerce-order-list' }">
+            Просмотр продаж
+          </VBtn>
         </VCardText>
       </VCol>
 

@@ -1,8 +1,13 @@
 <script setup>
 import { useTheme } from 'vuetify'
 import { hexToRgb } from '@layouts/utils'
+import { useDashboard } from '@/composables/useDashboard'
 
 const vuetifyTheme = useTheme()
+const { formatRevenue } = useDashboard()
+const dashboardData = inject('dashboardData')
+
+const totalRevenue = computed(() => dashboardData?.value?.stats?.revenue ?? 0)
 
 const series = {
   bar: [
@@ -409,7 +414,7 @@ const chartOptions = computed(() => {
 
           <div class="d-flex flex-column my-8">
             <h5 class="font-weight-medium text-h3">
-              ₽0
+              {{ formatRevenue(totalRevenue) }}
             </h5>
             <p class="mb-0">
               <span class="text-high-emphasis font-weight-medium me-1">Бюджет:</span>

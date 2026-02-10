@@ -41,7 +41,7 @@ export const db = {
           title: 'Электронная коммерция - Список заказов',
         },
         {
-          url: { name: 'apps-ecommerce-order-details-id', params: { id: '9042' } },
+          url: { name: 'apps-ecommerce-order-details-id', params: { id: '1' } },
           icon: 'tabler-list-check',
           title: 'Электронная коммерция - Детали заказа',
         },

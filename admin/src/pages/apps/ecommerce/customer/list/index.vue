@@ -65,8 +65,11 @@ const totalCustomers = computed(() => customerData.value.total)
           />
           <div class="d-flex flex-row gap-4 align-center flex-wrap">
             <AppSelect
-              v-model="itemsPerPage"
-              :items="[5, 10, 20, 50, 100]"
+              :model-value="itemsPerPage"
+              :items="[5, 10, 20, 50, 100].map(n => ({ value: n, title: String(n) }))"
+              item-value="value"
+              item-title="title"
+              @update:model-value="itemsPerPage = Number($event)"
             />
 
             <VBtn

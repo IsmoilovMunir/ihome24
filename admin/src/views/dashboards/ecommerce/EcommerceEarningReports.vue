@@ -1,10 +1,13 @@
 <script setup>
 import { useTheme } from 'vuetify'
 import { hexToRgb } from '@layouts/utils'
+import { useDashboard } from '@/composables/useDashboard'
 
 const vuetifyTheme = useTheme()
+const { formatRevenue } = useDashboard()
+const dashboardData = inject('dashboardData')
 
-const series = [{
+const series = computed(() => [{
   data: [
     0,
     0,
@@ -14,7 +17,7 @@ const series = [{
     0,
     0,
   ],
-}]
+}])
 
 const chartOptions = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors
@@ -81,32 +84,37 @@ const chartOptions = computed(() => {
   }
 })
 
-const earningReports = [
-  {
-    avatarIcon: 'tabler-chart-pie-2',
-    avatarColor: 'primary',
-    title: 'Чистая прибыль',
-    subtitle: '0 продаж',
-    earnings: '₽0',
-    percentage: '0%',
-  },
-  {
-    avatarIcon: 'tabler-currency-ruble',
-    avatarColor: 'success',
-    title: 'Общий доход',
-    subtitle: 'Продажи, Партнерство',
-    earnings: '₽0',
-    percentage: '0%',
-  },
-  {
-    avatarIcon: 'tabler-credit-card',
-    avatarColor: 'secondary',
-    title: 'Общие расходы',
-    subtitle: 'Реклама, Маркетинг',
-    earnings: '₽0',
-    percentage: '0%',
-  },
-]
+const earningReports = computed(() => {
+  const d = dashboardData?.value?.stats
+  const sales = d?.sales ?? 0
+  const revenue = d?.revenue ?? 0
+  return [
+    {
+      avatarIcon: 'tabler-chart-pie-2',
+      avatarColor: 'primary',
+      title: 'Чистая прибыль',
+      subtitle: `${sales} продаж`,
+      earnings: formatRevenue(revenue),
+      percentage: '0%',
+    },
+    {
+      avatarIcon: 'tabler-currency-ruble',
+      avatarColor: 'success',
+      title: 'Общий доход',
+      subtitle: 'Продажи, Партнерство',
+      earnings: formatRevenue(revenue),
+      percentage: '0%',
+    },
+    {
+      avatarIcon: 'tabler-credit-card',
+      avatarColor: 'secondary',
+      title: 'Общие расходы',
+      subtitle: 'Реклама, Маркетинг',
+      earnings: '₽0',
+      percentage: '0%',
+    },
+  ]
+})
 
 const moreList = [
   {

@@ -75,10 +75,11 @@ browser_data_interactive/
 *.env.prod
 *.env.production
 # Но оставляем примеры
-!.env.example
 !env.prod.example
-!**/.env.example
 !**/env.prod.example
+# Не добавлять .env.example в git (могут содержать чувствительные данные)
+admin/.env.example
+backend/.env.example
 
 # Logs
 *.log

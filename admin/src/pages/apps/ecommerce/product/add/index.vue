@@ -98,17 +98,17 @@ const handleImageDeleted = (file) => {
   }
 }
 
-const handleGalleryImagesUploaded = (files) => {
-  uploadedGalleryImages.value = files
+const handleGalleryImagesUploaded = () => {
+  // Не перезаписываем uploadedGalleryImages — FileUploader уже обновил v-model полным списком (старые + новые файлы).
+  // Перезапись только новыми файлами приводила к потере ранее добавленных при загрузке по одному.
   uploadedGalleryImages.value.forEach((file, index) => {
     file.sortOrder = index
   })
   // Если нет основного изображения, берем первое из галереи
-  if (!mainImage.value && files.length > 0 && files[0].url) {
-    mainImage.value = files[0].url
-    // Перемещаем первое изображение в основное
-    uploadedImages.value = [files[0]]
-    uploadedGalleryImages.value = files.slice(1)
+  if (!mainImage.value && uploadedGalleryImages.value.length > 0 && uploadedGalleryImages.value[0].url) {
+    mainImage.value = uploadedGalleryImages.value[0].url
+    uploadedImages.value = [uploadedGalleryImages.value[0]]
+    uploadedGalleryImages.value = uploadedGalleryImages.value.slice(1)
   }
 }
 
@@ -445,7 +445,13 @@ const loadProductData = async () => {
     galleryImages.value = []
     
     if (response.images && response.images.length > 0) {
-      const sortedImages = [...response.images].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+      // Используем product_images как единственный источник — он хранит правильный порядок (main, gallery)
+      const sortedImages = [...response.images].sort((a, b) => {
+        const aPrimary = a.isPrimary ? 0 : 1
+        const bPrimary = b.isPrimary ? 0 : 1
+        if (aPrimary !== bPrimary) return aPrimary - bPrimary
+        return (a.sortOrder || 0) - (b.sortOrder || 0)
+      })
       const imageUrls = sortedImages.map(img => img.imageUrl).filter(url => url)
       
       if (imageUrls.length > 0) {
@@ -463,22 +469,6 @@ const loadProductData = async () => {
         if (fileObjects.length > 1) {
           uploadedGalleryImages.value = fileObjects.slice(1)
         }
-      }
-      
-      // Пытаемся загрузить файлы из MinIO (если они есть)
-      try {
-        const filesResponse = await $api(`/admin/files/product/${productId.value}/images`)
-        if (filesResponse && filesResponse.length > 0) {
-          // Если есть файлы из MinIO, используем их вместо URL
-          uploadedImages.value = filesResponse.slice(0, 1)
-          uploadedGalleryImages.value = filesResponse.slice(1)
-          if (uploadedImages.value.length > 0 && uploadedImages.value[0].url) {
-            mainImage.value = uploadedImages.value[0].url
-          }
-        }
-      } catch (error) {
-        console.warn('Не удалось загрузить файлы из MinIO:', error)
-        // Продолжаем использовать URL изображения
       }
     } else if (response.imageUrl) {
       mainImage.value = response.imageUrl
