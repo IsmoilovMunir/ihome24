@@ -1,6 +1,7 @@
 package com.ihome24.ihome24.controller.publicapi.order;
 
 import com.ihome24.ihome24.dto.request.order.CreateOrderRequest;
+import com.ihome24.ihome24.dto.request.order.UpdateOrderItemsRequest;
 import com.ihome24.ihome24.dto.request.order.UpdateOrderStatusRequest;
 import com.ihome24.ihome24.dto.response.order.OrderListResponse;
 import com.ihome24.ihome24.dto.response.order.OrderResponse;
@@ -53,6 +54,14 @@ public class OrderRestController {
 
         OrderListResponse response = orderService.getOrders(q, page, itemsPerPage, sortBy, orderBy, completed);
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/{id}/items")
+    public ResponseEntity<OrderResponse> updateOrderItems(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateOrderItemsRequest request) {
+        OrderResponse order = orderService.updateOrderItems(id, request.getItems());
+        return ResponseEntity.ok(order);
     }
 
     @PatchMapping("/{id}/status")

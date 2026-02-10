@@ -9,24 +9,13 @@ const isConfirmDialogVisible = ref(false)
 const isUserInfoEditDialogVisible = ref(false)
 const isEditAddressDialogVisible = ref(false)
 
-const headers = [
-  {
-    title: 'Товар',
-    key: 'productName',
-  },
-  {
-    title: 'Цена',
-    key: 'price',
-  },
-  {
-    title: 'Количество',
-    key: 'quantity',
-  },
-  {
-    title: 'Всего',
-    key: 'total',
-  },
-]
+// Редактируемый состав заказа: { productId, productName, price, quantity }
+const editableItems = ref([])
+const isItemsSaving = ref(false)
+const productList = ref([])
+const addProductId = ref(null)
+const addQuantity = ref(1)
+const isProductsLoading = ref(false)
 
 const resolvePaymentStatus = payment => {
   if (payment === 1)
@@ -94,16 +83,103 @@ const handleStatusChange = async newStatus => {
   }
 }
 
-const orderDetail = computed(() => {
-  if (!orderData.value?.items?.length)
-    return []
-  return orderData.value.items.map(item => ({
-    productName: item.productName || '',
-    price: item.price != null ? Number(item.price) : 0,
-    quantity: item.quantity || 0,
-    total: item.total != null ? Number(item.total) : 0,
-  }))
-})
+// Синхронизируем редактируемый список при загрузке заказа
+watch(
+  () => orderData.value?.items,
+  items => {
+    if (!items?.length) {
+      editableItems.value = []
+      return
+    }
+    editableItems.value = items.map(item => ({
+      productId: item.productId,
+      productName: item.productName || '',
+      price: item.price != null ? Number(item.price) : 0,
+      quantity: item.quantity || 0,
+    }))
+  },
+  { immediate: true },
+)
+
+const orderDetail = computed(() =>
+  editableItems.value.map(item => ({
+    ...item,
+    total: item.price * (item.quantity || 0),
+  })),
+)
+
+const orderTotalFromItems = computed(() =>
+  orderDetail.value.reduce((sum, item) => sum + item.total, 0),
+)
+
+const fetchProducts = async () => {
+  isProductsLoading.value = true
+  try {
+    const data = await $api('/admin/products', {
+      query: { page: 1, itemsPerPage: 200 },
+    }).catch(() => ({ products: [] }))
+    productList.value = data?.products ?? []
+  } catch (e) {
+    console.error('Ошибка загрузки товаров:', e)
+    productList.value = []
+  } finally {
+    isProductsLoading.value = false
+  }
+}
+
+const addProductToOrder = () => {
+  const id = addProductId.value
+  const qty = Math.max(1, parseInt(addQuantity.value, 10) || 1)
+  if (!id) return
+  const product = productList.value.find(p => p.id === id)
+  if (!product) return
+  const existing = editableItems.value.find(i => i.productId === id)
+  if (existing) {
+    existing.quantity += qty
+  } else {
+    editableItems.value.push({
+      productId: product.id,
+      productName: product.name || '',
+      price: product.price != null ? Number(product.price) : 0,
+      quantity: qty,
+    })
+  }
+  addProductId.value = null
+  addQuantity.value = 1
+}
+
+const removeItem = index => {
+  editableItems.value.splice(index, 1)
+}
+
+const saveOrderItems = async () => {
+  if (!orderData.value?.id) return
+  if (!editableItems.value.length) return
+  isItemsSaving.value = true
+  try {
+    const body = {
+      items: editableItems.value.map(i => ({
+        productId: i.productId,
+        quantity: i.quantity || 1,
+      })),
+    }
+    const data = await $api(`/apps/ecommerce/orders/${orderData.value.id}/items`, {
+      method: 'PATCH',
+      body,
+    })
+    orderData.value = { ...orderData.value, ...data }
+    editableItems.value = (data.items || []).map(item => ({
+      productId: item.productId,
+      productName: item.productName || '',
+      price: item.price != null ? Number(item.price) : 0,
+      quantity: item.quantity || 0,
+    }))
+  } catch (e) {
+    console.error('Ошибка сохранения состава заказа:', e)
+  } finally {
+    isItemsSaving.value = false
+  }
+}
 
 const formatPrice = val => {
   if (val == null) return '0 ₽'
@@ -237,45 +313,126 @@ const handleDeleteOrder = async () => {
             </template>
           </VCardItem>
           <VDivider />
-          <VDataTable
-            :headers="headers"
-            :items="orderDetail"
-            item-value="productName"
-            class="text-no-wrap"
-          >
-            <template #item.productName="{ item }">
-              <div class="d-flex flex-column align-start">
-                <h6 class="text-h6">
-                  {{ item.productName }}
-                </h6>
-              </div>
-            </template>
-            <template #item.price="{ item }">
-              {{ formatPrice(item.price) }}
-            </template>
-            <template #item.total="{ item }">
-              {{ formatPrice(item.total) }}
-            </template>
-            <template #item.quantity="{ item }">
-              {{ item.quantity }}
-            </template>
-            <template #bottom />
-          </VDataTable>
+          <VTable class="text-no-wrap">
+            <thead>
+              <tr>
+                <th class="text-left">
+                  Товар
+                </th>
+                <th class="text-left">
+                  Цена
+                </th>
+                <th class="text-left" style="width: 120px;">
+                  Количество
+                </th>
+                <th class="text-left">
+                  Всего
+                </th>
+                <th class="text-left" style="width: 56px;" />
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                v-for="(item, idx) in orderDetail"
+                :key="item.productId + '-' + idx"
+              >
+                <td>
+                  <h6 class="text-h6 mb-0">
+                    {{ item.productName }}
+                  </h6>
+                </td>
+                <td>
+                  {{ formatPrice(item.price) }}
+                </td>
+                <td>
+                  <VTextField
+                    v-model.number="editableItems[idx].quantity"
+                    type="number"
+                    min="1"
+                    density="compact"
+                    hide-details
+                    variant="outlined"
+                    style="max-width: 80px;"
+                    @update:model-value="(v) => { if (v < 1) editableItems[idx].quantity = 1 }"
+                  />
+                </td>
+                <td>
+                  {{ formatPrice(item.total) }}
+                </td>
+                <td>
+                  <VBtn
+                    icon
+                    variant="text"
+                    size="small"
+                    color="error"
+                    @click="removeItem(idx)"
+                  >
+                    <VIcon icon="tabler-trash" />
+                  </VBtn>
+                </td>
+              </tr>
+              <tr>
+                <td colspan="5" class="pt-4">
+                  <div class="d-flex align-center gap-2 flex-wrap">
+                    <VSelect
+                      v-model="addProductId"
+                      :items="productList"
+                      item-title="name"
+                      item-value="id"
+                      placeholder="Добавить товар"
+                      density="compact"
+                      style="max-width: 260px;"
+                      :loading="isProductsLoading"
+                      clearable
+                      @focus="productList.length === 0 && fetchProducts()"
+                    />
+                    <VTextField
+                      v-model.number="addQuantity"
+                      type="number"
+                      min="1"
+                      density="compact"
+                      hide-details
+                      style="max-width: 80px;"
+                      placeholder="Кол-во"
+                    />
+                    <VBtn
+                      size="small"
+                      color="primary"
+                      :disabled="!addProductId"
+                      @click="addProductToOrder"
+                    >
+                      Добавить
+                    </VBtn>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </VTable>
           <VDivider />
           <VCardText>
-            <div class="d-flex align-end flex-column">
-              <table class="text-high-emphasis">
-                <tbody>
-                  <tr>
-                    <td class="text-high-emphasis font-weight-medium" width="200">
-                      Итого:
-                    </td>
-                    <td class="font-weight-medium">
-                      {{ formatPrice(orderData.spent) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="d-flex align-center justify-space-between flex-wrap gap-2">
+              <div class="d-flex align-end flex-column">
+                <table class="text-high-emphasis">
+                  <tbody>
+                    <tr>
+                      <td class="text-high-emphasis font-weight-medium" width="200">
+                        Итого:
+                      </td>
+                      <td class="font-weight-medium">
+                        {{ formatPrice(orderTotalFromItems) }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <VBtn
+                color="primary"
+                :loading="isItemsSaving"
+                :disabled="!editableItems.length"
+                @click="saveOrderItems"
+              >
+                Сохранить состав заказа
+              </VBtn>
             </div>
           </VCardText>
         </VCard>

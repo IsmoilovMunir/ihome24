@@ -1,6 +1,7 @@
 package com.ihome24.ihome24.service.order;
 
 import com.ihome24.ihome24.dto.request.order.CreateOrderRequest;
+import com.ihome24.ihome24.dto.request.order.UpdateOrderItemsRequest;
 import com.ihome24.ihome24.dto.response.order.OrderItemResponse;
 import com.ihome24.ihome24.dto.response.order.OrderListResponse;
 import com.ihome24.ihome24.dto.response.order.OrderResponse;
@@ -24,7 +25,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -95,6 +98,43 @@ public class OrderService {
     }
 
     @Transactional
+    public OrderResponse updateOrderItems(Long id, List<UpdateOrderItemsRequest.OrderItemUpdate> itemsRequest) {
+        Order order = orderRepository.findByIdWithItems(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Заказ не найден: " + id));
+
+        order.getItems().clear();
+        BigDecimal totalSpent = BigDecimal.ZERO;
+
+        if (itemsRequest != null && !itemsRequest.isEmpty()) {
+            // Объединяем по productId (одинаковый товар в нескольких строках — суммируем количество)
+            Map<Long, Integer> productIdToQty = new LinkedHashMap<>();
+            for (UpdateOrderItemsRequest.OrderItemUpdate req : itemsRequest) {
+                if (req.getQuantity() == null || req.getQuantity() < 1) continue;
+                productIdToQty.merge(req.getProductId(), req.getQuantity(), Integer::sum);
+            }
+            for (Map.Entry<Long, Integer> e : productIdToQty.entrySet()) {
+                Product product = productRepository.findById(e.getKey())
+                        .orElseThrow(() -> new ResourceNotFoundException("Товар не найден: " + e.getKey()));
+                BigDecimal price = product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
+                int qty = e.getValue();
+                OrderItem item = OrderItem.builder()
+                        .order(order)
+                        .product(product)
+                        .productName(product.getName())
+                        .quantity(qty)
+                        .price(price)
+                        .build();
+                order.getItems().add(item);
+                totalSpent = totalSpent.add(price.multiply(BigDecimal.valueOf(qty)));
+            }
+        }
+
+        order.setSpent(totalSpent);
+        order = orderRepository.save(order);
+        return mapToDetailsResponse(order);
+    }
+
+    @Transactional
     public OrderResponse updateOrderStatus(Long id, String statusStr) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Заказ не найден: " + id));
@@ -103,7 +143,22 @@ public class OrderService {
         order.setStatus(newStatus);
         order = orderRepository.save(order);
 
+        String statusDisplayRu = orderStatusToDisplayRu(newStatus);
+        emailService.sendOrderStatusChange(order.getEmail(), order.getCustomer(), order.getOrderNumber(), statusDisplayRu);
+
         return mapToResponse(order);
+    }
+
+    private String orderStatusToDisplayRu(Order.OrderStatus status) {
+        if (status == null) return "—";
+        return switch (status) {
+            case PENDING -> "Ожидает";
+            case IN_PROCESSING -> "В обработке";
+            case DISPATCHED -> "Отправлено";
+            case OUT_FOR_DELIVERY -> "В доставке";
+            case READY_TO_PICKUP -> "Готово к выдаче";
+            case DELIVERED -> "Доставлено";
+        };
     }
 
     private Order.OrderStatus parseOrderStatus(String statusStr) {
@@ -176,10 +231,16 @@ public class OrderService {
         }
         order = orderRepository.save(order);
 
-        // Отправляем письмо клиенту о принятии заказа
+        // Отправляем письмо клиенту о принятии заказа со списком товаров
         try {
             String totalStr = totalSpent != null ? String.format("%.2f ₽", totalSpent) : "";
-            emailService.sendOrderConfirmation(order.getEmail(), order.getCustomer(), order.getOrderNumber(), totalStr);
+            List<EmailService.OrderItemLine> lines = order.getItems().stream()
+                    .map(item -> new EmailService.OrderItemLine(
+                            item.getProductName(),
+                            item.getQuantity() != null ? item.getQuantity() : 0,
+                            item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO))
+                    .toList();
+            emailService.sendOrderConfirmation(order.getEmail(), order.getCustomer(), order.getOrderNumber(), totalStr, lines);
         } catch (Exception e) {
             // Заказ создан, письмо не критично — не прерываем
         }
@@ -232,6 +293,7 @@ public class OrderService {
         List<OrderItemResponse> itemResponses = order.getItems() != null
                 ? order.getItems().stream()
                     .map(item -> OrderItemResponse.builder()
+                            .productId(item.getProduct() != null ? item.getProduct().getId() : null)
                             .productName(item.getProductName())
                             .quantity(item.getQuantity())
                             .price(item.getPrice())
