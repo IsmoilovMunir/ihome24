@@ -43,9 +43,10 @@ public class SecurityConfig {
                         .requestMatchers("/actuator/**").permitAll() // Разрешаем доступ к actuator endpoints для мониторинга
                         .requestMatchers("/api/publicapi/**").permitAll() // Разрешаем публичные API endpoints (регистрация и т.д.)
                         .requestMatchers("/api/auth/**").permitAll() // Разрешаем аутентификацию
-                        .requestMatchers("/api/apps/**").permitAll() // Temporarily permit all for frontend integration
+                        .requestMatchers("/api/apps/**").permitAll() // Orders, admin - permit for frontend checkout and admin
                         .requestMatchers("/api/files/**").permitAll() // Публичный доступ к файлам
                         .requestMatchers("/api/products", "/api/products/**").permitAll() // Публичный доступ к продуктам
+                        .requestMatchers("/api/cart", "/api/cart/**").permitAll() // Валидация корзины
                         .requestMatchers("/api/categories", "/api/categories/**").permitAll() // Публичный доступ к категориям
                         .requestMatchers("/api/admin/categories", "/api/admin/categories/**").permitAll() // Временно разрешаем доступ к категориям для разработки
                         .requestMatchers("/api/admin/products", "/api/admin/products/**").permitAll() // Временно разрешаем доступ к продуктам для разработки

@@ -41,23 +41,25 @@ spring:
       matching-strategy: ant_path_matcher
 
   # Email Configuration (Timeweb SMTP)
+  # ВАЖНО: пароль и логин ТОЛЬКО через переменные окружения!
+  # MAIL_USERNAME, MAIL_PASSWORD — задайте в .env или system env
   mail:
-    host: smtp.timeweb.ru
-    port: 587
-    username: info@ihome24.ru
-    password: ov6t4gpce10
+    host: ${MAIL_HOST:smtp.timeweb.ru}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
     properties:
       mail:
-        debug: ${MAIL_DEBUG:true}  # Включаем детальное логирование SMTP
+        debug: ${MAIL_DEBUG:false}
         smtp:
           auth: ${MAIL_SMTP_AUTH:true}
           ssl:
             enable: ${MAIL_SMTP_SSL_ENABLE:false}
-            trust: ${MAIL_SMTP_SSL_TRUST:*}
+            trust: ${MAIL_SMTP_SSL_TRUST:smtp.timeweb.ru}
             checkserveridentity: ${MAIL_SMTP_SSL_CHECK_SERVER_IDENTITY:false}
           starttls:
-            enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
-            required: ${MAIL_SMTP_STARTTLS_REQUIRED:true}
+            enable: ${MAIL_STARTTLS:true}
+            required: ${MAIL_STARTTLS:true}
           connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:10000}
           timeout: ${MAIL_TIMEOUT:10000}
           writetimeout: ${MAIL_WRITE_TIMEOUT:10000}

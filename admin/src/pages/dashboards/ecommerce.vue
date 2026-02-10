@@ -1,4 +1,5 @@
 <script setup>
+import { useDashboard } from '@/composables/useDashboard'
 import EcommerceCongratulationsJohn from '@/views/dashboards/ecommerce/EcommerceCongratulationsJohn.vue'
 import EcommerceEarningReports from '@/views/dashboards/ecommerce/EcommerceEarningReports.vue'
 import EcommerceExpensesRadialBarCharts from '@/views/dashboards/ecommerce/EcommerceExpensesRadialBarCharts.vue'
@@ -10,6 +11,10 @@ import EcommerceRevenueReport from '@/views/dashboards/ecommerce/EcommerceRevenu
 import EcommerceStatistics from '@/views/dashboards/ecommerce/EcommerceStatistics.vue'
 import EcommerceTotalProfitLineCharts from '@/views/dashboards/ecommerce/EcommerceTotalProfitLineCharts.vue'
 import EcommerceTransactions from '@/views/dashboards/ecommerce/EcommerceTransactions.vue'
+
+const { fullData, fetchFull } = useDashboard()
+onMounted(fetchFull)
+provide('dashboardData', fullData)
 </script>
 
 <template>

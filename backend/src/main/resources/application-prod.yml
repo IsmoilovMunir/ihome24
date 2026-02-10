@@ -52,10 +52,11 @@ spring:
   security:
     require-ssl: false  # Используйте reverse proxy для SSL
 
-  # Email Configuration
+  # Email Configuration (Timeweb SMTP)
+  # Порт 587: STARTTLS (ssl=false, starttls=true). Порт 465: SSL (ssl=true, starttls=false).
   mail:
-    host: ${MAIL_HOST:smtp.yandex.ru}
-    port: ${MAIL_PORT:465}
+    host: ${MAIL_HOST:smtp.timeweb.ru}
+    port: ${MAIL_PORT:587}
     username: ${MAIL_USERNAME}
     password: ${MAIL_PASSWORD}
     properties:
@@ -64,12 +65,12 @@ spring:
         smtp:
           auth: ${MAIL_SMTP_AUTH:true}
           ssl:
-            enable: ${MAIL_SMTP_SSL_ENABLE:true}
-            trust: ${MAIL_SMTP_SSL_TRUST:*}
+            enable: ${MAIL_SMTP_SSL_ENABLE:false}
+            trust: ${MAIL_SMTP_SSL_TRUST:smtp.timeweb.ru}
             checkserveridentity: ${MAIL_SMTP_SSL_CHECK_SERVER_IDENTITY:false}
           starttls:
-            enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
-            required: ${MAIL_SMTP_STARTTLS_REQUIRED:false}
+            enable: ${MAIL_STARTTLS:true}
+            required: ${MAIL_STARTTLS:true}
           connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:10000}
           timeout: ${MAIL_TIMEOUT:10000}
           writetimeout: ${MAIL_WRITE_TIMEOUT:10000}

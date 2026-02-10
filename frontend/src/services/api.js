@@ -49,6 +49,22 @@ export const authApi = {
   updateMe: (userData) => api.put('/api/auth/me', userData),
 }
 
+export const orderApi = {
+  create: (orderData) => api.post('/api/apps/ecommerce/orders', orderData),
+}
+
+export const cartApi = {
+  /** Валидирует корзину: проверяет существование товаров, возвращает актуальные данные и список удалённых */
+  validate: (items) => api.post('/api/cart/validate', {
+    items: items
+      .filter(item => (item.product?.id ?? item.productId) != null)
+      .map(item => ({
+        productId: item.product?.id ?? item.productId,
+        quantity: item.quantity,
+      })),
+  }),
+}
+
 export const fileApi = {
   getFileUrl: (filePath) => {
     if (!filePath || filePath.trim() === '') {

@@ -95,19 +95,19 @@ const printInvoice = () => {
             <div>
               <!-- 👉 Invoice ID -->
               <h6 class="font-weight-medium text-lg mb-6">
-                Invoice #{{ invoice.id }}
+                Счёт №{{ invoice.id }}
               </h6>
 
               <!-- 👉 Issue Date -->
               <h6 class="text-h6 font-weight-regular">
-                <span>Date Issued: </span>
-                <span>{{ new Date(invoice.issuedDate).toLocaleDateString('en-GB') }}</span>
+                <span>Дата выдачи: </span>
+                <span>{{ new Date(invoice.issuedDate).toLocaleDateString('ru-RU') }}</span>
               </h6>
 
               <!-- 👉 Due Date -->
               <h6 class="text-h6 font-weight-regular">
-                <span>Due Date: </span>
-                <span>{{ new Date(invoice.dueDate).toLocaleDateString('en-GB') }}</span>
+                <span>Срок оплаты: </span>
+                <span>{{ new Date(invoice.dueDate).toLocaleDateString('ru-RU') }}</span>
               </h6>
             </div>
           </div>
@@ -117,7 +117,7 @@ const printInvoice = () => {
           <VRow class="print-row mb-6">
             <VCol class="text-no-wrap">
               <h6 class="text-h6 mb-4">
-                Invoice To:
+                Платёж получателю:
               </h6>
 
               <p class="mb-0">
@@ -139,13 +139,13 @@ const printInvoice = () => {
 
             <VCol class="text-no-wrap">
               <h6 class="text-h6 mb-4">
-                Bill To:
+                Реквизиты оплаты:
               </h6>
               <table>
                 <tbody>
                   <tr>
                     <td class="pe-4">
-                      Total Due:
+                      К оплате:
                     </td>
                     <td>
                       {{ paymentDetails.totalDue }}
@@ -153,7 +153,7 @@ const printInvoice = () => {
                   </tr>
                   <tr>
                     <td class="pe-4">
-                      Bank Name:
+                      Банк:
                     </td>
                     <td>
                       {{ paymentDetails.bankName }}
@@ -161,7 +161,7 @@ const printInvoice = () => {
                   </tr>
                   <tr>
                     <td class="pe-4">
-                      Country:
+                      Страна:
                     </td>
                     <td>
                       {{ paymentDetails.country }}
@@ -177,7 +177,7 @@ const printInvoice = () => {
                   </tr>
                   <tr>
                     <td class="pe-4">
-                      SWIFT Code:
+                      SWIFT-код:
                     </td>
                     <td>
                       {{ paymentDetails.swiftCode }}
@@ -193,28 +193,28 @@ const printInvoice = () => {
             <thead>
               <tr>
                 <th scope="col">
-                  ITEM
+                  ТОВАР
                 </th>
                 <th scope="col">
-                  DESCRIPTION
+                  ОПИСАНИЕ
                 </th>
                 <th
                   scope="col"
                   class="text-center"
                 >
-                  HOURS
+                  ЧАСЫ
                 </th>
                 <th
                   scope="col"
                   class="text-center"
                 >
-                  QTY
+                  КОЛ-ВО
                 </th>
                 <th
                   scope="col"
                   class="text-center"
                 >
-                  TOTAL
+                  СУММА
                 </th>
               </tr>
             </thead>
@@ -248,11 +248,11 @@ const printInvoice = () => {
             <div class="mb-2">
               <div class="d-flex align-center mb-1">
                 <h6 class="text-h6 me-2">
-                  Salesperson:
+                  Менеджер:
                 </h6>
-                <span>Jenny Parker</span>
+                <span>Менеджер</span>
               </div>
-              <p>Thanks for your business</p>
+              <p>Благодарим за покупку</p>
             </div>
 
             <div>
@@ -260,7 +260,7 @@ const printInvoice = () => {
                 <tbody>
                   <tr>
                     <td class="pe-16">
-                      Subtotal:
+                      Подитог:
                     </td>
                     <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
                       <h6 class="text-base font-weight-medium">
@@ -270,7 +270,7 @@ const printInvoice = () => {
                   </tr>
                   <tr>
                     <td class="pe-16">
-                      Discount:
+                      Скидка:
                     </td>
                     <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
                       <h6 class="text-base font-weight-medium">
@@ -280,7 +280,7 @@ const printInvoice = () => {
                   </tr>
                   <tr>
                     <td class="pe-16">
-                      Tax:
+                      НДС:
                     </td>
                     <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
                       <h6 class="text-base font-weight-medium">
@@ -297,7 +297,7 @@ const printInvoice = () => {
                 <tbody>
                   <tr>
                     <td class="pe-16">
-                      Total:
+                      Итого:
                     </td>
                     <td :class="$vuetify.locale.isRtl ? 'text-start' : 'text-end'">
                       <h6 class="text-base font-weight-medium">
@@ -314,9 +314,9 @@ const printInvoice = () => {
 
           <p class="mb-0">
             <span class="text-high-emphasis font-weight-medium me-1">
-              Note:
+              Примечание:
             </span>
-            <span>It was a pleasure working with you and your team. We hope you will keep us in mind for future freelance projects. Thank You!</span>
+            <span>Благодарим за ваш заказ. При возникновении вопросов мы всегда готовы помочь.</span>
           </p>
         </VCard>
       </VCol>
@@ -335,7 +335,7 @@ const printInvoice = () => {
               class="mb-4"
               @click="isSendPaymentSidebarVisible = true"
             >
-              Send Invoice
+              Отправить счёт
             </VBtn>
 
             <VBtn
@@ -344,7 +344,7 @@ const printInvoice = () => {
               variant="tonal"
               class="mb-4"
             >
-              Download
+              Скачать
             </VBtn>
 
             <div class="d-flex flex-wrap gap-4">
@@ -354,7 +354,7 @@ const printInvoice = () => {
                 class="flex-grow-1"
                 @click="printInvoice"
               >
-                Print
+                Печать
               </VBtn>
 
               <VBtn
@@ -363,7 +363,7 @@ const printInvoice = () => {
                 class="mb-4 flex-grow-1"
                 :to="{ name: 'apps-invoice-edit-id', params: { id: route.params.id } }"
               >
-                Edit
+                Редактировать
               </VBtn>
             </div>
 
@@ -374,7 +374,7 @@ const printInvoice = () => {
               color="success"
               @click="isAddPaymentSidebarVisible = true"
             >
-              Add Payment
+              Добавить платёж
             </VBtn>
           </VCardText>
         </VCard>
@@ -392,7 +392,7 @@ const printInvoice = () => {
       type="error"
       variant="tonal"
     >
-      Invoice with ID  {{ route.params.id }} not found!
+      Счёт с ID {{ route.params.id }} не найден!
     </VAlert>
   </section>
 </template>

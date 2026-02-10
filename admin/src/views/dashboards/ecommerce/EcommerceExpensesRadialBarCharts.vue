@@ -1,9 +1,14 @@
 <script setup>
 import { useTheme } from 'vuetify'
 import { hexToRgb } from '@layouts/utils'
+import { useDashboard } from '@/composables/useDashboard'
 
 const vuetifyTheme = useTheme()
-const series = [0]
+const { formatRevenue } = useDashboard()
+const dashboardData = inject('dashboardData')
+
+const expenses = computed(() => 0) // Модель расходов не реализована
+const series = computed(() => [0])
 
 const chartOptions = computed(() => {
   const currentTheme = vuetifyTheme.current.value.colors
@@ -93,7 +98,7 @@ const chartOptions = computed(() => {
   <VCard>
     <VCardItem class="pb-3">
       <VCardTitle>
-        82.5K
+        {{ formatRevenue(expenses) }}
       </VCardTitle>
       <VCardSubtitle>
         Расходы

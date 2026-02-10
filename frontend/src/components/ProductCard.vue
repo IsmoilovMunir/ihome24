@@ -40,27 +40,34 @@
     
     <!-- Кнопка "В корзину" или иконка корзины (вне router-link, чтобы не открывать товар) -->
     <div class="absolute top-2 right-2 z-20">
-      <!-- Иконка корзины, если товар уже в корзине -->
-      <button
+      <!-- Количество +/− в корзине, если товар уже добавлен -->
+      <div
         v-if="isInCart"
-        @click.stop="goToCart"
-        class="bg-[#F37021] text-white p-2.5 rounded-md hover:bg-[#E0651D] transition-colors z-20 flex items-center justify-center"
-        title="Товар в корзине. Перейти в корзину"
+        class="bg-[#F37021] rounded-md flex items-center z-20 overflow-hidden"
       >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+        <button
+          type="button"
+          @click.stop="decreaseQuantity"
+          class="w-8 h-8 flex items-center justify-center text-white hover:bg-[#E0651D] transition-colors text-lg"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-          />
-        </svg>
-      </button>
+          −
+        </button>
+        <button
+          type="button"
+          @click.stop="goToCart"
+          class="px-2 min-w-[2rem] h-8 flex items-center justify-center text-white text-sm font-semibold hover:bg-[#E0651D] transition-colors"
+        >
+          {{ cartQuantity }}
+        </button>
+        <button
+          type="button"
+          @click.stop="increaseQuantity"
+          class="w-8 h-8 flex items-center justify-center text-white hover:bg-[#E0651D] transition-colors text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="cartQuantity >= maxQuantity"
+        >
+          +
+        </button>
+      </div>
       
       <!-- Кнопка "В корзину", если товара нет в корзине -->
       <button
@@ -154,6 +161,30 @@ const isAvailable = computed(() => {
 const isInCart = computed(() => {
   return cartStore.items.some(item => item.product.id === props.product.id)
 })
+
+const cartQuantity = computed(() => {
+  const item = cartStore.items.find(item => item.product.id === props.product.id)
+  return item?.quantity ?? 0
+})
+
+const maxQuantity = computed(() => {
+  if (props.product.stockQuantity == null) return 999
+  return props.product.stockQuantity
+})
+
+const decreaseQuantity = () => {
+  if (cartQuantity.value > 1) {
+    cartStore.updateQuantity(props.product.id, cartQuantity.value - 1)
+  } else {
+    cartStore.removeFromCart(props.product.id)
+  }
+}
+
+const increaseQuantity = () => {
+  if (cartQuantity.value < maxQuantity.value) {
+    cartStore.updateQuantity(props.product.id, cartQuantity.value + 1)
+  }
+}
 
 const formatPrice = (price) => {
   if (!price) return '0 ₽'

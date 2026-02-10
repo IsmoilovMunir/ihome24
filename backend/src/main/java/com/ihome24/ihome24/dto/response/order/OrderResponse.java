@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -17,6 +18,8 @@ public class OrderResponse {
     private Long order;
     private String customer;
     private String email;
+    private String phone;
+    private String address;
     private String avatar;
     private Integer payment;
     private String status;
@@ -24,4 +27,5 @@ public class OrderResponse {
     private String method;
     private String date;
     private String methodNumber;
+    private List<OrderItemResponse> items;
 }

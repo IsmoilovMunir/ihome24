@@ -1,5 +1,30 @@
 <script setup>
-const transitions = []
+const dashboardData = inject('dashboardData')
+
+const formatRevenue = val => {
+  if (val == null) return '₽0'
+  return new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', minimumFractionDigits: 0 }).format(val)
+}
+
+const formatDate = d => {
+  if (!d) return ''
+  return new Date(d).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+const transitions = computed(() => {
+  const list = dashboardData?.value?.recentTransactions ?? []
+  return list.map(t => ({
+    id: t.orderId,
+    title: `Заказ #${t.orderNumber}`,
+    subtitle: `${t.customer} · ${formatDate(t.date)}`,
+    stats: formatRevenue(t.amount),
+    profit: t.isIncome,
+    avatarColor: 'primary',
+    avatarIcon: 'tabler-shopping-cart',
+  }))
+})
+
+const totalTransactions = computed(() => transitions.value.length)
 
 const moreList = [
   {
@@ -20,7 +45,7 @@ const moreList = [
 <template>
   <VCard
     title="Транзакции"
-    subtitle="Всего 0 транзакций за этот месяц"
+    :subtitle="`Всего ${totalTransactions} транзакций`"
   >
     <template #append>
       <div class="mt-n4 me-n2">
@@ -35,7 +60,9 @@ const moreList = [
       <VList class="card-list">
         <VListItem
           v-for="transition in transitions"
-          :key="transition.title"
+          :key="transition.id"
+          :to="{ name: 'apps-ecommerce-order-details-id', params: { id: transition.id } }"
+          class="cursor-pointer"
         >
           <template #prepend>
             <VAvatar

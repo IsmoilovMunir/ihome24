@@ -1,9 +1,18 @@
 package com.ihome24.ihome24.service.order;
 
+import com.ihome24.ihome24.dto.request.order.CreateOrderRequest;
+import com.ihome24.ihome24.dto.request.order.UpdateOrderItemsRequest;
+import com.ihome24.ihome24.dto.response.order.OrderItemResponse;
 import com.ihome24.ihome24.dto.response.order.OrderListResponse;
 import com.ihome24.ihome24.dto.response.order.OrderResponse;
+import com.ihome24.ihome24.dto.response.order.OrderStatsResponse;
 import com.ihome24.ihome24.entity.order.Order;
+import com.ihome24.ihome24.entity.order.OrderItem;
+import com.ihome24.ihome24.entity.product.Product;
+import com.ihome24.ihome24.exception.ResourceNotFoundException;
 import com.ihome24.ihome24.repository.order.OrderRepository;
+import com.ihome24.ihome24.service.email.EmailService;
+import com.ihome24.ihome24.repository.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -12,8 +21,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,18 +35,35 @@ import java.util.stream.Collectors;
 public class OrderService {
 
     private final OrderRepository orderRepository;
+    private final ProductRepository productRepository;
+    private final EmailService emailService;
 
     @Transactional(readOnly = true)
-    public OrderListResponse getOrders(String searchQuery, Integer page, Integer itemsPerPage, String sortBy, String orderBy) {
-        // Create pageable with sorting
+    public OrderStatsResponse getOrderStats() {
+        return OrderStatsResponse.builder()
+                .awaitingPayment(orderRepository.countByPayment(Order.PaymentStatus.PENDING))
+                .completed(orderRepository.countByStatus(Order.OrderStatus.DELIVERED))
+                .returned(orderRepository.countByPayment(Order.PaymentStatus.CANCELLED))
+                .failed(orderRepository.countByPayment(Order.PaymentStatus.FAILED))
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public OrderListResponse getOrders(String searchQuery, Integer page, Integer itemsPerPage,
+                                       String sortBy, String orderBy, Boolean completed) {
         Sort.Direction direction = "desc".equalsIgnoreCase(orderBy) ? Sort.Direction.DESC : Sort.Direction.ASC;
         String sortField = getSortField(sortBy);
         Pageable pageable = PageRequest.of(page - 1, itemsPerPage, Sort.by(direction, sortField));
 
-        // Get orders with search
-        Page<Order> orderPage = orderRepository.findOrdersWithSearch(searchQuery, pageable);
+        Page<Order> orderPage;
+        if (completed != null) {
+            orderPage = orderRepository.findOrdersWithSearchAndCompleted(
+                    searchQuery != null ? searchQuery.trim() : null, completed, pageable);
+        } else {
+            orderPage = orderRepository.findOrdersWithSearch(
+                    searchQuery != null ? searchQuery.trim() : null, pageable);
+        }
 
-        // Map to response
         List<OrderResponse> orderResponses = orderPage.getContent().stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
@@ -50,12 +81,171 @@ public class OrderService {
         return mapToResponse(order);
     }
 
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderByIdOrOrderNumber(Long idOrOrderNumber) {
+        Order order = orderRepository.findByIdWithItems(idOrOrderNumber)
+                .or(() -> orderRepository.findByOrderNumberWithItems(idOrOrderNumber))
+                .orElseThrow(() -> new ResourceNotFoundException("Заказ не найден: " + idOrOrderNumber));
+        return mapToDetailsResponse(order);
+    }
+
     @Transactional
     public void deleteOrder(Long id) {
         if (!orderRepository.existsById(id)) {
-            throw new IllegalArgumentException("Order not found: " + id);
+            throw new ResourceNotFoundException("Заказ не найден: " + id);
         }
         orderRepository.deleteById(id);
+    }
+
+    @Transactional
+    public OrderResponse updateOrderItems(Long id, List<UpdateOrderItemsRequest.OrderItemUpdate> itemsRequest) {
+        Order order = orderRepository.findByIdWithItems(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Заказ не найден: " + id));
+
+        order.getItems().clear();
+        BigDecimal totalSpent = BigDecimal.ZERO;
+
+        if (itemsRequest != null && !itemsRequest.isEmpty()) {
+            // Объединяем по productId (одинаковый товар в нескольких строках — суммируем количество)
+            Map<Long, Integer> productIdToQty = new LinkedHashMap<>();
+            for (UpdateOrderItemsRequest.OrderItemUpdate req : itemsRequest) {
+                if (req.getQuantity() == null || req.getQuantity() < 1) continue;
+                productIdToQty.merge(req.getProductId(), req.getQuantity(), Integer::sum);
+            }
+            for (Map.Entry<Long, Integer> e : productIdToQty.entrySet()) {
+                Product product = productRepository.findById(e.getKey())
+                        .orElseThrow(() -> new ResourceNotFoundException("Товар не найден: " + e.getKey()));
+                BigDecimal price = product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
+                int qty = e.getValue();
+                OrderItem item = OrderItem.builder()
+                        .order(order)
+                        .product(product)
+                        .productName(product.getName())
+                        .quantity(qty)
+                        .price(price)
+                        .build();
+                order.getItems().add(item);
+                totalSpent = totalSpent.add(price.multiply(BigDecimal.valueOf(qty)));
+            }
+        }
+
+        order.setSpent(totalSpent);
+        order = orderRepository.save(order);
+        return mapToDetailsResponse(order);
+    }
+
+    @Transactional
+    public OrderResponse updateOrderStatus(Long id, String statusStr) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Заказ не найден: " + id));
+
+        Order.OrderStatus newStatus = parseOrderStatus(statusStr);
+        order.setStatus(newStatus);
+        order = orderRepository.save(order);
+
+        String statusDisplayRu = orderStatusToDisplayRu(newStatus);
+        emailService.sendOrderStatusChange(order.getEmail(), order.getCustomer(), order.getOrderNumber(), statusDisplayRu);
+
+        return mapToResponse(order);
+    }
+
+    private String orderStatusToDisplayRu(Order.OrderStatus status) {
+        if (status == null) return "—";
+        return switch (status) {
+            case PENDING -> "Ожидает";
+            case IN_PROCESSING -> "В обработке";
+            case DISPATCHED -> "Отправлено";
+            case OUT_FOR_DELIVERY -> "В доставке";
+            case READY_TO_PICKUP -> "Готово к выдаче";
+            case DELIVERED -> "Доставлено";
+        };
+    }
+
+    private Order.OrderStatus parseOrderStatus(String statusStr) {
+        if (statusStr == null || statusStr.isBlank()) {
+            throw new IllegalArgumentException("Некорректный статус: " + statusStr);
+        }
+        try {
+            return Order.OrderStatus.valueOf(statusStr.toUpperCase().replace(" ", "_"));
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Недопустимый статус: " + statusStr +
+                    ". Допустимые: PENDING, IN_PROCESSING, DISPATCHED, OUT_FOR_DELIVERY, READY_TO_PICKUP, DELIVERED");
+        }
+    }
+
+    @Transactional
+    public OrderResponse createOrder(CreateOrderRequest request) {
+        Long maxNum = orderRepository.findMaxOrderNumber();
+        Long nextOrderNumber = (maxNum != null ? maxNum + 1 : 1L);
+
+        String address = "delivery".equals(request.getDeliveryMethod())
+                ? request.getAddress()
+                : request.getPickupAddress();
+
+        Order.PaymentMethod paymentMethod = "cash".equalsIgnoreCase(request.getPaymentMethod())
+                ? Order.PaymentMethod.CASH
+                : Order.PaymentMethod.MASTERCARD;
+
+        BigDecimal totalSpent = BigDecimal.ZERO;
+        List<OrderItem> items = new ArrayList<>();
+
+        for (CreateOrderRequest.OrderItemRequest itemReq : request.getItems()) {
+            Product product = productRepository.findById(itemReq.getProductId())
+                    .orElseThrow(() -> new IllegalArgumentException("Товар не найден: " + itemReq.getProductId()));
+            if (product.getIsActive() == null || !product.getIsActive()) {
+                throw new IllegalArgumentException("Товар недоступен для заказа: " + product.getName());
+            }
+            BigDecimal price = product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
+            BigDecimal itemTotal = price.multiply(BigDecimal.valueOf(itemReq.getQuantity()));
+            totalSpent = totalSpent.add(itemTotal);
+
+            OrderItem orderItem = OrderItem.builder()
+                    .product(product)
+                    .productName(product.getName())
+                    .quantity(itemReq.getQuantity())
+                    .price(price)
+                    .build();
+            items.add(orderItem);
+        }
+
+        Order order = Order.builder()
+                .orderNumber(nextOrderNumber)
+                .customer(request.getFullName())
+                .email(request.getEmail())
+                .phone(request.getPhone())
+                .address(address)
+                .deliveryMethod(request.getDeliveryMethod())
+                .comment(request.getComment())
+                .payment(Order.PaymentStatus.PENDING)
+                .status(Order.OrderStatus.PENDING)
+                .spent(totalSpent)
+                .method(paymentMethod)
+                .orderDate(LocalDateTime.now())
+                .build();
+
+        order = orderRepository.save(order);
+
+        for (OrderItem item : items) {
+            item.setOrder(order);
+            order.getItems().add(item);
+        }
+        order = orderRepository.save(order);
+
+        // Отправляем письмо клиенту о принятии заказа со списком товаров
+        try {
+            String totalStr = totalSpent != null ? String.format("%.2f ₽", totalSpent) : "";
+            List<EmailService.OrderItemLine> lines = order.getItems().stream()
+                    .map(item -> new EmailService.OrderItemLine(
+                            item.getProductName(),
+                            item.getQuantity() != null ? item.getQuantity() : 0,
+                            item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO))
+                    .toList();
+            emailService.sendOrderConfirmation(order.getEmail(), order.getCustomer(), order.getOrderNumber(), totalStr, lines);
+        } catch (Exception e) {
+            // Заказ создан, письмо не критично — не прерываем
+        }
+
+        return mapToResponse(order);
     }
 
     private String getSortField(String sortBy) {
@@ -95,6 +285,27 @@ public class OrderService {
                 .build();
     }
 
+    private OrderResponse mapToDetailsResponse(Order order) {
+        OrderResponse response = mapToResponse(order);
+        response.setPhone(order.getPhone());
+        response.setAddress(order.getAddress());
+
+        List<OrderItemResponse> itemResponses = order.getItems() != null
+                ? order.getItems().stream()
+                    .map(item -> OrderItemResponse.builder()
+                            .productId(item.getProduct() != null ? item.getProduct().getId() : null)
+                            .productName(item.getProductName())
+                            .quantity(item.getQuantity())
+                            .price(item.getPrice())
+                            .total(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                            .build())
+                    .collect(Collectors.toList())
+                : List.of();
+        response.setItems(itemResponses);
+
+        return response;
+    }
+
     private Integer mapPaymentStatusToInt(Order.PaymentStatus status) {
         switch (status) {
             case PAID: return 1;
@@ -106,7 +317,10 @@ public class OrderService {
     }
 
     private String mapOrderStatusToString(Order.OrderStatus status) {
+        if (status == null) return "Delivered";
         switch (status) {
+            case PENDING: return "Pending";
+            case IN_PROCESSING: return "In Processing";
             case DELIVERED: return "Delivered";
             case OUT_FOR_DELIVERY: return "Out for Delivery";
             case READY_TO_PICKUP: return "Ready to Pickup";
@@ -116,9 +330,11 @@ public class OrderService {
     }
 
     private String mapPaymentMethodToString(Order.PaymentMethod method) {
+        if (method == null) return "paypalLogo";
         switch (method) {
             case PAYPAL: return "paypalLogo";
             case MASTERCARD: return "mastercard";
+            case CASH: return "cash";
             default: return "paypalLogo";
         }
     }
