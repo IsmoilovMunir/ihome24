@@ -9,10 +9,31 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class EmailService {
+
+    /** Строка состава заказа для письма */
+    public static class OrderItemLine {
+        private final String productName;
+        private final int quantity;
+        private final BigDecimal price;
+
+        public OrderItemLine(String productName, int quantity, BigDecimal price) {
+            this.productName = productName != null ? productName : "";
+            this.quantity = quantity;
+            this.price = price != null ? price : BigDecimal.ZERO;
+        }
+
+        public String getProductName() { return productName; }
+        public int getQuantity() { return quantity; }
+        public BigDecimal getPrice() { return price; }
+    }
 
     private final JavaMailSender mailSender;
 
@@ -171,7 +192,7 @@ public class EmailService {
      * заказ всё равно создаётся, письмо просто не отправляется.
      */
     public void sendOrderConfirmation(String toEmail, String customerName, Long orderNumber, String totalAmount,
-                                      java.util.List<String> orderLines) {
+                                      List<OrderItemLine> orderLines) {
         if (mailUsername == null || mailUsername.isEmpty()) {
             log.warn("Email не настроен — письмо подтверждения заказа #{} не отправлено. Укажите MAIL_USERNAME и MAIL_PASSWORD в .env.prod", orderNumber);
             return;
@@ -182,11 +203,14 @@ public class EmailService {
             message.setFrom(fromEmail);
             message.setTo(toEmail);
             message.setSubject("Подтверждение заказа #" + orderNumber + " — iHome24");
-            String lines = orderLines != null && !orderLines.isEmpty()
-                    ? String.join("\n", orderLines) : "—";
+            String linesStr = orderLines != null && !orderLines.isEmpty()
+                    ? orderLines.stream()
+                            .map(line -> String.format("%s x %d — %s ₽", line.getProductName(), line.getQuantity(), line.getPrice()))
+                            .collect(Collectors.joining("\n"))
+                    : "—";
             String body = String.format(
                     "Здравствуйте, %s!\n\nВаш заказ #%s принят.\nСумма: %s\n\nСостав заказа:\n%s\n\nС уважением,\niHome24",
-                    customerName != null ? customerName : "", orderNumber, totalAmount != null ? totalAmount : "", lines);
+                    customerName != null ? customerName : "", orderNumber, totalAmount != null ? totalAmount : "", linesStr);
             message.setText(body);
             mailSender.send(message);
             log.info("Письмо подтверждения заказа #{} отправлено на {}", orderNumber, toEmail);
