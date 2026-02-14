@@ -209,27 +209,59 @@ public class EmailService {
             return;
         }
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
             String fromEmail = mailUsername;
-            message.setFrom(fromEmail);
-            message.setTo(toEmail);
-            message.setSubject("Подтверждение заказа #" + orderNumber + " — iHome24");
+            String name = customerName != null && !customerName.isBlank() ? customerName : "клиент";
+            String total = totalAmount != null && !totalAmount.isBlank() ? totalAmount : "—";
+
             String linesStr = orderLines != null && !orderLines.isEmpty()
                     ? orderLines.stream()
-                            .map(line -> String.format("%s x %d — %s ₽", line.getProductName(), line.getQuantity(), line.getPrice()))
+                            .map(line -> String.format("%s × %d — %s ₽", line.getProductName(), line.getQuantity(), line.getPrice()))
                             .collect(Collectors.joining("\n"))
                     : "—";
-            String body = String.format(
-                    "Здравствуйте, %s!\n\nВаш заказ #%s принят.\nСумма: %s\n\nСостав заказа:\n%s\n\nС уважением,\niHome24",
-                    customerName != null ? customerName : "", orderNumber, totalAmount != null ? totalAmount : "", linesStr);
-            message.setText(body);
-            mailSender.send(message);
+            String plainText = String.format(
+                    "Здравствуйте, %s!\n\nВаш заказ №%s принят.\nИтого к оплате: %s\n\nСостав заказа:\n%s\n\nС уважением,\niHome24 — ihome24.ru",
+                    name, orderNumber, total, linesStr);
+
+            StringBuilder rows = new StringBuilder();
+            if (orderLines != null && !orderLines.isEmpty()) {
+                for (OrderItemLine line : orderLines) {
+                    String productName = line.getProductName() != null ? escapeHtml(line.getProductName()) : "—";
+                    String price = line.getPrice() != null ? line.getPrice().toString() : "0";
+                    rows.append(String.format(
+                            "<tr><td style=\"padding:10px 12px;border-bottom:1px solid #eee;\">%s</td><td style=\"padding:10px 12px;border-bottom:1px solid #eee;text-align:center;\">%d</td><td style=\"padding:10px 12px;border-bottom:1px solid #eee;text-align:right;\">%s ₽</td></tr>",
+                            productName, line.getQuantity(), price));
+                }
+            }
+
+            String html = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\"></head><body style=\"margin:0;font-family:Arial,sans-serif;font-size:16px;line-height:1.5;color:#333;background:#f5f5f5;\">"
+                    + "<div style=\"max-width:560px;margin:24px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);\">"
+                    + "<div style=\"background:#2563eb;color:#fff;padding:20px 24px;\"><h1 style=\"margin:0;font-size:22px;font-weight:600;\">Подтверждение заказа №" + orderNumber + "</h1><p style=\"margin:8px 0 0;opacity:0.9;font-size:14px;\">iHome24</p></div>"
+                    + "<div style=\"padding:24px;\">"
+                    + "<p style=\"margin:0 0 16px;\">Здравствуйте, <strong>" + escapeHtml(name) + "</strong>!</p>"
+                    + "<p style=\"margin:0 0 20px;\">Ваш заказ принят. Ниже состав и сумма.</p>"
+                    + "<table style=\"width:100%;border-collapse:collapse;background:#fafafa;border-radius:8px;\"><thead><tr style=\"background:#f1f5f9;\"><th style=\"padding:10px 12px;text-align:left;font-size:13px;color:#64748b;\">Товар</th><th style=\"padding:10px 12px;text-align:center;font-size:13px;color:#64748b;\">Кол-во</th><th style=\"padding:10px 12px;text-align:right;font-size:13px;color:#64748b;\">Цена</th></tr></thead><tbody>" + rows + "</tbody></table>"
+                    + "<p style=\"margin:20px 0 0;padding:16px;background:#eff6ff;border-radius:8px;font-size:18px;font-weight:600;\">Итого к оплате: " + escapeHtml(total) + " ₽</p>"
+                    + "</div>"
+                    + "<div style=\"padding:16px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:14px;color:#64748b;\">С уважением,<br><strong>iHome24</strong> — <a href=\"https://ihome24.ru\" style=\"color:#2563eb;\">ihome24.ru</a></div>"
+                    + "</div></body></html>";
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(fromEmail, "iHome24");
+            helper.setTo(toEmail);
+            helper.setSubject("Подтверждение заказа №" + orderNumber + " — iHome24");
+            helper.setText(plainText, html);
+            mailSender.send(mimeMessage);
             log.info("Письмо подтверждения заказа #{} отправлено на {}", orderNumber, toEmail);
         } catch (Exception e) {
             log.error("Не удалось отправить письмо подтверждения заказа #{}: {}", orderNumber, e.getMessage());
             logSmtpPortHint(e);
-            // Не пробрасываем — заказ уже создан, не ломаем ответ 500
         }
+    }
+
+    private static String escapeHtml(String s) {
+        if (s == null) return "";
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     /**
@@ -241,14 +273,31 @@ public class EmailService {
             return;
         }
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(mailUsername);
-            message.setTo(toEmail);
-            message.setSubject("Статус заказа #" + orderNumber + " — iHome24");
-            message.setText(String.format(
-                    "Здравствуйте, %s!\n\nСтатус вашего заказа #%s: %s\n\nС уважением,\niHome24",
-                    customerName != null ? customerName : "", orderNumber, newStatusDisplay != null ? newStatusDisplay : "—"));
-            mailSender.send(message);
+            String name = customerName != null && !customerName.isBlank() ? customerName : "клиент";
+            String status = newStatusDisplay != null && !newStatusDisplay.isBlank() ? newStatusDisplay : "обновлён";
+
+            String plainText = String.format(
+                    "Здравствуйте, %s!\n\nСтатус вашего заказа №%s: %s\n\nС уважением,\niHome24 — ihome24.ru",
+                    name, orderNumber, status);
+
+            String html = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\"></head><body style=\"margin:0;font-family:Arial,sans-serif;font-size:16px;line-height:1.5;color:#333;background:#f5f5f5;\">"
+                    + "<div style=\"max-width:560px;margin:24px auto;background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);\">"
+                    + "<div style=\"background:#0d9488;color:#fff;padding:20px 24px;\"><h1 style=\"margin:0;font-size:22px;font-weight:600;\">Статус заказа №" + orderNumber + "</h1><p style=\"margin:8px 0 0;opacity:0.9;font-size:14px;\">iHome24</p></div>"
+                    + "<div style=\"padding:24px;\">"
+                    + "<p style=\"margin:0 0 16px;\">Здравствуйте, <strong>" + escapeHtml(name) + "</strong>!</p>"
+                    + "<p style=\"margin:0 0 20px;\">Текущий статус вашего заказа:</p>"
+                    + "<p style=\"margin:0;padding:16px;background:#f0fdfa;border-radius:8px;font-size:18px;font-weight:600;color:#0d9488;\">" + escapeHtml(status) + "</p>"
+                    + "</div>"
+                    + "<div style=\"padding:16px 24px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:14px;color:#64748b;\">С уважением,<br><strong>iHome24</strong> — <a href=\"https://ihome24.ru\" style=\"color:#2563eb;\">ihome24.ru</a></div>"
+                    + "</div></body></html>";
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(mailUsername, "iHome24");
+            helper.setTo(toEmail);
+            helper.setSubject("Статус заказа №" + orderNumber + " — iHome24");
+            helper.setText(plainText, html);
+            mailSender.send(mimeMessage);
             log.info("Уведомление о статусе заказа #{} отправлено на {}", orderNumber, toEmail);
         } catch (Exception e) {
             log.error("Не удалось отправить уведомление о статусе заказа #{}: {}", orderNumber, e.getMessage());
