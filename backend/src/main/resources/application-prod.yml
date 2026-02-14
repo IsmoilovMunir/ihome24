@@ -53,7 +53,9 @@ spring:
     require-ssl: false  # Используйте reverse proxy для SSL
 
   # Email Configuration (Timeweb SMTP)
-  # Порт 587: STARTTLS (ssl=false, starttls=true). Порт 465: SSL (ssl=true, starttls=false).
+  # Рекомендация: порт 587 + STARTTLS — чаще не блокируется хостингами.
+  # Для 587: MAIL_PORT=587, MAIL_SMTP_SSL_ENABLE=false, MAIL_STARTTLS=true
+  # Для 465: MAIL_PORT=465, MAIL_SMTP_SSL_ENABLE=true, MAIL_STARTTLS=false (если 587 недоступен)
   mail:
     host: ${MAIL_HOST:smtp.timeweb.ru}
     port: ${MAIL_PORT:587}
@@ -71,9 +73,9 @@ spring:
           starttls:
             enable: ${MAIL_STARTTLS:true}
             required: ${MAIL_STARTTLS:true}
-          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:10000}
-          timeout: ${MAIL_TIMEOUT:10000}
-          writetimeout: ${MAIL_WRITE_TIMEOUT:10000}
+          connectiontimeout: ${MAIL_CONNECTION_TIMEOUT:20000}
+          timeout: ${MAIL_TIMEOUT:20000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT:20000}
 
 server:
   port: ${SERVER_PORT:8080}
@@ -96,6 +98,11 @@ app:
   # Email Configuration
   email:
     from: ${APP_EMAIL_FROM}
+
+# Resend API (опционально): при заданном ключе письма о заказах идут через HTTPS, обход блокировки SMTP
+resend:
+  api:
+    key: ${RESEND_API_KEY:}
 
 # MinIO S3 Configuration
 minio:
