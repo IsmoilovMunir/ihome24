@@ -96,9 +96,11 @@ minio:
   max-video-size: ${MINIO_MAX_VIDEO_SIZE:104857600}  # 100 МБ
   # Размеры изображений (в пикселях)
   image-size-small: ${MINIO_IMAGE_SIZE_SMALL:300}
-  image-size-medium: ${MINIO_IMAGE_SIZE_MEDIUM:600}
-  image-size-large: ${MINIO_IMAGE_SIZE_LARGE:1200}
+  image-size-medium: ${MINIO_IMAGE_SIZE_MEDIUM:1000}
+  image-size-large: ${MINIO_IMAGE_SIZE_LARGE:1600}
+  image-size-display: ${MINIO_IMAGE_SIZE_DISPLAY:2000}
   # Качество изображений (0-1)
   image-quality-small: ${MINIO_IMAGE_QUALITY_SMALL:0.7}
-  image-quality-medium: ${MINIO_IMAGE_QUALITY_MEDIUM:0.75}
-  image-quality-large: ${MINIO_IMAGE_QUALITY_LARGE:0.8}
+  image-quality-medium: ${MINIO_IMAGE_QUALITY_MEDIUM:0.85}
+  image-quality-large: ${MINIO_IMAGE_QUALITY_LARGE:0.9}
+  image-quality-display: ${MINIO_IMAGE_QUALITY_DISPLAY:0.92}

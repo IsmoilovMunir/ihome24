@@ -92,6 +92,8 @@ public class FileMetadata {
         ORIGINAL,
         SMALL,
         MEDIUM,
-        LARGE
+        LARGE,
+        /** Для страницы товара: макс 2000px, качество 0.92 — баланс скорость/качество */
+        DISPLAY
     }
 }

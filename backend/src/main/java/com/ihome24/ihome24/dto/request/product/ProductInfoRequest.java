@@ -14,6 +14,8 @@ public class ProductInfoRequest {
 
     private String brand;
 
+    private Integer quantityPerPackage;
+
     @NotBlank(message = "Название товара обязательно")
     private String title;
 

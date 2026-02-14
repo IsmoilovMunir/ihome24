@@ -48,6 +48,9 @@ public class Product {
     @Column(name = "stock_quantity")
     private Integer stockQuantity;
 
+    @Column(name = "quantity_per_package")
+    private Integer quantityPerPackage;
+
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;

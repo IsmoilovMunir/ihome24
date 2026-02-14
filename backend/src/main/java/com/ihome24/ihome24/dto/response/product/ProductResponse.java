@@ -26,9 +26,12 @@ public class ProductResponse {
     private String sku;
     private String brand;
     private Integer stockQuantity;
+    private Integer quantityPerPackage;
     private Boolean isActive;
     private Boolean isFeatured;
     private String imageUrl;
+    /** URL главного фото в оригинальном качестве (без ресайза/сжатия) */
+    private String mainImageOriginalUrl;
     private CategoryResponse category;
     private List<CharacteristicResponse> characteristics = new ArrayList<>();
     private List<VariantResponse> variants = new ArrayList<>();

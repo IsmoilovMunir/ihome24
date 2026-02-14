@@ -12,14 +12,16 @@
       <!-- Images -->
       <div>
         <div
-          class="bg-[#26211E] rounded-lg overflow-hidden mb-4 flex items-center justify-center h-96 relative cursor-pointer"
+          class="protect-image bg-[#26211E] rounded-lg overflow-hidden mb-4 flex items-center justify-center h-96 relative cursor-pointer"
           @click="openFullscreenGallery"
+          @contextmenu.prevent
         >
           <img
             v-if="mainImageUrl"
             :src="mainImageUrl"
             :alt="product.name"
-            class="w-[97%] h-[97%] object-contain pointer-events-none"
+            class="w-[97%] h-[97%] object-contain"
+            draggable="false"
           />
           <div
             v-else
@@ -63,7 +65,7 @@
             </button>
           </template>
         </div>
-        <div v-if="product.images && product.images.length > 1" class="grid grid-cols-4 gap-2">
+        <div v-if="product.images && product.images.length > 1" class="grid grid-cols-4 gap-2 protect-image" @contextmenu.prevent>
           <button
             v-for="(image, index) in product.images"
             :key="index"
@@ -75,6 +77,7 @@
               :src="getImageUrl(image.imageUrl || image.url)"
               :alt="`${product.name} - изображение ${index + 1}`"
               class="w-[90%] h-[90%] object-cover"
+              draggable="false"
             />
           </button>
         </div>
@@ -129,6 +132,9 @@
             </p>
             <p v-if="product.brand" class="text-sm text-gray-300">
               <span class="font-semibold">Бренд:</span> {{ product.brand }}
+            </p>
+            <p v-if="product.quantityPerPackage != null" class="text-sm text-gray-300">
+              <span class="font-semibold">Количество в упаковке:</span> {{ product.quantityPerPackage }} шт.
             </p>
             <p class="text-sm text-gray-300">
               <span class="font-semibold">Наличие: </span>
@@ -201,11 +207,12 @@
         </button>
 
         <div
-          class="flex-1 flex items-center justify-center min-h-0 p-4 rounded-lg m-4 overflow-hidden cursor-grab active:cursor-grabbing"
+          class="flex-1 flex items-center justify-center min-h-0 p-4 rounded-lg m-4 overflow-hidden cursor-grab active:cursor-grabbing protect-image"
           style="background-color: #26211E;"
           @wheel.prevent="onFullscreenWheel"
           @mousedown="onFullscreenPanStart"
           @touchstart.prevent="onFullscreenPanStart"
+          @contextmenu.prevent
         >
           <div
             v-if="mainImageUrl"
@@ -218,7 +225,7 @@
             <img
               :src="mainImageUrl"
               :alt="product.name"
-              class="max-w-full max-h-full object-contain select-none pointer-events-none"
+              class="max-w-full max-h-full object-contain select-none"
               draggable="false"
             />
           </div>
@@ -278,7 +285,7 @@
             </button>
           </div>
 
-          <div class="flex justify-center gap-2 pb-6 pt-4 px-4 overflow-x-auto rounded-t-lg" style="background-color: #26211E;">
+          <div class="flex justify-center gap-2 pb-6 pt-4 px-4 overflow-x-auto rounded-t-lg protect-image" style="background-color: #26211E;" @contextmenu.prevent>
             <button
               v-for="(image, index) in product.images"
               :key="index"
@@ -292,6 +299,7 @@
                 :src="getImageUrl(image.imageUrl || image.url)"
                 :alt="`${product.name} - изображение ${index + 1}`"
                 class="w-[90%] h-[90%] object-cover"
+                draggable="false"
               />
             </button>
           </div>
@@ -402,32 +410,64 @@ const onFullscreenKeydown = (e) => {
 
 const getImageUrl = (url) => {
   if (!url) return null
-  const result = fileApi.getFileUrl(url)
-  console.log('ProductDetail getImageUrl:', url, '→', result)
-  return result
+  return fileApi.getFileUrl(url)
 }
 
-const mainImageUrl = computed(() => {
+/** URL варианта large — показываем сразу для скорости */
+const getImageUrlLarge = (url) => {
+  if (!url) return null
+  const base = fileApi.getFileUrl(url)
+  if (!base) return null
+  return base.replace(/\/medium\//, '/large/').replace(/\/small\//, '/large/')
+}
+
+/** Быстрый URL (large) для текущего фото — рисуем первым */
+const mainImageUrlFast = computed(() => {
   if (!product.value) return null
-  
-  // Проверяем images массив (в ProductImageResponse поле называется imageUrl, не url!)
-  if (product.value.images && product.value.images.length > 0) {
+  if (product.value.images?.length > 0) {
     const img = product.value.images[selectedImageIndex.value]
-    // Проверяем разные возможные поля (imageUrl - правильное поле из ProductImageResponse)
-    const imgUrl = img.imageUrl || img.url || (typeof img === 'string' ? img : null)
-    if (imgUrl) {
-      return getImageUrl(imgUrl)
-    }
+    const imgUrl = img?.imageUrl || img?.url || (typeof img === 'string' ? img : null)
+    if (imgUrl) return getImageUrlLarge(imgUrl)
   }
-  
-  // Проверяем imageUrl
-  if (product.value.imageUrl) {
-    return getImageUrl(product.value.imageUrl)
-  }
-  
-  console.log('ProductDetail: No image found for product', product.value)
+  if (product.value.imageUrl) return getImageUrlLarge(product.value.imageUrl)
   return null
 })
+
+/** Высокое качество (display/original с API) — подгружаем в фоне и подменяем */
+const mainImageUrlHighRes = computed(() => {
+  if (!product.value) return null
+  if (product.value.images?.length > 0) {
+    const img = product.value.images[selectedImageIndex.value]
+    if (img?.originalUrl) return fileApi.getFileUrl(img.originalUrl)
+    const imgUrl = img?.imageUrl || img?.url || (typeof img === 'string' ? img : null)
+    if (imgUrl) return getImageUrlLarge(imgUrl)
+  }
+  if (product.value.mainImageOriginalUrl) return fileApi.getFileUrl(product.value.mainImageOriginalUrl)
+  if (product.value.imageUrl) return getImageUrlLarge(product.value.imageUrl)
+  return null
+})
+
+/** Фактический src картинки: сначала fast, после загрузки highRes (прогрессивная загрузка) */
+const displayedMainImageUrl = ref('')
+
+watch(
+  () => [product.value, selectedImageIndex.value],
+  () => {
+    const fast = mainImageUrlFast.value
+    const highRes = mainImageUrlHighRes.value
+    displayedMainImageUrl.value = fast || ''
+    if (!highRes || highRes === fast) return
+    const idx = selectedImageIndex.value
+    const img = new Image()
+    img.onload = () => {
+      if (selectedImageIndex.value === idx) displayedMainImageUrl.value = highRes
+    }
+    img.src = highRes
+  },
+  { immediate: true }
+)
+
+const mainImageUrl = computed(() => displayedMainImageUrl.value || mainImageUrlFast.value)
 
 const goToPrevImage = () => {
   if (!product.value?.images?.length) return

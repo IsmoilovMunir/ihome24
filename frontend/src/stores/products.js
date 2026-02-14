@@ -49,6 +49,7 @@ export const useProductsStore = defineStore('products', {
     },
 
     async fetchCategories() {
+      if (this.categories.length > 0) return // уже загружены — не дублируем запрос
       try {
         const response = await categoryApi.getAll()
         this.categories = response.data

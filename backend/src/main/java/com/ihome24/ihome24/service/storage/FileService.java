@@ -50,6 +50,9 @@ public class FileService {
     @Value("${minio.image-size-large:1200}")
     private int imageLargeWidth;
 
+    @Value("${minio.image-size-display:2000}")
+    private int imageDisplayWidth;
+
     @Value("${minio.image-quality-small:0.7}")
     private float imageSmallQuality;
 
@@ -58,6 +61,9 @@ public class FileService {
 
     @Value("${minio.image-quality-large:0.8}")
     private float imageLargeQuality;
+
+    @Value("${minio.image-quality-display:0.92}")
+    private float imageDisplayQuality;
 
     private static final Set<String> ALLOWED_IMAGE_TYPES = Set.of(
             "image/png", "image/jpeg", "image/jpg", "image/webp"
@@ -187,6 +193,83 @@ public class FileService {
 
     public InputStream getFile(String objectName) {
         return minIOService.getFile(objectName);
+    }
+
+    /**
+     * Возвращает URL оригинала изображения по пути к medium/small/large варианту.
+     * Поддерживает и сохранённые товары (productId), и черновики (путь с draft → productId в метаданных null).
+     */
+    public String getOriginalImageUrl(Long productId, String imagePath) {
+        if (imagePath == null || imagePath.isBlank()) {
+            return null;
+        }
+        String path = imagePath;
+        if (path.contains("/api/files/")) {
+            path = path.substring(path.indexOf("/api/files/") + "/api/files/".length());
+        }
+        if (path.contains("://")) {
+            int i = path.indexOf("/api/files/");
+            if (i >= 0) path = path.substring(i + "/api/files/".length());
+        }
+        int lastSlash = path.lastIndexOf('/');
+        String filename = lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
+        int lastDot = filename.lastIndexOf('.');
+        String fileGroup = lastDot > 0 ? filename.substring(0, lastDot) : filename;
+        if (fileGroup.isEmpty()) return null;
+
+        if (productId != null) {
+            Optional<FileMetadata> found = fileMetadataRepository
+                    .findFirstByFileGroupAndProductIdAndFileTypeAndMediaSize(
+                            fileGroup, productId, FileMetadata.FileType.IMAGE, FileMetadata.MediaSize.ORIGINAL);
+            if (found.isPresent()) {
+                return minIOService.getFileUrl(found.get().getBucketName(), found.get().getFilePath());
+            }
+        }
+        if (path.contains("/draft/")) {
+            return fileMetadataRepository
+                    .findFirstByFileGroupAndFileTypeAndMediaSizeAndProductIdIsNull(
+                            fileGroup, FileMetadata.FileType.IMAGE, FileMetadata.MediaSize.ORIGINAL)
+                    .map(meta -> minIOService.getFileUrl(meta.getBucketName(), meta.getFilePath()))
+                    .orElse(null);
+        }
+        return null;
+    }
+
+    /**
+     * URL для страницы товара: вариант DISPLAY (2000px, 0.92) для скорости, иначе ORIGINAL для старых загрузок.
+     */
+    public String getDisplayImageUrl(Long productId, String imagePath) {
+        if (imagePath == null || imagePath.isBlank()) return null;
+        String path = imagePath;
+        if (path.contains("/api/files/")) path = path.substring(path.indexOf("/api/files/") + "/api/files/".length());
+        if (path.contains("://")) {
+            int i = path.indexOf("/api/files/");
+            if (i >= 0) path = path.substring(i + "/api/files/".length());
+        }
+        int lastSlash = path.lastIndexOf('/');
+        String filename = lastSlash >= 0 ? path.substring(lastSlash + 1) : path;
+        int lastDot = filename.lastIndexOf('.');
+        String fileGroup = lastDot > 0 ? filename.substring(0, lastDot) : filename;
+        if (fileGroup.isEmpty()) return null;
+
+        if (productId != null) {
+            Optional<FileMetadata> display = fileMetadataRepository.findFirstByFileGroupAndProductIdAndFileTypeAndMediaSize(
+                    fileGroup, productId, FileMetadata.FileType.IMAGE, FileMetadata.MediaSize.DISPLAY);
+            if (display.isPresent()) return minIOService.getFileUrl(display.get().getBucketName(), display.get().getFilePath());
+            Optional<FileMetadata> orig = fileMetadataRepository.findFirstByFileGroupAndProductIdAndFileTypeAndMediaSize(
+                    fileGroup, productId, FileMetadata.FileType.IMAGE, FileMetadata.MediaSize.ORIGINAL);
+            if (orig.isPresent()) return minIOService.getFileUrl(orig.get().getBucketName(), orig.get().getFilePath());
+        }
+        if (path.contains("/draft/")) {
+            Optional<FileMetadata> display = fileMetadataRepository.findFirstByFileGroupAndFileTypeAndMediaSizeAndProductIdIsNull(
+                    fileGroup, FileMetadata.FileType.IMAGE, FileMetadata.MediaSize.DISPLAY);
+            if (display.isPresent()) return minIOService.getFileUrl(display.get().getBucketName(), display.get().getFilePath());
+            return fileMetadataRepository.findFirstByFileGroupAndFileTypeAndMediaSizeAndProductIdIsNull(
+                    fileGroup, FileMetadata.FileType.IMAGE, FileMetadata.MediaSize.ORIGINAL)
+                    .map(meta -> minIOService.getFileUrl(meta.getBucketName(), meta.getFilePath()))
+                    .orElse(null);
+        }
+        return null;
     }
 
     public List<FileUploadResponse> getProductFiles(Long productId) {
@@ -350,14 +433,17 @@ public class FileService {
         byte[] smallBytes = resizeToFormat(originalBytes, imageSmallWidth, imageSmallQuality, variantFormat);
         byte[] mediumBytes = resizeToFormat(originalBytes, imageMediumWidth, imageMediumQuality, variantFormat);
         byte[] largeBytes = resizeToFormat(originalBytes, imageLargeWidth, imageLargeQuality, variantFormat);
+        byte[] displayBytes = resizeToFormat(originalBytes, imageDisplayWidth, imageDisplayQuality, variantFormat);
 
         String smallObjectName = productFolder + "/small/" + baseName + variantExtension;
         String mediumObjectName = productFolder + "/medium/" + baseName + variantExtension;
         String largeObjectName = productFolder + "/large/" + baseName + variantExtension;
+        String displayObjectName = productFolder + "/display/" + baseName + variantExtension;
 
         minIOService.uploadFile(bucketName, smallObjectName, smallBytes, variantContentType);
         minIOService.uploadFile(bucketName, mediumObjectName, mediumBytes, variantContentType);
         minIOService.uploadFile(bucketName, largeObjectName, largeBytes, variantContentType);
+        minIOService.uploadFile(bucketName, displayObjectName, displayBytes, variantContentType);
 
         int resolvedSortOrder = resolveSortOrder(productId, sortOrder, FileMetadata.FileType.IMAGE);
         boolean isMain = isMainImage(productId, resolvedSortOrder);
@@ -370,7 +456,9 @@ public class FileService {
                 buildMetadata(file, baseName + variantExtension, mediumObjectName, bucketName, mediumBytes.length,
                         FileMetadata.FileType.IMAGE, FileMetadata.MediaSize.MEDIUM, productId, userId, resolvedSortOrder, isMain, fileGroup, variantContentType),
                 buildMetadata(file, baseName + variantExtension, largeObjectName, bucketName, largeBytes.length,
-                        FileMetadata.FileType.IMAGE, FileMetadata.MediaSize.LARGE, productId, userId, resolvedSortOrder, isMain, fileGroup, variantContentType)
+                        FileMetadata.FileType.IMAGE, FileMetadata.MediaSize.LARGE, productId, userId, resolvedSortOrder, isMain, fileGroup, variantContentType),
+                buildMetadata(file, baseName + variantExtension, displayObjectName, bucketName, displayBytes.length,
+                        FileMetadata.FileType.IMAGE, FileMetadata.MediaSize.DISPLAY, productId, userId, resolvedSortOrder, isMain, fileGroup, variantContentType)
         );
 
         fileMetadataRepository.saveAll(metadataList);

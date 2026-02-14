@@ -25,4 +25,7 @@ public interface FileMetadataRepository extends JpaRepository<FileMetadata, Long
     Optional<FileMetadata> findFirstByProductIdAndFileTypeAndIsMainTrue(Long productId, FileMetadata.FileType fileType);
 
     Optional<FileMetadata> findFirstByFileGroupAndProductIdAndFileTypeAndMediaSize(String fileGroup, Long productId, FileMetadata.FileType fileType, FileMetadata.MediaSize mediaSize);
+
+    /** Для черновиков: файлы загружены с productId=null (путь products/draft/user-X/...) */
+    Optional<FileMetadata> findFirstByFileGroupAndFileTypeAndMediaSizeAndProductIdIsNull(String fileGroup, FileMetadata.FileType fileType, FileMetadata.MediaSize mediaSize);
 }

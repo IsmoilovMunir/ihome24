@@ -5,7 +5,10 @@
     :class="['catalog-category-tile', { 'catalog-category-tile-special': isSpecial }]"
   >
     <!-- Image Container -->
-    <div :class="['catalog-category-tile-image-container', { 'catalog-category-tile-image-multiple': hasMultipleImages }]">
+    <div
+      :class="['catalog-category-tile-image-container protect-image', { 'catalog-category-tile-image-multiple': hasMultipleImages }]"
+      @contextmenu.prevent
+    >
       <!-- Single Image -->
       <img
         v-if="!hasMultipleImages && imageUrl"
@@ -13,6 +16,7 @@
         :alt="category.name"
         data-test="catalog-category-tile-img"
         class="catalog-category-tile-image"
+        draggable="false"
       />
       
       <!-- Multiple Images (for animation/carousel) -->
@@ -24,6 +28,7 @@
           :alt="category.name"
           data-test="catalog-category-tile-img"
           :class="['catalog-category-tile-image', 'catalog-category-tile-image-multi']"
+          draggable="false"
         />
       </template>
     </div>
@@ -45,7 +50,9 @@
         :src="logoUrl"
         :alt="category.name"
         data-test="catalog-category-tile-title-placeholder"
-        class="catalog-category-tile-logo"
+        class="catalog-category-tile-logo protect-image"
+        draggable="false"
+        @contextmenu.prevent
       />
     </div>
   </router-link>

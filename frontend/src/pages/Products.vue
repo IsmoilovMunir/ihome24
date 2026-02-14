@@ -4,8 +4,9 @@
     <div v-if="bannerCategory" class="category-banner">
       <div
         v-if="bannerCategoryImageUrl"
-        class="category-banner-image"
+        class="category-banner-image protect-image"
         :style="{ backgroundImage: `url(${bannerCategoryImageUrl})` }"
+        @contextmenu.prevent
       ></div>
       <div class="category-banner-overlay"></div>
       
@@ -175,7 +176,7 @@
                 
                 <!-- Когда на уровне 1 показываем категории уровня 3 — показываем товары категорий уровня 2 -->
                 <div v-if="isMobile && selectedCategory && level2ProductsWhenOnLevel1.length > 0" class="mt-6">
-                  <div class="grid grid-cols-2 gap-4">
+                  <div class="grid grid-cols-2 gap-6 sm:gap-4">
                     <ProductCard
                       v-for="product in level2ProductsWhenOnLevel1"
                       :key="product.id"
@@ -186,7 +187,7 @@
                 
                 <!-- Товары текущей выбранной категории (уровень 1, 2 или 3) -->
                 <div v-if="isMobile && selectedCategory && selectedCategoryProducts.length > 0" class="mt-6">
-                  <div class="grid grid-cols-2 gap-4">
+                  <div class="grid grid-cols-2 gap-6 sm:gap-4">
                     <ProductCard
                       v-for="product in selectedCategoryProducts"
                       :key="product.id"
@@ -211,7 +212,7 @@
                 Товары не найдены
               </div>
 
-              <div v-else class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+              <div v-else class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-6">
                 <ProductCard
                   v-for="product in filteredProducts"
                   :key="product.id"

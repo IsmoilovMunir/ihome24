@@ -108,3 +108,17 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* Защита от копирования фото: отключить правый клик, перетаскивание, выделение */
+.protect-image,
+.protect-image img,
+img.protect-image {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+.protect-image img,
+img.protect-image {
+  pointer-events: none;
+}

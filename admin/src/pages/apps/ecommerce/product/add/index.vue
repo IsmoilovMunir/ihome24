@@ -16,6 +16,7 @@ const isEditMode = ref(false)
 // ========== PRODUCT BASIC INFO ==========
 const productSku = ref('')
 const productBrand = ref('')
+const quantityPerPackage = ref(null)
 const productTitle = ref('')
 const categoryId = ref(null)
 const parentCategoryId = ref(null)
@@ -408,6 +409,7 @@ const loadProductData = async () => {
     // Основная информация
     productSku.value = response.sku || response.product?.sku || ''
     productBrand.value = response.brand || response.product?.brand || ''
+    quantityPerPackage.value = response.quantityPerPackage ?? response.product?.quantityPerPackage ?? null
     productTitle.value = response.name || response.product?.title || ''
     categoryId.value = response.category?.id || response.product?.category?.id || null
     parentCategoryId.value = response.category?.parentId || response.product?.category?.parentId || null
@@ -734,9 +736,10 @@ const buildProductRequest = () => {
   }
   
   const requestData = {
-    product: {
+      product: {
       sku: productSku.value?.trim() || null,
       brand: productBrand.value?.trim() || null,
+      quantityPerPackage: quantityPerPackage.value != null && quantityPerPackage.value !== '' ? parseInt(quantityPerPackage.value) : null,
       title: productTitle.value,
       category: {
         id: categoryIdToSend,
@@ -1130,6 +1133,18 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
                   v-model="productBrand"
                   label="Бренд"
                   placeholder="MyBrand"
+                />
+              </VCol>
+              <VCol
+                cols="12"
+                md="6"
+              >
+                <AppTextField
+                  v-model.number="quantityPerPackage"
+                  label="Количество в упаковке"
+                  placeholder="24"
+                  type="number"
+                  min="0"
                 />
               </VCol>
               <VCol

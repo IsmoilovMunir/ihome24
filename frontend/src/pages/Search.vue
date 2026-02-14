@@ -47,7 +47,7 @@
 
             <section v-if="searchResultsProducts.length > 0">
               <h2 class="text-xl font-semibold text-white mb-4">Товары ({{ searchResultsProducts.length }})</h2>
-              <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+              <div class="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-6">
                 <ProductCard
                   v-for="product in searchResultsProducts"
                   :key="'prod-' + product.id"

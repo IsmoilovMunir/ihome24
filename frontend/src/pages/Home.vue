@@ -258,8 +258,11 @@ onMounted(async () => {
   window.scrollTo(0, 0)
   document.documentElement.scrollTop = 0
   document.body.scrollTop = 0
-  await productsStore.fetchProducts()
-  await productsStore.fetchCategories()
+  // Параллельная загрузка — страница обновляется быстрее
+  await Promise.all([
+    productsStore.fetchProducts(),
+    productsStore.fetchCategories(),
+  ])
 })
 </script>
 
@@ -433,11 +436,12 @@ onMounted(async () => {
   }
   
   .mobile-collection {
-    margin-bottom: 24px;
+    margin-bottom: 32px;
   }
   
   .mobile-products-grid {
-    gap: 12px;
+    gap: 20px;
+    margin-bottom: 28px;
   }
 }
 </style>

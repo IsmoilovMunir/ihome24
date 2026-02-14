@@ -151,6 +151,7 @@ public class ProductService {
                 .sku(sku)
                 .brand(productInfo.getBrand())
                 .stockQuantity(stockQuantity)
+                .quantityPerPackage(productInfo.getQuantityPerPackage())
                 .isActive(isActive)
                 .isFeatured(isFeatured)
                 .imageUrl(imageUrl)
@@ -332,6 +333,7 @@ public class ProductService {
         product.setSku(sku);
         product.setBrand(productInfo.getBrand());
         product.setStockQuantity(stockQuantity);
+        product.setQuantityPerPackage(productInfo.getQuantityPerPackage());
         product.setIsActive(isActive);
         product.setImageUrl(imageUrl);
         product.setCharacteristicsJson(characteristicsJson);
@@ -380,9 +382,11 @@ public class ProductService {
                 .sku(product.getSku())
                 .brand(product.getBrand())
                 .stockQuantity(product.getStockQuantity())
+                .quantityPerPackage(product.getQuantityPerPackage())
                 .isActive(product.getIsActive())
                 .isFeatured(product.getIsFeatured())
                 .imageUrl(product.getImageUrl())
+                .mainImageOriginalUrl(fileService.getDisplayImageUrl(product.getId(), product.getImageUrl()))
                 .createdAt(product.getCreatedAt())
                 .updatedAt(product.getUpdatedAt());
 
@@ -511,6 +515,7 @@ public class ProductService {
                     .map(img -> ProductImageResponse.builder()
                             .id(img.getId())
                             .imageUrl(img.getImageUrl())
+                            .originalUrl(fileService.getDisplayImageUrl(product.getId(), img.getImageUrl()))
                             .altText(img.getAltText())
                             .sortOrder(img.getSortOrder())
                             .isPrimary(img.getIsPrimary())

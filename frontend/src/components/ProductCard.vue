@@ -1,12 +1,17 @@
 <template>
   <div class="product-tile rounded-lg overflow-hidden relative">
     <router-link :to="`/products/${product.id}`">
-      <div class="product-card-image-container w-full h-[410px] relative flex items-center justify-center overflow-hidden group rounded-xl" style="background-color: var(--product-tile-background);">
+      <div
+        class="product-card-image-container protect-image w-full h-[410px] relative flex items-center justify-center overflow-hidden group rounded-xl"
+        style="background-color: var(--product-tile-background);"
+        @contextmenu.prevent
+      >
         <img
           v-if="imageUrl"
           :src="imageUrl"
           :alt="product.name"
-          class="w-[90%] h-[90%] object-contain transition-transform duration-300 ease-in-out group-hover:scale-[1.20]"
+          class="w-full h-full md:w-[99%] md:h-[99%] object-contain transition-transform duration-300 ease-in-out group-hover:scale-[1.20]"
+          draggable="false"
         />
         <div
           v-else
@@ -94,13 +99,6 @@
             {{ formatPrice(product.oldPrice) }}
           </span>
         </div>
-        <span
-          v-if="product.stockQuantity !== null && product.stockQuantity <= 10"
-          class="text-xs font-semibold"
-          style="color: var(--product-tile-title-color);"
-        >
-          Осталось: {{ product.stockQuantity }}
-        </span>
       </div>
     </div>
   </div>
@@ -125,9 +123,7 @@ const cartStore = useCartStore()
 const imageUrl = computed(() => {
   // Проверяем imageUrl
   if (props.product.imageUrl) {
-    const url = fileApi.getFileUrl(props.product.imageUrl)
-    console.log('ProductCard imageUrl:', props.product.imageUrl, '→', url)
-    return url
+    return fileApi.getFileUrl(props.product.imageUrl)
   }
   
   // Проверяем images массив (в ProductImageResponse поле называется imageUrl, не url!)
@@ -135,14 +131,8 @@ const imageUrl = computed(() => {
     const img = props.product.images[0]
     // Проверяем разные возможные поля (imageUrl - правильное поле из ProductImageResponse)
     const imgUrl = img.imageUrl || img.url || (typeof img === 'string' ? img : null)
-    if (imgUrl) {
-      const url = fileApi.getFileUrl(imgUrl)
-      console.log('ProductCard images[0]:', img, '→', imgUrl, '→', url)
-      return url
-    }
+    if (imgUrl) return fileApi.getFileUrl(imgUrl)
   }
-  
-  console.log('ProductCard: No image found for product', props.product.id, props.product)
   return null
 })
 

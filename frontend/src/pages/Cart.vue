@@ -35,12 +35,13 @@
               :key="item.product.id"
               class="flex items-center space-x-4 border-b pb-4"
             >
-              <router-link :to="`/products/${item.product.id}`" class="flex-shrink-0">
+              <router-link :to="`/products/${item.product.id}`" class="flex-shrink-0 protect-image" @contextmenu.prevent>
                 <img
                   v-if="getImageUrl(item.product)"
                   :src="getImageUrl(item.product)"
                   :alt="item.product.name"
                   class="w-24 h-24 object-cover rounded"
+                  draggable="false"
                 />
                 <div
                   v-else

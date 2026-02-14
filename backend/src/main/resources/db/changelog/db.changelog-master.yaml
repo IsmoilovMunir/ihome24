@@ -28,6 +28,8 @@ databaseChangeLog:
   - include:
       file: db/changelog/changeset/products_V003__extend_fields.sql
   - include:
+      file: db/changelog/changeset/products_V004__quantity_per_package.sql
+  - include:
       file: db/changelog/changeset/company_settings_V001__initial.sql
   - include:
       file: db/changelog/changeset/orders_V001__initial.sql

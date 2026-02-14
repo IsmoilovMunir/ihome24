@@ -4,6 +4,7 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  timeout: 15000, // 15 сек — страница не зависнет, если бэкенд не отвечает
   headers: {
     'Content-Type': 'application/json',
   },
@@ -58,7 +59,6 @@ export const fileApi = {
     
     // Если путь уже полный URL, возвращаем как есть
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
-      console.log('getFileUrl: full URL detected', filePath)
       return filePath
     }
     
@@ -77,9 +77,7 @@ export const fileApi = {
       filePath = filePath.substring(1)
     }
     
-    const result = `${API_BASE_URL}/api/files/${filePath}`
-    console.log('getFileUrl result:', result)
-    return result
+    return `${API_BASE_URL}/api/files/${filePath}`
   },
 }
 

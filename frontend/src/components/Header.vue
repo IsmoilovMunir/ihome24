@@ -190,7 +190,9 @@
             :src="getCategoryImage()"
             :alt="getCurrentCategoryData()?.name"
             :title="getCurrentCategoryData()?.name"
-            class="dropdown-menu-img"
+            class="dropdown-menu-img protect-image"
+            draggable="false"
+            @contextmenu.prevent
           />
         </div>
       </div>
@@ -257,14 +259,16 @@
                     v-for="product in searchResultsProducts"
                     :key="'prod-' + product.id"
                     :to="`/products/${product.id}`"
-                    class="search-result-item search-result-product"
+                    class="search-result-item search-result-product protect-image"
                     @click="closeSearch"
+                    @contextmenu.prevent
                   >
                     <img
                       v-if="getProductSearchImageUrl(product)"
                       :src="getProductSearchImageUrl(product)"
                       :alt="product.name"
                       class="search-result-product-img"
+                      draggable="false"
                     />
                     <div class="search-result-product-info">
                       <span class="search-result-product-name">{{ product.name }}</span>
