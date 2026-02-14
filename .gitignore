@@ -249,3 +249,6 @@ nbdist/
 *.md
 !README.md
 !**/README.md
+
+git add .gitignore
+infrastructure/.env.example
