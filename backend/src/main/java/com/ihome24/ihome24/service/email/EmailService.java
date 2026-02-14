@@ -43,6 +43,17 @@ public class EmailService {
     @Value("${app.email.from:}")
     private String appEmailFrom;
 
+    /** При таймауте/ошибке соединения с SMTP подсказать переключиться на 587 (часто решает проблему на хостинге) */
+    private void logSmtpPortHint(Throwable e) {
+        String msg = e != null ? e.getMessage() : "";
+        if (msg == null) return;
+        boolean looksLikeConnectionFailure = msg.contains("465") || msg.contains("Connect timed out")
+                || msg.contains("MailConnectException") || msg.contains("connection failed");
+        if (looksLikeConnectionFailure) {
+            log.warn("SMTP недоступен с этого сервера. В .env.prod попробуйте порт 587: MAIL_PORT=587, MAIL_SMTP_SSL_ENABLE=false, MAIL_STARTTLS=true");
+        }
+    }
+
     public void sendVerificationCode(String toEmail, String code, String deviceInfo) {
         // Проверяем наличие конфигурации email
         if (mailUsername == null || mailUsername.isEmpty()) {
@@ -216,6 +227,7 @@ public class EmailService {
             log.info("Письмо подтверждения заказа #{} отправлено на {}", orderNumber, toEmail);
         } catch (Exception e) {
             log.error("Не удалось отправить письмо подтверждения заказа #{}: {}", orderNumber, e.getMessage());
+            logSmtpPortHint(e);
             // Не пробрасываем — заказ уже создан, не ломаем ответ 500
         }
     }
@@ -240,6 +252,7 @@ public class EmailService {
             log.info("Уведомление о статусе заказа #{} отправлено на {}", orderNumber, toEmail);
         } catch (Exception e) {
             log.error("Не удалось отправить уведомление о статусе заказа #{}: {}", orderNumber, e.getMessage());
+            logSmtpPortHint(e);
         }
     }
 }
