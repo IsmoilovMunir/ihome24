@@ -1,7 +1,10 @@
 # Production Docker Compose конфигурация
-# Использование: docker-compose -f docker-compose.prod.yml --env-file .env.prod up -d
-# 
-# ВАЖНО: 
+#
+# ОБЯЗАТЕЛЬНО указывайте --env-file .env.prod (иначе переменные пустые и backend не стартует):
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate backend
+#
+# ВАЖНО:
 # - Все сервисы работают на localhost и доступны только через nginx reverse proxy
 # - Порты не пробрасываются наружу, только для внутренней сети Docker
 # - Используйте переменные окружения из .env.prod файла

@@ -29,7 +29,7 @@ spring:
     properties:
       hibernate:
         format_sql: false
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        # dialect выбирается автоматически по драйверу БД (PostgreSQL)
         # Оптимизации для продакшена
         jdbc:
           batch_size: 20
