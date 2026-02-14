@@ -17,6 +17,7 @@ spring:
     driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
 
   jpa:
+    open-in-view: false  # Явно отключаем (избегаем lazy-запросов во время обработки HTTP)
     hibernate:
       ddl-auto: update  # Автоматическое создание таблиц из сущностей
     show-sql: ${SHOW_SQL:true}

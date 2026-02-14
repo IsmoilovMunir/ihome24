@@ -21,6 +21,7 @@ spring:
       max-lifetime: 1800000
 
   jpa:
+    open-in-view: false  # Отключаем, чтобы не держать сессию БД открытой во время рендера (рекомендуется для prod)
     hibernate:
       # В продакшене НЕ создавать таблицы автоматически!
       # Используйте Liquibase для миграций
@@ -135,6 +136,8 @@ logging:
     com.ihome24: INFO
     org.springframework: WARN
     org.hibernate: WARN
+    # Конфигурация Security намеренная (DaoAuthenticationProvider + UserDetailsService) — убираем предупреждение
+    org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
   file:
     name: /app/logs/application.log
     max-size: 100MB
