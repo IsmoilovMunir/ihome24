@@ -211,6 +211,10 @@
               <span class="text-gray-400 text-sm font-medium capitalize">Бренд</span>
               <span class="text-gray-200 text-sm capitalize">{{ product.brand }}</span>
             </div>
+            <div v-if="product.quantityPerPackage != null" class="flex justify-between items-center py-2 border-b border-white/10">
+              <span class="text-gray-400 text-sm font-medium capitalize">Количество в упаковке</span>
+              <span class="text-gray-200 text-sm capitalize">{{ product.quantityPerPackage }} шт.</span>
+            </div>
             <div class="flex justify-between items-center py-2">
               <span class="text-gray-400 text-sm font-medium capitalize">Наличие</span>
               <span class="text-sm capitalize" :style="{ color: isAvailable ? '#C56129' : '#9d9390' }">{{ isAvailable ? 'В наличии' : 'Нет в наличии' }}</span>
@@ -793,7 +797,7 @@ onUnmounted(() => {
 <style scoped>
 /* Все шрифты на странице товара явно прописаны */
 .product-detail-page,
-.product-detail-page h1,
+.product-detail-page h1:not(.product-detail-title),
 .product-detail-page h2,
 .product-detail-page h3,
 .product-detail-page p,
@@ -812,9 +816,10 @@ onUnmounted(() => {
   text-transform: uppercase;
 }
 
-.product-detail-title {
-  font-family: helvetica, sans-serif;
-  font-weight: 400;
+.product-detail-page h1.product-detail-title {
+  font-family: "bork", sans-serif !important;
+  text-transform: none;
+  font-size: 1.6em;
 }
 
 /* Галерея миниатюр — одна строка, незаметный горизонтальный скролл */

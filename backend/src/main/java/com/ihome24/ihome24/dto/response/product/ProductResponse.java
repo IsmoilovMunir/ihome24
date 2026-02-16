@@ -26,6 +26,7 @@ public class ProductResponse {
     private String sku;
     private String brand;
     private Integer stockQuantity;
+    private Integer quantityPerPackage;
     private Boolean isActive;
     private Boolean isFeatured;
     private String imageUrl;
