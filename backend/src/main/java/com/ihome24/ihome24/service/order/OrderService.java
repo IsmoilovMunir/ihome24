@@ -5,6 +5,7 @@ import com.ihome24.ihome24.dto.request.order.UpdateOrderItemsRequest;
 import com.ihome24.ihome24.dto.response.order.OrderItemResponse;
 import com.ihome24.ihome24.dto.response.order.OrderListResponse;
 import com.ihome24.ihome24.dto.response.order.OrderResponse;
+import com.ihome24.ihome24.dto.response.order.OrderCountResponse;
 import com.ihome24.ihome24.dto.response.order.OrderStatsResponse;
 import com.ihome24.ihome24.entity.order.Order;
 import com.ihome24.ihome24.entity.order.OrderItem;
@@ -37,6 +38,13 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final EmailService emailService;
+
+    @Transactional(readOnly = true)
+    public OrderCountResponse getTotalOrderCount() {
+        return OrderCountResponse.builder()
+                .count(orderRepository.count())
+                .build();
+    }
 
     @Transactional(readOnly = true)
     public OrderStatsResponse getOrderStats() {
