@@ -67,16 +67,8 @@ export const cartApi = {
 
 export const fileApi = {
   getFileUrl: (filePath) => {
-    if (!filePath || filePath.trim() === '') {
-      console.warn('getFileUrl: empty filePath')
-      return null
-    }
-    
-    // Если путь уже полный URL, возвращаем как есть
-    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
-      console.log('getFileUrl: full URL detected', filePath)
-      return filePath
-    }
+    if (!filePath || filePath.trim() === '') return null
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath
     
     // Если путь уже начинается с /api/files/, убираем этот префикс
     if (filePath.startsWith('/api/files/')) {
@@ -93,9 +85,21 @@ export const fileApi = {
       filePath = filePath.substring(1)
     }
     
-    const result = `${API_BASE_URL}/api/files/${filePath}`
-    console.log('getFileUrl result:', result)
-    return result
+    return `${API_BASE_URL}/api/files/${filePath}`
+  },
+  /** URL варианта large (1200px) — для прогрессивной загрузки главного фото */
+  getImageUrlLarge: (filePath) => {
+    if (!filePath || filePath.trim() === '') return null
+    const base = fileApi.getFileUrl(filePath)
+    if (!base) return null
+    return base.replace(/\/medium\//, '/large/').replace(/\/small\//, '/large/')
+  },
+  /** URL оригинала — максимальное качество (если доступен) */
+  getImageUrlOriginal: (filePath) => {
+    if (!filePath || filePath.trim() === '') return null
+    const base = fileApi.getFileUrl(filePath)
+    if (!base) return null
+    return base.replace(/\/medium\//, '/original/').replace(/\/small\//, '/original/').replace(/\/large\//, '/original/')
   },
 }
 

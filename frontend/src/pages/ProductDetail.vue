@@ -633,32 +633,91 @@ const onFullscreenKeydown = (e) => {
 
 const getImageUrl = (url) => {
   if (!url) return null
-  const result = fileApi.getFileUrl(url)
-  console.log('ProductDetail getImageUrl:', url, '→', result)
-  return result
+  return fileApi.getFileUrl(url)
 }
 
-const mainImageUrl = computed(() => {
+/** Прогрессивная загрузка: сначала medium (быстро), затем large (качественно) */
+const displayedMainImageUrl = ref('')
+const mainImageUrlFast = computed(() => {
   if (!product.value) return null
-  
-  // Проверяем images массив (в ProductImageResponse поле называется imageUrl, не url!)
-  if (product.value.images && product.value.images.length > 0) {
+  if (product.value.images?.length > 0) {
     const img = product.value.images[selectedImageIndex.value]
-    // Проверяем разные возможные поля (imageUrl - правильное поле из ProductImageResponse)
-    const imgUrl = img.imageUrl || img.url || (typeof img === 'string' ? img : null)
-    if (imgUrl) {
-      return getImageUrl(imgUrl)
-    }
+    const imgUrl = img?.imageUrl || img?.url || (typeof img === 'string' ? img : null)
+    if (imgUrl) return getImageUrl(imgUrl)
   }
-  
-  // Проверяем imageUrl
-  if (product.value.imageUrl) {
-    return getImageUrl(product.value.imageUrl)
-  }
-  
-  console.log('ProductDetail: No image found for product', product.value)
+  if (product.value.imageUrl) return getImageUrl(product.value.imageUrl)
   return null
 })
+const mainImageUrlLarge = computed(() => {
+  if (!product.value) return null
+  if (product.value.images?.length > 0) {
+    const img = product.value.images[selectedImageIndex.value]
+    const imgUrl = img?.imageUrl || img?.url || (typeof img === 'string' ? img : null)
+    if (imgUrl) return fileApi.getImageUrlLarge(imgUrl)
+  }
+  if (product.value.imageUrl) return fileApi.getImageUrlLarge(product.value.imageUrl)
+  return null
+})
+const mainImageUrlOriginal = computed(() => {
+  if (!product.value) return null
+  if (product.value.images?.length > 0) {
+    const img = product.value.images[selectedImageIndex.value]
+    const imgUrl = img?.imageUrl || img?.url || (typeof img === 'string' ? img : null)
+    if (imgUrl) return fileApi.getImageUrlOriginal(imgUrl)
+  }
+  if (product.value.imageUrl) return fileApi.getImageUrlOriginal(product.value.imageUrl)
+  return null
+})
+
+watch(
+  () => [mainImageUrlFast.value, mainImageUrlLarge.value, mainImageUrlOriginal.value, selectedImageIndex.value],
+  () => {
+    const fast = mainImageUrlFast.value
+    const large = mainImageUrlLarge.value
+    const original = mainImageUrlOriginal.value
+    displayedMainImageUrl.value = fast || ''
+    if (!fast) return
+    const idx = selectedImageIndex.value
+    const tryLarge = large && large !== fast
+    const tryOriginal = original && original !== fast && original !== large
+    if (tryLarge) {
+      const imgLarge = new Image()
+      imgLarge.onload = () => {
+        if (selectedImageIndex.value !== idx) return
+        displayedMainImageUrl.value = large
+        if (tryOriginal) {
+          const imgOrig = new Image()
+          imgOrig.onload = () => {
+            if (selectedImageIndex.value === idx) displayedMainImageUrl.value = original
+          }
+          imgOrig.onerror = () => {}
+          imgOrig.src = original
+        }
+      }
+      imgLarge.onerror = () => {
+        if (tryOriginal && selectedImageIndex.value === idx) {
+          const imgOrig = new Image()
+          imgOrig.onload = () => {
+            if (selectedImageIndex.value === idx) displayedMainImageUrl.value = original
+          }
+          imgOrig.onerror = () => {}
+          imgOrig.src = original
+        }
+      }
+      imgLarge.src = large
+    } else if (tryOriginal) {
+      const imgOrig = new Image()
+      imgOrig.onload = () => {
+        if (selectedImageIndex.value === idx) displayedMainImageUrl.value = original
+      }
+      imgOrig.onerror = () => {}
+      imgOrig.src = original
+    }
+  },
+  { immediate: true }
+)
+
+const mainImageUrl = computed(() => displayedMainImageUrl.value || mainImageUrlFast.value)
 
 const scrollThumbnailIntoView = () => {
   nextTick(() => {
