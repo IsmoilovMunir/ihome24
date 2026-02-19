@@ -102,7 +102,7 @@
           </span>
         </div>
         <span
-          v-if="product.stockQuantity !== null && product.stockQuantity <= 10"
+          v-if="product.stockQuantity !== null && product.stockQuantity > 0 && product.stockQuantity <= 10"
           class="text-xs font-semibold"
           style="color: var(--product-tile-title-color);"
         >

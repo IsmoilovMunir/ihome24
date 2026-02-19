@@ -21,9 +21,6 @@
     <!-- Popular Products and Collections -->
     <section class="py-12 bg-[#3A3331]">
       <div class="container mx-auto px-4">
-        <h2 class="text-3xl font-bold text-white mb-8">
-          {{ productsStore.featuredProducts.length > 0 ? 'Хиты продаж' : 'Популярные товары' }}
-        </h2>
         <div v-if="productsStore.loading" class="text-center py-12">
           <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
         </div>
