@@ -13,7 +13,8 @@
       <div>
         <div
           ref="mainImageContainerRef"
-          class="bg-[#26211E] rounded-lg overflow-hidden mb-4 flex items-center justify-center h-96 relative cursor-pointer touch-none"
+          class="bg-[#26211E] rounded-lg overflow-hidden mb-4 flex items-center justify-center h-96 relative cursor-pointer"
+          style="touch-action: pan-y;"
           @click="onMainImageClick"
           @touchstart="onMainImageTouchStart"
           @touchmove="onMainImageTouchMove"
@@ -358,17 +359,17 @@
 
         <div
           class="flex-1 flex items-center justify-center min-h-0 p-4 rounded-lg m-4 overflow-hidden cursor-grab active:cursor-grabbing"
-          style="background-color: #26211E;"
+          style="background-color: #26211E; touch-action: none;"
           @wheel.prevent="onFullscreenWheel"
           @mousedown="onFullscreenPanStart"
-          @touchstart.prevent="onFullscreenPanStart"
+          @touchstart="onFullscreenTouchStart"
         >
           <div
             v-if="mainImageUrl"
-            class="w-full h-full flex items-center justify-center origin-center select-none touch-none"
+            class="w-full h-full flex items-center justify-center origin-center select-none"
             :style="{
               transform: `translate(${fullscreenPan.x}px, ${fullscreenPan.y}px) scale(${fullscreenZoom})`,
-              transition: isPanning ? 'none' : 'transform 0.15s ease-out',
+              transition: (isPanning || isPinching) ? 'none' : 'transform 0.15s ease-out',
             }"
           >
             <img
@@ -484,7 +485,9 @@ let mainImageHadGesture = false
 const fullscreenZoom = ref(1)
 const fullscreenPan = ref({ x: 0, y: 0 })
 const isPanning = ref(false)
+const isPinching = ref(false)
 let panStart = { clientX: 0, clientY: 0, x: 0, y: 0 }
+let fullscreenPinchStart = { distance: 0, zoom: 0 }
 
 const ZOOM_MIN = 0.5
 const ZOOM_MAX = 4
@@ -533,6 +536,7 @@ const onMainImageTouchMove = (e) => {
     const scale = distance / pinchStart.distance
     mainImageZoom.value = Math.min(4, Math.max(0.5, pinchStart.zoom * scale))
   } else if (e.touches.length === 1 && mainImageZoom.value > 1) {
+    if (e.cancelable) e.preventDefault()
     mainImageHadGesture = true
     mainImagePan.value = {
       x: panStartMain.panX + (e.touches[0].clientX - panStartMain.x),
@@ -570,16 +574,68 @@ const closeFullscreenGallery = () => {
   fullscreenPan.value = { x: 0, y: 0 }
 }
 
+const onFullscreenTouchStart = (e) => {
+  document.removeEventListener('touchmove', onFullscreenTouchMove)
+  document.removeEventListener('touchend', onFullscreenTouchEnd)
+  document.removeEventListener('touchcancel', onFullscreenTouchEnd)
+  if (e.touches.length === 2) {
+    isPinching.value = true
+    isPanning.value = false
+    fullscreenPinchStart = {
+      distance: getTouchDistance(e.touches[0], e.touches[1]),
+      zoom: fullscreenZoom.value,
+    }
+    document.addEventListener('touchmove', onFullscreenTouchMove, { passive: false })
+    document.addEventListener('touchend', onFullscreenTouchEnd)
+    document.addEventListener('touchcancel', onFullscreenTouchEnd)
+  } else if (e.touches.length === 1) {
+    isPanning.value = true
+    isPinching.value = false
+    panStart = {
+      clientX: e.touches[0].clientX,
+      clientY: e.touches[0].clientY,
+      x: fullscreenPan.value.x,
+      y: fullscreenPan.value.y,
+    }
+    document.addEventListener('touchmove', onFullscreenTouchMove, { passive: false })
+    document.addEventListener('touchend', onFullscreenTouchEnd)
+    document.addEventListener('touchcancel', onFullscreenTouchEnd)
+  }
+}
+
+const onFullscreenTouchMove = (e) => {
+  if (e.touches.length === 2 && isPinching.value) {
+    e.preventDefault()
+    const distance = getTouchDistance(e.touches[0], e.touches[1])
+    const scale = distance / fullscreenPinchStart.distance
+    fullscreenZoom.value = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, fullscreenPinchStart.zoom * scale))
+  } else if (e.touches.length === 1 && isPanning.value) {
+    e.preventDefault()
+    fullscreenPan.value = {
+      x: panStart.x + (e.touches[0].clientX - panStart.clientX),
+      y: panStart.y + (e.touches[0].clientY - panStart.clientY),
+    }
+  }
+}
+
+const onFullscreenTouchEnd = (e) => {
+  if (e.touches.length < 2) isPinching.value = false
+  if (e.touches.length < 1) {
+    isPanning.value = false
+    document.removeEventListener('touchmove', onFullscreenTouchMove)
+    document.removeEventListener('touchend', onFullscreenTouchEnd)
+    document.removeEventListener('touchcancel', onFullscreenTouchEnd)
+  }
+}
+
 const onFullscreenPanStart = (e) => {
-  const clientX = e.touches ? e.touches[0].clientX : e.clientX
-  const clientY = e.touches ? e.touches[0].clientY : e.clientY
+  if (e.touches) return
+  const clientX = e.clientX
+  const clientY = e.clientY
   isPanning.value = true
   panStart = { clientX, clientY, x: fullscreenPan.value.x, y: fullscreenPan.value.y }
   document.addEventListener('mousemove', onFullscreenPanMove)
   document.addEventListener('mouseup', onFullscreenPanEnd)
-  document.addEventListener('touchmove', onFullscreenPanMove, { passive: false })
-  document.addEventListener('touchend', onFullscreenPanEnd)
-  document.addEventListener('touchcancel', onFullscreenPanEnd)
 }
 
 const onFullscreenPanMove = (e) => {
@@ -597,9 +653,6 @@ const onFullscreenPanEnd = () => {
   isPanning.value = false
   document.removeEventListener('mousemove', onFullscreenPanMove)
   document.removeEventListener('mouseup', onFullscreenPanEnd)
-  document.removeEventListener('touchmove', onFullscreenPanMove)
-  document.removeEventListener('touchend', onFullscreenPanEnd)
-  document.removeEventListener('touchcancel', onFullscreenPanEnd)
 }
 
 const fullscreenZoomIn = () => {
@@ -847,9 +900,9 @@ onUnmounted(() => {
   document.removeEventListener('keydown', onFullscreenKeydown)
   document.removeEventListener('mousemove', onFullscreenPanMove)
   document.removeEventListener('mouseup', onFullscreenPanEnd)
-  document.removeEventListener('touchmove', onFullscreenPanMove)
-  document.removeEventListener('touchend', onFullscreenPanEnd)
-  document.removeEventListener('touchcancel', onFullscreenPanEnd)
+  document.removeEventListener('touchmove', onFullscreenTouchMove)
+  document.removeEventListener('touchend', onFullscreenTouchEnd)
+  document.removeEventListener('touchcancel', onFullscreenTouchEnd)
 })
 </script>
 
