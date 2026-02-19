@@ -155,6 +155,7 @@ public class ProductService {
                 .oldPrice(oldPrice)
                 .sku(sku)
                 .brand(productInfo.getBrand())
+                .quantityPerPackage(productInfo.getQuantityPerPackage())
                 .stockQuantity(stockQuantity)
                 .isActive(isActive)
                 .isFeatured(isFeatured)
@@ -401,6 +402,7 @@ public class ProductService {
         product.setOldPrice(oldPrice);
         product.setSku(sku);
         product.setBrand(productInfo.getBrand());
+        product.setQuantityPerPackage(productInfo.getQuantityPerPackage());
         product.setStockQuantity(stockQuantity);
         product.setIsActive(isActive);
         product.setImageUrl(imageUrl);
@@ -450,6 +452,7 @@ public class ProductService {
                 .sku(product.getSku())
                 .brand(product.getBrand())
                 .stockQuantity(product.getStockQuantity())
+                .quantityPerPackage(product.getQuantityPerPackage())
                 .isActive(product.getIsActive())
                 .isFeatured(product.getIsFeatured())
                 .imageUrl(product.getImageUrl())

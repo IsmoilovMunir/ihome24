@@ -680,7 +680,7 @@ onUnmounted(() => {
   display: block;
   padding: 15px 0;
   color: #fff;
-  font-size: 14px;
+  font-size: 12px;
   font-family: "helvetica", sans-serif;
   text-decoration: none;
   text-transform: uppercase;

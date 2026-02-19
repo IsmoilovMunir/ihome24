@@ -45,6 +45,9 @@ public class Product {
     @Column(name = "brand")
     private String brand;
 
+    @Column(name = "quantity_per_package")
+    private Integer quantityPerPackage;
+
     @Column(name = "stock_quantity")
     private Integer stockQuantity;
 
