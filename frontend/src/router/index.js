@@ -7,6 +7,8 @@ import Checkout from '../pages/Checkout.vue'
 import Login from '../pages/Login.vue'
 import Register from '../pages/Register.vue'
 import Search from '../pages/Search.vue'
+import Contacts from '../pages/Contacts.vue'
+import Oferta from '../pages/Oferta.vue'
 
 const routes = [
   {
@@ -48,6 +50,16 @@ const routes = [
     path: '/search',
     name: 'Search',
     component: Search,
+  },
+  {
+    path: '/support/contacts',
+    name: 'Contacts',
+    component: Contacts,
+  },
+  {
+    path: '/support/oferta',
+    name: 'Oferta',
+    component: Oferta,
   },
 ]
 
