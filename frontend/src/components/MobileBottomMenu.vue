@@ -59,10 +59,10 @@
       <span class="mobile-menu-label">Корзина</span>
     </router-link>
 
-    <router-link
-      v-if="authStore.isAuthenticated"
-      to="/profile"
-      class="mobile-menu-item"
+    <button
+      type="button"
+      class="mobile-menu-item mobile-menu-item--button"
+      @click.stop="personalMenuStore.openMenu"
     >
       <svg
         class="mobile-menu-icon"
@@ -78,36 +78,16 @@
         />
       </svg>
       <span class="mobile-menu-label">Кабинет</span>
-    </router-link>
-    <router-link
-      v-else
-      to="/login"
-      class="mobile-menu-item"
-    >
-      <svg
-        class="mobile-menu-icon"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-        />
-      </svg>
-      <span class="mobile-menu-label">Кабинет</span>
-    </router-link>
+    </button>
   </nav>
 </template>
 
 <script setup>
 import { useCartStore } from '../stores/cart'
-import { useAuthStore } from '../stores/auth'
+import { usePersonalMenuStore } from '../stores/personalMenu'
 
 const cartStore = useCartStore()
-const authStore = useAuthStore()
+const personalMenuStore = usePersonalMenuStore()
 </script>
 
 <style scoped>
@@ -150,6 +130,13 @@ const authStore = useAuthStore()
 .mobile-menu-item:hover,
 .mobile-menu-item.router-link-active {
   color: #fff;
+}
+
+.mobile-menu-item--button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
 }
 
 .mobile-menu-icon-wrapper {

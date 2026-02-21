@@ -12,6 +12,34 @@
     <script type="module" src="/src/main.js"></script>
     <!-- Jivo чат для поддержки клиентов -->
     <script src="https://code.jivo.ru/widget/LEJJlqxi8u" async></script>
+    <style id="jivo-cycle-styles">
+      body.jivo-hidden jdiv[class*="wrap__"],
+      body.jivo-hidden [class*="jivoMobileButton"] {
+        opacity: 0 !important;
+        pointer-events: none !important;
+        transition: opacity 0.5s ease !important;
+      }
+    </style>
+    <script>
+      (function() {
+        function init() {
+          document.body.classList.add('jivo-hidden');
+          function runCycle() {
+            document.body.classList.remove('jivo-hidden');
+            setTimeout(function() {
+              document.body.classList.add('jivo-hidden');
+              setTimeout(runCycle, 30000);
+            }, 30000);
+          }
+          setTimeout(runCycle, 30000);
+        }
+        if (document.body) {
+          init();
+        } else {
+          document.addEventListener('DOMContentLoaded', init);
+        }
+      })();
+    </script>
     <!-- Yandex.Metrika counter -->
     <script type="text/javascript">
       (function(m,e,t,r,i,k,a){

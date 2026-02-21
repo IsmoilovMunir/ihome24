@@ -14,8 +14,8 @@
         </div>
         
         <ul class="header-nav-right">
-          <!-- Корзина -->
-          <li class="header-nav-item">
+          <!-- Корзина (скрыто на мобильных — есть в нижнем меню) -->
+          <li class="header-nav-item header-nav-item--hide-mobile">
             <router-link to="/cart" class="header-nav-link relative">
               <svg
                 class="header-icon"
@@ -58,26 +58,15 @@
             </button>
           </li>
           
-          <!-- Аккаунт -->
-          <li class="header-nav-item">
-            <div v-if="authStore.isAuthenticated" class="header-account">
-              <router-link to="/profile" class="header-nav-link">
-                <svg
-                  class="header-icon"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              </router-link>
-            </div>
-            <router-link v-else to="/login" class="header-nav-link">
+          <!-- Аккаунт (скрыто на мобильных — есть в нижнем меню) -->
+          <li class="header-nav-item header-nav-item--account header-nav-item--hide-mobile" ref="accountNavRef">
+            <button
+              type="button"
+              class="header-nav-link"
+              aria-haspopup="true"
+              :aria-expanded="personalMenuStore.open"
+              @click="personalMenuStore.toggle"
+            >
               <svg
                 class="header-icon"
                 fill="none"
@@ -91,11 +80,98 @@
                   d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 />
               </svg>
-            </router-link>
+            </button>
           </li>
         </ul>
       </nav>
     </div>
+
+    <!-- Меню личного кабинета (Teleport — вне скрытого элемента, работает на мобильных) -->
+    <Teleport to="body">
+      <Transition name="personal-menu">
+        <div
+          v-if="personalMenuStore.open"
+          class="personal-menu-wrapper"
+          @click.self="personalMenuStore.closeMenu"
+        >
+          <div class="personal-menu personal-menu--shared" @click.stop>
+            <button
+              type="button"
+              class="personal-menu__close-mobile"
+              aria-label="Закрыть"
+              @click="personalMenuStore.closeMenu"
+            >
+              Закрыть
+            </button>
+            <div class="personal-menu__items">
+                  <!-- Город -->
+                  <div class="personal-menu__location personal-menu__item">
+                    <svg class="personal-menu__icon" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M12 13.43a3.12 3.12 0 1 0 0-6.24 3.12 3.12 0 0 0 0 6.24z" fill="currentColor" stroke="currentColor" stroke-width="1.5"/>
+                      <path d="M3.62 8.49c1.97-8.66 14.8-8.65 16.76.01 1.15 5.08-2.01 9.38-4.78 12.04a5.193 5.193 0 0 1-7.21 0c-2.76-2.66-5.92-6.97-4.77-12.05z" stroke="currentColor" stroke-width="1.5"/>
+                    </svg>
+                    <button
+                      type="button"
+                      class="personal-menu__location-name personal-menu__location-btn"
+                      @click="openCityPicker"
+                    >
+                      {{ locationLoading ? 'Определение...' : (locationCity || 'Москва') }}
+                    </button>
+                  </div>
+
+                  <!-- Кнопка входа (если не авторизован) -->
+                  <router-link
+                    v-if="!authStore.isAuthenticated"
+                    to="/login"
+                    class="personal-menu__auth-btn"
+                    @click="personalMenuStore.closeMenu"
+                  >
+                    Вход или регистрация
+                  </router-link>
+
+                  <!-- Пункты меню (при клике проверяется авторизация) -->
+                  <router-link to="/personal" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
+                    <svg class="personal-menu__icon" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="m9.268 3.603-4.94 3.85c-.825.642-1.495 2.008-1.495 3.044v6.792c0 2.127 1.733 3.869 3.86 3.869h10.614a3.871 3.871 0 0 0 3.86-3.86v-6.673c0-1.11-.743-2.53-1.65-3.162l-5.665-3.97c-1.284-.898-3.346-.852-4.584.11zM12 17.49v-2.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Личный кабинет
+                  </router-link>
+                  <router-link to="/personal/orders" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
+                    <svg class="personal-menu__icon" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M9.5 22h6c4.02 0 4.74-1.61 4.95-3.57l.75-6C21.47 9.99 20.77 8 16.5 8h-8c-4.27 0-4.97 1.99-4.7 4.43l.75 6C4.76 20.39 5.48 22 9.5 22zM8 7.67V6.7c0-2.25 1.81-4.46 4.06-4.67A4.5 4.5 0 0 1 17 6.51v1.38" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Заказы
+                  </router-link>
+                  <router-link to="/personal/favorites" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
+                    <svg class="personal-menu__icon" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M12.62 20.81C12.28 20.93 11.72 20.93 11.38 20.81C8.48 19.82 2 15.69 2 8.68998C2 5.59998 4.49 3.09998 7.56 3.09998C9.38 3.09998 10.99 3.97998 12 5.33998C13.01 3.97998 14.63 3.09998 16.44 3.09998C19.51 3.09998 22 5.59998 22 8.68998C22 15.69 15.52 19.82 12.62 20.81Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Избранное
+                  </router-link>
+                  <router-link to="/personal/profile" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
+                    <svg class="personal-menu__icon" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                      <path d="M12.5 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM21.09 22c0-3.87-3.85-7-8.59-7s-8.59 3.13-8.59 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Личные данные
+                  </router-link>
+
+                  <!-- Где мой заказ? -->
+                  <router-link to="/order-tracking" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
+                    <svg class="personal-menu__icon" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 24">
+                      <path d="M12.2366 19.5C16.3787 19.5 19.7366 16.1421 19.7366 12C19.7366 7.85786 16.3787 4.5 12.2366 4.5C8.09443 4.5 4.73657 7.85786 4.73657 12C4.73657 16.1421 8.09443 19.5 12.2366 19.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12.2366 15C13.8935 15 15.2366 13.6569 15.2366 12C15.2366 10.3431 13.8935 9 12.2366 9C10.5797 9 9.23657 10.3431 9.23657 12C9.23657 13.6569 10.5797 15 12.2366 15Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12.2366 4V2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M4.23657 12H2.23657" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M12.2366 20V22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M20.2366 12H22.2366" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    Где мой заказ?
+                  </router-link>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
     
     <!-- Нижний слой: горизонтальное меню (скрыто на странице корзины) -->
     <div v-if="route.path !== '/cart'" class="header-menu">
@@ -279,6 +355,62 @@
         </div>
       </Transition>
     </Teleport>
+
+    <!-- Модальное окно выбора города -->
+    <Teleport to="body">
+      <Transition name="city-picker">
+        <div
+          v-if="cityPickerOpen"
+          class="city-picker-overlay"
+          @click.self="closeCityPicker"
+        >
+          <div class="city-picker-modal">
+            <div class="city-picker__header">
+              <h3 class="city-picker__title">Укажите ваш город</h3>
+              <p class="city-picker__info">
+                Правильный выбор города влияет на наличие и условия доставки товаров
+              </p>
+            </div>
+            <div class="city-picker__input-wrap">
+              <input
+                ref="citySearchInputRef"
+                v-model="citySearchQuery"
+                type="text"
+                class="city-picker__input"
+                placeholder="Ваш город"
+                @keydown.esc="closeCityPicker"
+              />
+              <svg class="city-picker__input-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M11.5833 19.5C15.9555 19.5 19.5 15.9556 19.5 11.5833C19.5 7.21108 15.9555 3.66666 11.5833 3.66666C7.21104 3.66666 3.66663 7.21108 3.66663 11.5833C3.66663 15.9556 7.21104 19.5 11.5833 19.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M20.5001 20.5L19 18.9997" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div v-if="locationCity" class="city-picker__chosen">
+              <span class="city-picker__chosen-label">{{ locationCity }}</span>
+              <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M17.1094 6.5L10.0458 13.9295C9.32254 14.6902 8.13901 14.6902 7.41575 13.9295L4.10937 10.4518" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <ul class="city-picker__list">
+              <li
+                v-for="city in filteredCities"
+                :key="city"
+                class="city-picker__item"
+              >
+                <button
+                  type="button"
+                  class="city-picker__link"
+                  :class="{ 'city-picker__link--chosen': city === locationCity }"
+                  @click="selectCity(city)"
+                >
+                  {{ city }}
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </header>
 </template>
 
@@ -288,16 +420,45 @@ import { useRoute, useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
 import { useProductsStore } from '../stores/products'
-import { fileApi } from '../services/api'
+import { usePersonalMenuStore } from '../stores/personalMenu'
+import { fileApi, geoApi } from '../services/api'
 
 const route = useRoute()
 const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
 const productsStore = useProductsStore()
+const personalMenuStore = usePersonalMenuStore()
 
 const visibleSubmenu = ref(null)
 const submenuTimeout = ref(null)
+
+const accountNavRef = ref(null)
+
+const locationCity = ref('')
+const locationLoading = ref(true)
+
+const cityPickerOpen = ref(false)
+const citySearchQuery = ref('')
+const citySearchInputRef = ref(null)
+
+const CITIES = [
+  'Белгород', 'Брянск', 'Владимир', 'Вологда', 'Екатеринбург', 'Казань', 'Калуга',
+  'Краснодар', 'Москва', 'Нижний Новгород', 'Новомосковск', 'Новосибирск', 'Ногинск',
+  'Обнинск', 'Орёл', 'Ростов-на-Дону', 'Санкт-Петербург', 'Сергиев Посад', 'Сочи', 'Тула'
+]
+
+/** Маппинг EN→RU для городов от ipapi.co */
+const CITY_EN_RU = {
+  Belgorod: 'Белгород', Bryansk: 'Брянск', Vladimir: 'Владимир', Vologda: 'Вологда',
+  Yekaterinburg: 'Екатеринбург', Kazan: 'Казань', Kaluga: 'Калуга', Krasnodar: 'Краснодар',
+  Moscow: 'Москва', 'Nizhny Novgorod': 'Нижний Новгород', Novosibirsk: 'Новосибирск',
+  Noginsk: 'Ногинск', Obninsk: 'Обнинск', Oryol: 'Орёл', 'Rostov-on-Don': 'Ростов-на-Дону',
+  'Saint Petersburg': 'Санкт-Петербург', 'St Petersburg': 'Санкт-Петербург',
+  'Sergiev Posad': 'Сергиев Посад', Sochi: 'Сочи', Tula: 'Тула'
+}
+
+const normalizeCity = (city) => (city && CITY_EN_RU[city]) || city
 
 const searchOpen = ref(false)
 const searchQuery = ref('')
@@ -496,6 +657,12 @@ const searchResultsCategories = computed(() => {
   return cats.filter((c) => c.name && matchesQuery(c.name))
 })
 
+const filteredCities = computed(() => {
+  const q = citySearchQuery.value.trim().toLowerCase()
+  if (!q) return CITIES
+  return CITIES.filter((c) => c.toLowerCase().includes(q))
+})
+
 const getProductSearchImageUrl = (product) => {
   if (product?.imageUrl) return fileApi.getFileUrl(product.imageUrl)
   if (product?.images?.[0]?.imageUrl) return fileApi.getFileUrl(product.images[0].imageUrl)
@@ -510,15 +677,122 @@ const formatSearchPrice = (price) => {
 
 const onKeydown = (e) => {
   if (e.key === 'Escape' && searchOpen.value) closeSearch()
+  if (e.key === 'Escape' && personalMenuStore.open) personalMenuStore.closeMenu()
+  if (e.key === 'Escape' && cityPickerOpen.value) closeCityPicker()
+}
+
+const openCityPicker = async () => {
+  cityPickerOpen.value = true
+  citySearchQuery.value = ''
+  await nextTick()
+  citySearchInputRef.value?.focus()
+}
+
+const closeCityPicker = () => {
+  cityPickerOpen.value = false
+  citySearchQuery.value = ''
+}
+
+/** При клике на пункт меню: если не авторизован — редирект на /login */
+const handlePersonalMenuClick = (e) => {
+  if (!authStore.isAuthenticated) {
+    e.preventDefault()
+    router.push('/login')
+  }
+  personalMenuStore.closeMenu()
+}
+
+const selectCity = (city) => {
+  locationCity.value = city
+  localStorage.setItem('ihome24_location_city', city)
+  closeCityPicker()
+}
+
+const handleClickOutside = (e) => {
+  if (!personalMenuStore.open) return
+  const target = e.target
+  if (accountNavRef.value?.contains(target)) return
+  if (target?.closest('.mobile-bottom-menu')) return
+  if (target?.closest('.personal-menu-wrapper')) return
+  personalMenuStore.closeMenu()
+}
+
+/** JSONP для ip-api.com (обходит CORS, работает без бэкенда на localhost) */
+const fetchLocationViaJsonp = () => new Promise((resolve) => {
+  let resolved = false
+  const callbackName = `__ihome24GeoCallback_${Date.now()}`
+  const cleanup = (result) => {
+    if (resolved) return
+    resolved = true
+    clearTimeout(timeout)
+    delete window[callbackName]
+    script.remove()
+    resolve(result)
+  }
+  const timeout = setTimeout(() => cleanup(null), 8000)
+  window[callbackName] = (data) => cleanup(data?.status === 'success' ? data.city : null)
+  const script = document.createElement('script')
+  script.src = `http://ip-api.com/json/?lang=ru&fields=status,city&callback=${callbackName}`
+  script.onerror = () => cleanup(null)
+  document.body.appendChild(script)
+})
+
+const fetchLocation = async () => {
+  const cached = localStorage.getItem('ihome24_location_city')
+  if (cached) {
+    locationCity.value = cached
+    locationLoading.value = false
+    return
+  }
+  let city = null
+
+  // 1. ipapi.co (HTTPS, CORS) — часто работает с localhost
+  try {
+    const res = await fetch('https://ipapi.co/json/')
+    const data = await res.json()
+    city = normalizeCity(data?.city) || data?.city
+  } catch {
+    //
+  }
+
+  // 2. JSONP ip-api.com (HTTP localhost, обходит CORS)
+  if (!city && typeof window !== 'undefined' && window.location?.protocol === 'http:') {
+    city = await fetchLocationViaJsonp()
+  }
+
+  // 3. Бэкенд — через прокси (localhost:3000) или напрямую
+  if (!city) {
+    try {
+      const res = await fetch('/api/geo/location')
+      const data = await res.json()
+      city = data?.city
+    } catch {
+      try {
+        const res = await geoApi.getLocation()
+        city = res.data?.city
+      } catch {
+        //
+      }
+    }
+  }
+
+  locationCity.value = city || 'Москва'
+  if (city) {
+    localStorage.setItem('ihome24_location_city', city)
+  }
+  locationLoading.value = false
 }
 
 onMounted(async () => {
   await productsStore.fetchCategories()
+  fetchLocation()
   window.addEventListener('keydown', onKeydown)
+  document.addEventListener('click', handleClickOutside)
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
+  document.removeEventListener('click', handleClickOutside)
 })
 </script>
 
@@ -538,6 +812,8 @@ onUnmounted(() => {
 }
 
 .header-top {
+  position: relative;
+  z-index: 10002; /* Выше header-menu, чтобы личное меню не перекрывалось */
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -638,10 +914,226 @@ onUnmounted(() => {
   justify-content: center;
 }
 
+/* Скрыть на мобильных (есть в нижнем меню) */
+@media screen and (max-width: 768px) {
+  .header-nav-item--hide-mobile {
+    display: none;
+  }
+}
+
+/* Выпадающее меню личного кабинета */
+.header-nav-item--account {
+  position: relative;
+}
+
+.personal-menu-wrapper {
+  position: fixed;
+  inset: 0;
+  z-index: 10003;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding: 60px 16px 16px;
+}
+
+@media screen and (max-width: 768px) {
+  .personal-menu-wrapper {
+    align-items: flex-end;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.5);
+  }
+}
+
+.personal-menu {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 320px;
+  max-width: 360px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #2E2826;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  padding: 12px 0;
+}
+
+.personal-menu__close-mobile {
+  display: none;
+}
+
+@media screen and (max-width: 768px) {
+  .personal-menu__close-mobile {
+    display: block;
+    width: 100%;
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    color: #F47427;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+  .personal-menu.personal-menu--shared {
+    position: relative;
+    top: auto;
+    right: auto;
+    min-width: 100%;
+    max-width: 100%;
+    max-height: 85vh;
+    border-radius: 16px 16px 0 0;
+    padding: 0 0 40px;
+  }
+}
+
+.personal-menu__items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.personal-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-family: "helvetica", sans-serif;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.personal-menu__item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.personal-menu__location {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 4px;
+  padding-bottom: 12px;
+}
+
+.personal-menu__icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.personal-menu__location-name {
+  flex: 1;
+  font-weight: 500;
+}
+
+.personal-menu__location-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  transition: color 0.2s;
+}
+
+.personal-menu__location-btn:hover {
+  color: #F47427;
+}
+
+.personal-menu__auth-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 8px 0 12px;
+  padding: 12px 20px;
+  text-align: center;
+  background: #F47427;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: "helvetica", sans-serif;
+  text-decoration: none;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.personal-menu__auth-btn:hover {
+  background: #e66a1f;
+}
+
+.personal-menu__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-family: "helvetica", sans-serif;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s;
+}
+
+.personal-menu__link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.personal-menu__link:hover .personal-menu__icon {
+  color: #F47427;
+}
+
+.personal-menu__link.router-link-active {
+  background: rgba(244, 116, 39, 0.1);
+  color: #F47427;
+}
+
+.personal-menu__link.router-link-active .personal-menu__icon {
+  color: #F47427;
+}
+
+.personal-menu__badge {
+  margin-left: auto;
+  padding: 4px 10px;
+  background: rgba(59, 130, 246, 0.2);
+  color: #60a5fa;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 8px;
+}
+
+/* Анимация personal menu */
+.personal-menu-enter-active,
+.personal-menu-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.personal-menu-enter-from,
+.personal-menu-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+@media screen and (max-width: 768px) {
+  .personal-menu-enter-active .personal-menu,
+  .personal-menu-leave-active .personal-menu {
+    transition: transform 0.3s ease;
+  }
+  .personal-menu-enter-from .personal-menu,
+  .personal-menu-leave-to .personal-menu {
+    transform: translateY(100%);
+  }
+}
+
 .header-menu {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
-  z-index: 10001; /* Выше подменю, чтобы быть видимым */
+  z-index: 10001; /* Ниже header-top, чтобы личное меню было поверх */
   background: rgba(46, 40, 38, 0.4);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -1195,6 +1687,145 @@ onUnmounted(() => {
 
 .search-overlay-enter-from,
 .search-overlay-leave-to {
+  opacity: 0;
+}
+
+/* City picker modal */
+.city-picker-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10004;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 80px 16px 24px;
+  overflow-y: auto;
+}
+
+.city-picker-modal {
+  width: 100%;
+  max-width: 480px;
+  background: #2E2826;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+  padding: 24px;
+}
+
+.city-picker__header {
+  margin-bottom: 20px;
+}
+
+.city-picker__title {
+  margin: 0 0 8px;
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  font-family: "helvetica", sans-serif;
+}
+
+.city-picker__info {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+  line-height: 1.4;
+}
+
+.city-picker__input-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.city-picker__input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  font-size: 16px;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  outline: none;
+  font-family: inherit;
+}
+
+.city-picker__input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.city-picker__input:focus {
+  border-color: #F47427;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.city-picker__input-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.5);
+  pointer-events: none;
+}
+
+.city-picker__chosen {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background: rgba(244, 116, 39, 0.15);
+  border-radius: 8px;
+  color: #F47427;
+}
+
+.city-picker__chosen-label {
+  font-weight: 500;
+}
+
+.city-picker__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.city-picker__item {
+  margin: 0;
+}
+
+.city-picker__link {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 15px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  border-radius: 8px;
+}
+
+.city-picker__link:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.city-picker__link--chosen {
+  color: #F47427;
+  font-weight: 500;
+}
+
+.city-picker-enter-active,
+.city-picker-leave-active {
+  transition: opacity 0.2s ease;
+}
+
+.city-picker-enter-from,
+.city-picker-leave-to {
   opacity: 0;
 }
 </style>

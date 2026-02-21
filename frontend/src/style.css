@@ -108,3 +108,12 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* Jivo чат — выше нижнего меню на мобильных (меню ~60px) */
+@media screen and (max-width: 768px) {
+  jdiv[class*="wrap__"],
+  [class*="jivoMobileButton"],
+  .jivo-widget-container {
+    bottom: 70px !important;
+  }
+}

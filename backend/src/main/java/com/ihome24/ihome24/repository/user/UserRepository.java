@@ -18,6 +18,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @EntityGraph(attributePaths = {"role", "role.permissions"})
     @Query("SELECT u FROM User u WHERE u.username = :username")
     Optional<User> findByUsernameWithRoleAndPermissions(@Param("username") String username);
+
+    @EntityGraph(attributePaths = {"role", "role.permissions"})
+    @Query("SELECT u FROM User u WHERE u.phone = :phone")
+    Optional<User> findByPhoneWithRoleAndPermissions(@Param("phone") String phone);
     
     Optional<User> findByEmail(String email);
     boolean existsByUsername(String username);

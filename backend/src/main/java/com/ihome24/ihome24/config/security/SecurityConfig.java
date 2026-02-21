@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/products", "/api/products/**").permitAll() // Публичный доступ к продуктам
                         .requestMatchers("/api/cart", "/api/cart/**").permitAll() // Валидация корзины
                         .requestMatchers("/api/categories", "/api/categories/**").permitAll() // Публичный доступ к категориям
+                        .requestMatchers("/api/geo", "/api/geo/**").permitAll() // Геолокация по IP
                         .requestMatchers("/api/admin/categories", "/api/admin/categories/**").permitAll() // Временно разрешаем доступ к категориям для разработки
                         .requestMatchers("/api/admin/products", "/api/admin/products/**").permitAll() // Временно разрешаем доступ к продуктам для разработки
                         .requestMatchers("/api/admin/files/**").permitAll() // Временно разрешаем загрузку файлов для разработки

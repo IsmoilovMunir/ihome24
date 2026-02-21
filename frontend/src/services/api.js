@@ -53,6 +53,10 @@ export const orderApi = {
   create: (orderData) => api.post('/api/apps/ecommerce/orders', orderData),
 }
 
+export const geoApi = {
+  getLocation: () => api.get('/api/geo/location'),
+}
+
 export const cartApi = {
   /** Валидирует корзину: проверяет существование товаров, возвращает актуальные данные и список удалённых */
   validate: (items) => api.post('/api/cart/validate', {
