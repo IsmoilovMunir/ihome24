@@ -34,9 +34,15 @@ public class CustomUserDetailsService implements UserDetailsService {
                         .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
             }
         }
+
+        // Если не нашли по username/email, пробуем по номеру телефона
+        if (user == null) {
+            user = userRepository.findByPhoneWithRoleAndPermissions(username)
+                    .orElse(null);
+        }
         
         if (user == null) {
-            throw new UsernameNotFoundException("User not found with username/email: " + username);
+            throw new UsernameNotFoundException("User not found with username/email/phone: " + username);
         }
 
         // Принудительно инициализируем коллекции, чтобы избежать LazyInitializationException

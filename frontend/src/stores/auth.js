@@ -50,6 +50,13 @@ export const useAuthStore = defineStore('auth', {
       }
     },
 
+    setAuth(accessToken, userData) {
+      this.accessToken = accessToken
+      this.user = userData
+      localStorage.setItem('accessToken', accessToken)
+      localStorage.setItem('userData', JSON.stringify(userData))
+    },
+
     async logout() {
       try {
         await authApi.logout()

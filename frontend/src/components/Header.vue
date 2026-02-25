@@ -119,6 +119,28 @@
                     </button>
                   </div>
 
+                  <!-- Данные пользователя (если авторизован) -->
+                  <div v-if="authStore.isAuthenticated" class="personal-menu__user personal-menu__user--logged-in personal-menu__item">
+                    <div class="personal-menu__user-content">
+                      <div class="personal-menu__user-info">
+                        <span class="personal-menu__name text-truncate">{{ authStore.user?.fullName || 'Пользователь' }}</span>
+                        <div v-if="authStore.user?.phone" class="personal-menu__phone">
+                          {{ formatPhone(authStore.user.phone) }}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        class="personal-menu__logout-btn"
+                        aria-label="Выйти"
+                        @click="handleLogout"
+                      >
+                        <svg width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" class="tp-icon">
+                          <path d="m18 8 4 4-4 4M9 12h13M13 3H8.44c-2.278 0-3.417 0-4.284.45A4 4 0 0 0 2.45 5.156C2 6.023 2 7.162 2 9.44v5.12c0 2.278 0 3.417.45 4.284a4 4 0 0 0 1.706 1.706c.867.45 2.006.45 4.284.45H13" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+
                   <!-- Кнопка входа (если не авторизован) -->
                   <router-link
                     v-if="!authStore.isAuthenticated"
@@ -702,6 +724,23 @@ const handlePersonalMenuClick = (e) => {
   personalMenuStore.closeMenu()
 }
 
+/** Форматирование номера телефона: 79991234567 → +7-999-123-45-67 */
+const formatPhone = (phone) => {
+  if (!phone) return ''
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length >= 10) {
+    const match = digits.slice(-10).match(/^(\d{3})(\d{3})(\d{2})(\d{2})$/)
+    return match ? `+7-${match[1]}-${match[2]}-${match[3]}-${match[4]}` : phone
+  }
+  return phone
+}
+
+const handleLogout = () => {
+  authStore.logout()
+  personalMenuStore.closeMenu()
+  router.push('/')
+}
+
 const selectCity = (city) => {
   locationCity.value = city
   localStorage.setItem('ihome24_location_city', city)
@@ -1041,6 +1080,66 @@ onUnmounted(() => {
 
 .personal-menu__location-btn:hover {
   color: #F47427;
+}
+
+.personal-menu__user {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 4px;
+  padding-bottom: 12px;
+}
+
+.personal-menu__user-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.personal-menu__user-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.personal-menu__name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #fff;
+}
+
+.personal-menu__phone {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.personal-menu__logout-btn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.9);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.personal-menu__logout-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .personal-menu__auth-btn {

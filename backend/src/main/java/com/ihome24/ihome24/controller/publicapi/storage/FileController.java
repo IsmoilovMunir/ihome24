@@ -13,14 +13,31 @@ import java.io.InputStream;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/files")
 @RequiredArgsConstructor
 @CrossOrigin(origins = "*")
 public class FileController {
 
     private final FileService fileService;
 
-    @GetMapping(value = "/**", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    /** Локальные аватары (fallback при недоступности MinIO) */
+    @GetMapping(value = "/api/avatars/{userId}")
+    public ResponseEntity<byte[]> getLocalAvatar(@PathVariable Long userId) {
+        try {
+            Object[] result = fileService.getLocalAvatar(userId);
+            byte[] data = (byte[]) result[0];
+            String contentType = (String) result[1];
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.parseMediaType(contentType));
+            headers.setContentLength(data.length);
+            headers.setCacheControl("public, max-age=3600");
+            return ResponseEntity.ok().headers(headers).body(data);
+        } catch (Exception e) {
+            log.debug("Local avatar not found for user {}: {}", userId, e.getMessage());
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping(value = "/api/files/**", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public ResponseEntity<byte[]> getFile(HttpServletRequest request) {
         String requestPath = request.getRequestURI();
         String prefix = "/api/files";

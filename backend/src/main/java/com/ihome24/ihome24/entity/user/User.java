@@ -48,6 +48,9 @@ public class User implements UserDetails {
     @Column(name = "contact")
     private String contact;
 
+    @Column(name = "phone", unique = true, nullable = true)
+    private String phone;
+
     @Column(name = "current_plan")
     private String currentPlan;
 

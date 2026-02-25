@@ -10,6 +10,7 @@ import com.ihome24.ihome24.dto.response.order.OrderStatsResponse;
 import com.ihome24.ihome24.entity.order.Order;
 import com.ihome24.ihome24.entity.order.OrderItem;
 import com.ihome24.ihome24.entity.product.Product;
+import com.ihome24.ihome24.entity.product.ProductImage;
 import com.ihome24.ihome24.exception.ResourceNotFoundException;
 import com.ihome24.ihome24.repository.order.OrderRepository;
 import com.ihome24.ihome24.service.email.EmailService;
@@ -76,6 +77,35 @@ public class OrderService {
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
 
+        return OrderListResponse.builder()
+                .orders(orderResponses)
+                .total(orderPage.getTotalElements())
+                .build();
+    }
+
+    /**
+     * Заказы текущего пользователя по email и/или телефону (точное совпадение).
+     * Если оба null — возвращается пустой список.
+     */
+    @Transactional(readOnly = true)
+    public OrderListResponse getOrdersByEmailOrPhone(String email, String phone,
+                                                     Integer page, Integer itemsPerPage,
+                                                     String sortBy, String orderBy) {
+        if ((email == null || email.isBlank()) && (phone == null || phone.isBlank())) {
+            return OrderListResponse.builder()
+                    .orders(List.of())
+                    .total(0L)
+                    .build();
+        }
+        String emailTrim = email != null && !email.isBlank() ? email.trim() : null;
+        String phoneTrim = phone != null && !phone.isBlank() ? phone.trim() : null;
+        Sort.Direction direction = "desc".equalsIgnoreCase(orderBy) ? Sort.Direction.DESC : Sort.Direction.ASC;
+        String sortField = getSortField(sortBy);
+        Pageable pageable = PageRequest.of(page - 1, itemsPerPage, Sort.by(direction, sortField));
+        Page<Order> orderPage = orderRepository.findOrdersByEmailOrPhone(emailTrim, phoneTrim, pageable);
+        List<OrderResponse> orderResponses = orderPage.getContent().stream()
+                .map(this::mapToDetailsResponse)
+                .collect(Collectors.toList());
         return OrderListResponse.builder()
                 .orders(orderResponses)
                 .total(orderPage.getTotalElements())
@@ -306,12 +336,40 @@ public class OrderService {
                             .quantity(item.getQuantity())
                             .price(item.getPrice())
                             .total(item.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
+                            .imageUrl(item.getProduct() != null ? getProductMainImageUrl(item.getProduct()) : null)
                             .build())
                     .collect(Collectors.toList())
                 : List.of();
         response.setItems(itemResponses);
 
         return response;
+    }
+
+    /** Основное изображение товара для отображения в заказе */
+    private String getProductMainImageUrl(Product product) {
+        if (product == null) return null;
+        if (product.getImageUrl() != null && !product.getImageUrl().isBlank()) {
+            return product.getImageUrl();
+        }
+        if (product.getImages() != null && !product.getImages().isEmpty()) {
+            // Сначала пробуем primary, затем по sortOrder / первой записи
+            return product.getImages().stream()
+                    .sorted((a, b) -> {
+                        boolean aPrimary = Boolean.TRUE.equals(a.getIsPrimary());
+                        boolean bPrimary = Boolean.TRUE.equals(b.getIsPrimary());
+                        if (aPrimary != bPrimary) {
+                            return aPrimary ? -1 : 1;
+                        }
+                        Integer ao = a.getSortOrder() != null ? a.getSortOrder() : 0;
+                        Integer bo = b.getSortOrder() != null ? b.getSortOrder() : 0;
+                        return Integer.compare(ao, bo);
+                    })
+                    .map(ProductImage::getImageUrl)
+                    .filter(url -> url != null && !url.isBlank())
+                    .findFirst()
+                    .orElse(null);
+        }
+        return null;
     }
 
     private Integer mapPaymentStatusToInt(Order.PaymentStatus status) {

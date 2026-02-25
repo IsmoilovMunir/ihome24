@@ -9,6 +9,10 @@ import Register from '../pages/Register.vue'
 import Search from '../pages/Search.vue'
 import Contacts from '../pages/Contacts.vue'
 import Oferta from '../pages/Oferta.vue'
+import PersonalLayout from '../layouts/PersonalLayout.vue'
+import PersonalIndex from '../pages/PersonalIndex.vue'
+import PersonalProfile from '../pages/PersonalProfile.vue'
+import PersonalOrders from '../pages/PersonalOrders.vue'
 import PersonalPlaceholder from '../pages/PersonalPlaceholder.vue'
 
 const routes = [
@@ -62,18 +66,19 @@ const routes = [
     name: 'Oferta',
     component: Oferta,
   },
-  // Личный кабинет
-  { path: '/personal', name: 'Personal', component: PersonalPlaceholder },
-  { path: '/personal/orders', name: 'PersonalOrders', component: PersonalPlaceholder },
-  { path: '/personal/purchases', name: 'PersonalPurchases', component: PersonalPlaceholder },
-  { path: '/personal/bonuses', name: 'PersonalBonuses', component: PersonalPlaceholder },
-  { path: '/personal/privileges', name: 'PersonalPrivileges', component: PersonalPlaceholder },
-  { path: '/personal/favorites', name: 'PersonalFavorites', component: PersonalPlaceholder },
-  { path: '/personal/compare', name: 'PersonalCompare', component: PersonalPlaceholder },
-  { path: '/personal/profile', name: 'PersonalProfile', component: PersonalPlaceholder },
-  { path: '/personal/present', name: 'PersonalPresent', component: PersonalPlaceholder },
-  { path: '/services', name: 'Services', component: PersonalPlaceholder },
+  // Личный кабинет (с layout и sidebar)
+  {
+    path: '/personal',
+    component: PersonalLayout,
+    children: [
+      { path: '', name: 'Personal', component: PersonalIndex },
+      { path: 'orders', name: 'PersonalOrders', component: PersonalOrders },
+      { path: 'favorites', name: 'PersonalFavorites', component: PersonalPlaceholder },
+      { path: 'profile', name: 'PersonalProfile', component: PersonalProfile },
+    ],
+  },
   { path: '/order-tracking', name: 'OrderTracking', component: PersonalPlaceholder },
+  { path: '/services', name: 'Services', component: PersonalPlaceholder },
 ]
 
 const router = createRouter({

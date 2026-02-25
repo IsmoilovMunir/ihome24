@@ -68,9 +68,13 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
-# Конфигурация администратора по умолчанию
-# Эти параметры используются только при первом запуске, если администратор еще не существует
+# Конфигурация приложения
 app:
+  # SMS (для входа по номеру телефона)
+  # provider=mock — код логируется в консоль (для разработки)
+  sms:
+    provider: ${APP_SMS_PROVIDER:mock}
+  # Конфигурация администратора по умолчанию
   admin:
     username: ${ADMIN_USERNAME:iHome24admin}
     email: ${ADMIN_EMAIL:ismoilov.munir97@gmail.com}

@@ -24,8 +24,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPhoneWithRoleAndPermissions(@Param("phone") String phone);
     
     Optional<User> findByEmail(String email);
+    Optional<User> findByPhone(String phone);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    boolean existsByPhone(String phone);
+
+    /** Есть ли другой пользователь (не с указанным id) с таким email */
+    boolean existsByEmailAndIdNot(String email, Long id);
+    /** Есть ли другой пользователь (не с указанным id) с таким телефоном */
+    boolean existsByPhoneAndIdNot(String phone, Long id);
 
     @Query("SELECT u FROM User u WHERE " +
            "(:q IS NULL OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :q, '%'))) " +

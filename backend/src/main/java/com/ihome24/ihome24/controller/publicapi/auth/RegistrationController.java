@@ -1,7 +1,7 @@
 package com.ihome24.ihome24.controller.publicapi.auth;
 
 import com.ihome24.ihome24.dto.request.auth.AdminRegistrationRequest;
-import com.ihome24.ihome24.dto.request.user.UserRequest;
+import com.ihome24.ihome24.dto.request.auth.RegisterRequest;
 import com.ihome24.ihome24.dto.response.user.UserResponse;
 import com.ihome24.ihome24.entity.user.Role;
 import com.ihome24.ihome24.entity.user.User;
@@ -32,62 +32,49 @@ public class RegistrationController {
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody UserRequest request) {
-        // Проверка на существование username
-        if (userRepository.existsByUsername(request.getUsername())) {
+    public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+        String normalizedPhone = normalizePhone(request.getPhone());
+        if (normalizedPhone == null || normalizedPhone.length() < 10) {
             Map<String, Object> errors = new HashMap<>();
-            errors.put("username", new String[]{"Username already exists"});
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("errors", errors));
-        }
-        // Проверка на существование email
-        if (userRepository.existsByEmail(request.getEmail())) {
-            Map<String, Object> errors = new HashMap<>();
-            errors.put("email", new String[]{"Email already exists"});
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("errors", errors));
+            errors.put("phone", new String[]{"Введите корректный номер телефона"});
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
         }
 
-        // Определяем роль для нового пользователя
-        Role role;
-        if (request.getRoleId() != null) {
-            role = roleRepository.findById(request.getRoleId())
-                    .orElseThrow(() -> new RuntimeException("Role not found with id: " + request.getRoleId()));
-        } else {
-            // По умолчанию создаем пользователя с ролью "users"
-            role = roleRepository.findByName("users")
-                    .orElseThrow(() -> new RuntimeException("Default 'users' role not found"));
+        if (userRepository.existsByPhone(normalizedPhone)) {
+            Map<String, Object> errors = new HashMap<>();
+            errors.put("phone", new String[]{"Этот номер телефона уже зарегистрирован"});
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
         }
 
-        // Определяем статус пользователя
-        User.UserStatus userStatus = User.UserStatus.ACTIVE; // По умолчанию активен
-        if (request.getStatus() != null) {
-            try {
-                userStatus = User.UserStatus.valueOf(request.getStatus().toUpperCase());
-            } catch (IllegalArgumentException e) {
-                userStatus = User.UserStatus.ACTIVE;
-            }
+        String email = request.getEmail() != null && !request.getEmail().isEmpty()
+                ? request.getEmail().trim()
+                : (normalizedPhone + "@ihome24.local");
+        if (!email.endsWith("@ihome24.local") && userRepository.existsByEmail(email)) {
+            Map<String, Object> errors = new HashMap<>();
+            errors.put("email", new String[]{"Эта почта уже привязана к другому аккаунту"});
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
         }
+
+        Role role = roleRepository.findByName("users")
+                .orElseThrow(() -> new RuntimeException("Default 'users' role not found"));
+
+        String username = "user_" + normalizedPhone;
 
         User user = User.builder()
-                .username(request.getUsername())
-                .password(passwordEncoder.encode(request.getPassword() != null && !request.getPassword().isEmpty() 
-                        ? request.getPassword() : "password"))
-                .email(request.getEmail())
+                .username(username)
+                .password(passwordEncoder.encode(request.getPassword()))
+                .email(email)
                 .fullName(request.getFullName())
-                .avatar(request.getAvatar())
-                .company(request.getCompany())
-                .country(request.getCountry())
-                .contact(request.getContact())
-                .currentPlan(request.getCurrentPlan() != null ? request.getCurrentPlan() : "basic")
-                .billing(request.getBilling() != null ? request.getBilling() : "Автоматическое списание")
+                .phone(normalizedPhone)
+                .currentPlan("basic")
+                .billing("Автоматическое списание")
                 .role(role)
-                .status(userStatus)
+                .status(User.UserStatus.ACTIVE)
                 .enabled(true)
                 .accountNonExpired(true)
                 .accountNonLocked(true)
                 .credentialsNonExpired(true)
-                .passwordChangeRequired(false) // При создании через API пароль уже задан пользователем
+                .passwordChangeRequired(false)
                 .build();
 
         user = userRepository.save(user);
@@ -110,6 +97,11 @@ public class RegistrationController {
                 .build();
 
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    private String normalizePhone(String phone) {
+        if (phone == null) return null;
+        return phone.replaceAll("[^0-9]", "");
     }
 
     /**
