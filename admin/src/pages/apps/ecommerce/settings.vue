@@ -6,6 +6,7 @@ import SettingsPayment from '@/views/apps/ecommerce/settings/SettingsPayment.vue
 import SettingsShippingAndDelivery from '@/views/apps/ecommerce/settings/SettingsShippingAndDelivery.vue'
 import SettingsStoreDetails from '@/views/apps/ecommerce/settings/SettingsStoreDetails.vue'
 import SettingsCompanyInfo from '@/views/apps/ecommerce/settings/SettingsCompanyInfo.vue'
+import SettingsCurrencyRate from '@/views/apps/ecommerce/settings/SettingsCurrencyRate.vue'
 
 const tabsData = [
   {
@@ -35,6 +36,10 @@ const tabsData = [
   {
     icon: 'tabler-bell-ringing',
     title: 'Уведомления',
+  },
+  {
+    icon: 'tabler-currency-dollar',
+    title: 'Курс валюты',
   },
 ]
 
@@ -101,6 +106,10 @@ const activeTab = ref(null)
 
         <VWindowItem>
           <SettingsNotifications />
+        </VWindowItem>
+
+        <VWindowItem>
+          <SettingsCurrencyRate />
         </VWindowItem>
       </VWindow>
     </VCol>

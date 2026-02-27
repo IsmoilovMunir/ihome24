@@ -13,6 +13,7 @@ import com.ihome24.ihome24.entity.product.Product;
 import com.ihome24.ihome24.entity.product.ProductImage;
 import com.ihome24.ihome24.exception.ResourceNotFoundException;
 import com.ihome24.ihome24.repository.order.OrderRepository;
+import com.ihome24.ihome24.service.company.CompanySettingsService;
 import com.ihome24.ihome24.service.email.EmailService;
 import com.ihome24.ihome24.repository.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +40,7 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductRepository productRepository;
     private final EmailService emailService;
+    private final CompanySettingsService companySettingsService;
 
     @Transactional(readOnly = true)
     public OrderCountResponse getTotalOrderCount() {
@@ -153,7 +155,7 @@ public class OrderService {
             for (Map.Entry<Long, Integer> e : productIdToQty.entrySet()) {
                 Product product = productRepository.findById(e.getKey())
                         .orElseThrow(() -> new ResourceNotFoundException("Товар не найден: " + e.getKey()));
-                BigDecimal price = product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
+                BigDecimal price = companySettingsService.getDisplayPrice(product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO);
                 int qty = e.getValue();
                 OrderItem item = OrderItem.builder()
                         .order(order)
@@ -233,7 +235,7 @@ public class OrderService {
             if (product.getIsActive() == null || !product.getIsActive()) {
                 throw new IllegalArgumentException("Товар недоступен для заказа: " + product.getName());
             }
-            BigDecimal price = product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
+            BigDecimal price = companySettingsService.getDisplayPrice(product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO);
             BigDecimal itemTotal = price.multiply(BigDecimal.valueOf(itemReq.getQuantity()));
             totalSpent = totalSpent.add(itemTotal);
 

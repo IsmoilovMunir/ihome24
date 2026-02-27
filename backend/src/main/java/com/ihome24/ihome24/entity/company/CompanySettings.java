@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -68,6 +69,14 @@ public class CompanySettings {
 
     @Column(name = "bik")
     private String bik;
+
+    @Column(name = "currency_rate", precision = 12, scale = 4)
+    @Builder.Default
+    private BigDecimal currencyRate = BigDecimal.ONE;
+
+    @Column(name = "currency_percent_adjustment", precision = 6, scale = 2)
+    @Builder.Default
+    private BigDecimal currencyPercentAdjustment = BigDecimal.ZERO;
 
     @Column(name = "is_active")
     @Builder.Default

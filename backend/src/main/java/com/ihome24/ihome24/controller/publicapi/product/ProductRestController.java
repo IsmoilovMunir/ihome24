@@ -25,7 +25,7 @@ public class ProductRestController {
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
-        ProductResponse product = productService.getProductById(id);
+        ProductResponse product = productService.getProductById(id, true);
         // Проверяем, что товар активен (для публичной страницы)
         if (product.getIsActive() == null || !product.getIsActive()) {
             return ResponseEntity.notFound().build();

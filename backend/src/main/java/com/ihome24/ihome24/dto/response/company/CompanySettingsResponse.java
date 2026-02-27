@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -29,6 +30,8 @@ public class CompanySettingsResponse {
     private String bankAccount;
     private String correspondentAccount;
     private String bik;
+    private BigDecimal currencyRate;
+    private BigDecimal currencyPercentAdjustment;
     private Boolean isActive;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

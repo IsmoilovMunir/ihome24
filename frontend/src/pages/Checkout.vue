@@ -62,8 +62,8 @@
                   v-model="verificationCode"
                   type="text"
                   inputmode="numeric"
-                  maxlength="6"
-                  placeholder="000000"
+                  maxlength="4"
+                  placeholder="0000"
                   class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#F47327] focus:border-transparent text-center text-lg tracking-widest"
                 />
               </div>
@@ -740,8 +740,8 @@ const validateForm = (forGuestCodeStep = false) => {
   }
   if (forGuestCodeStep) {
     const code = String(verificationCode.value || '').trim()
-    if (code.length !== 6) {
-      error.value = 'Введите 6-значный код из SMS'
+    if (code.length !== 4) {
+      error.value = 'Введите 4-значный код из SMS'
       return false
     }
     error.value = null
