@@ -177,8 +177,12 @@
                     Личные данные
                   </router-link>
 
-                  <!-- Где мой заказ? -->
-                  <router-link to="/order-tracking" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
+                  <!-- Где мой заказ? (доступно без авторизации) -->
+                  <router-link
+                    to="/order-tracking"
+                    class="personal-menu__item personal-menu__link"
+                    @click="personalMenuStore.closeMenu()"
+                  >
                     <svg class="personal-menu__icon" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 24">
                       <path d="M12.2366 19.5C16.3787 19.5 19.7366 16.1421 19.7366 12C19.7366 7.85786 16.3787 4.5 12.2366 4.5C8.09443 4.5 4.73657 7.85786 4.73657 12C4.73657 16.1421 8.09443 19.5 12.2366 19.5Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                       <path d="M12.2366 15C13.8935 15 15.2366 13.6569 15.2366 12C15.2366 10.3431 13.8935 9 12.2366 9C10.5797 9 9.23657 10.3431 9.23657 12C9.23657 13.6569 10.5797 15 12.2366 15Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -872,6 +876,10 @@ onUnmounted(() => {
   }
 }
 
+body.ihome-policy-modal-open .header-top {
+  z-index: 10; /* Отправляем хедер ниже модалки согласия */
+}
+
 .header-navbar {
   display: flex;
   align-items: center;
@@ -1242,6 +1250,10 @@ onUnmounted(() => {
   .header-menu {
     display: none;
   }
+}
+
+body.ihome-policy-modal-open .header-menu {
+  z-index: 10; /* ниже модального окна согласия */
 }
 
 .horizontal-menu {

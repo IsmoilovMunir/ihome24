@@ -39,7 +39,7 @@
             >
               <div class="personal-orders__item-header">
                 <div>
-                  <div class="personal-orders__order-number">Заказ #{{ order.order }}</div>
+                  <div class="personal-orders__order-number">Заказ #{{ formatOrderNumber(order.order ?? order.id) }}</div>
                   <div class="personal-orders__order-date">{{ formatOrderDate(order.date) }}</div>
                 </div>
                 <div class="personal-orders__status">
@@ -59,16 +59,15 @@
                 >
                   <router-link
                     v-for="item in order.items"
-                    :key="item?.productId || item?.productName || Math.random()"
-                    v-if="item && item.productId"
-                    :to="`/products/${item.productId}`"
+                    :key="getProductKey(item)"
+                    :to="getProductLink(item)"
                     class="personal-orders__product"
                   >
                     <div class="personal-orders__product-image-wrapper">
                       <img
                         v-if="getProductImage(item)"
                         :src="getProductImage(item)"
-                        :alt="item.productName"
+                        :alt="getProductName(item)"
                         class="personal-orders__product-image"
                       />
                       <div v-else class="personal-orders__product-image-placeholder">
@@ -79,10 +78,10 @@
                     </div>
                     <div class="personal-orders__product-info">
                       <div class="personal-orders__product-name">
-                        {{ item.productName }}
+                        {{ getProductName(item) }}
                       </div>
                       <div class="personal-orders__product-meta">
-                        {{ item.quantity }} шт.
+                        {{ getProductQuantity(item) }} шт.
                       </div>
                     </div>
                   </router-link>
@@ -114,7 +113,7 @@
             >
               <div class="personal-orders__item-header">
                 <div>
-                  <div class="personal-orders__order-number">Заказ #{{ order.order }}</div>
+                  <div class="personal-orders__order-number">Заказ #{{ formatOrderNumber(order.order ?? order.id) }}</div>
                   <div class="personal-orders__order-date">{{ formatOrderDate(order.date) }}</div>
                 </div>
                 <div class="personal-orders__status">
@@ -133,16 +132,15 @@
                 >
                   <router-link
                     v-for="item in order.items"
-                    :key="item?.productId || item?.productName || Math.random()"
-                    v-if="item && item.productId"
-                    :to="`/products/${item.productId}`"
+                    :key="getProductKey(item)"
+                    :to="getProductLink(item)"
                     class="personal-orders__product"
                   >
                     <div class="personal-orders__product-image-wrapper">
                       <img
                         v-if="getProductImage(item)"
                         :src="getProductImage(item)"
-                        :alt="item.productName"
+                        :alt="getProductName(item)"
                         class="personal-orders__product-image"
                       />
                       <div v-else class="personal-orders__product-image-placeholder">
@@ -153,10 +151,10 @@
                     </div>
                     <div class="personal-orders__product-info">
                       <div class="personal-orders__product-name">
-                        {{ item.productName }}
+                        {{ getProductName(item) }}
                       </div>
                       <div class="personal-orders__product-meta">
-                        {{ item.quantity }} шт.
+                        {{ getProductQuantity(item) }} шт.
                       </div>
                     </div>
                   </router-link>
@@ -227,6 +225,13 @@ const formatOrderDate = (value) => {
   }).format(d)
 }
 
+const formatOrderNumber = (value) => {
+  if (value == null) return '—'
+  const n = Number(value)
+  if (!Number.isFinite(n)) return String(value)
+  return n.toString().padStart(3, '0')
+}
+
 const mapStatus = (status) => {
   if (!status) return 'В обработке'
   const s = status.toLowerCase()
@@ -255,9 +260,63 @@ const mapPaymentMethod = (method) => {
   return method
 }
 
+const getProductId = (item) => {
+  if (!item) return null
+  return (
+    item.productId ??
+    item.id ??
+    item.product?.id ??
+    item.product?.productId ??
+    null
+  )
+}
+
+const getProductKey = (item) => {
+  return (
+    getProductId(item) ??
+    item?.sku ??
+    item?.productName ??
+    item?.name ??
+    Math.random()
+  )
+}
+
+const getProductName = (item) => {
+  if (!item) return 'Товар'
+  return (
+    item.productName ??
+    item.name ??
+    item.title ??
+    item.product?.name ??
+    item.product?.title ??
+    'Товар'
+  )
+}
+
+const getProductQuantity = (item) => {
+  if (!item) return 1
+  return item.quantity ?? item.qty ?? item.count ?? 1
+}
+
 const getProductImage = (item) => {
-  if (!item || !item.imageUrl) return null
-  return fileApi.getFileUrl(item.imageUrl)
+  if (!item) return null
+
+  const rawPath =
+    item.imageUrl ??
+    item.image ??
+    item.imagePath ??
+    item.product?.imageUrl ??
+    item.product?.image ??
+    item.product?.imagePath ??
+    null
+
+  if (!rawPath) return null
+  return fileApi.getFileUrl(rawPath)
+}
+
+const getProductLink = (item) => {
+  const id = getProductId(item)
+  return id ? `/products/${id}` : '#'
 }
 
 const fetchOrders = async () => {

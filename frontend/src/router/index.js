@@ -14,6 +14,7 @@ import PersonalIndex from '../pages/PersonalIndex.vue'
 import PersonalProfile from '../pages/PersonalProfile.vue'
 import PersonalOrders from '../pages/PersonalOrders.vue'
 import PersonalPlaceholder from '../pages/PersonalPlaceholder.vue'
+import OrderTracking from '../pages/OrderTracking.vue'
 
 const routes = [
   {
@@ -77,7 +78,7 @@ const routes = [
       { path: 'profile', name: 'PersonalProfile', component: PersonalProfile },
     ],
   },
-  { path: '/order-tracking', name: 'OrderTracking', component: PersonalPlaceholder },
+  { path: '/order-tracking', name: 'OrderTracking', component: OrderTracking },
   { path: '/services', name: 'Services', component: PersonalPlaceholder },
 ]
 

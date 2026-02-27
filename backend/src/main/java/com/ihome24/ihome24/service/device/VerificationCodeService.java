@@ -21,27 +21,27 @@ public class VerificationCodeService {
     private static final SecureRandom random = new SecureRandom();
 
     /**
-     * Генерирует 6-значный код подтверждения (от 100000 до 999999)
+     * Генерирует 4-значный код подтверждения (от 1000 до 9999)
      */
     public String generateCode() {
-        int code = 100000 + random.nextInt(900000); // 100000-999999
+        int code = 1000 + random.nextInt(9000); // 1000-9999
         String codeStr = String.valueOf(code);
-        // Гарантируем, что код всегда 6-значный
+        // Гарантируем, что код всегда 4-значный
         int attempts = 0;
-        while (codeStr.length() != 6 && attempts < 10) {
-            log.warn("Generated code length is not 6: {} (length: {}), regenerating...", codeStr, codeStr.length());
-            code = 100000 + random.nextInt(900000);
+        while (codeStr.length() != 4 && attempts < 10) {
+            log.warn("Generated code length is not 4: {} (length: {}), regenerating...", codeStr, codeStr.length());
+            code = 1000 + random.nextInt(9000);
             codeStr = String.valueOf(code);
             attempts++;
         }
-        if (codeStr.length() != 6) {
-            log.error("Failed to generate 6-digit code after {} attempts. Generated: {} (length: {})", attempts, codeStr, codeStr.length());
-            // Форсируем 6-значный код
-            codeStr = String.format("%06d", code % 1000000);
+        if (codeStr.length() != 4) {
+            log.error("Failed to generate 4-digit code after {} attempts. Generated: {} (length: {})", attempts, codeStr, codeStr.length());
+            // Форсируем 4-значный код
+            codeStr = String.format("%04d", code % 10000);
         }
         // Маскируем код в логах (показываем только первые 2 символа)
-        String maskedCode = codeStr.length() >= 2 ? codeStr.substring(0, 2) + "****" : "******";
-        log.info("Generated 6-digit verification code: {} (length: {})", maskedCode, codeStr.length());
+        String maskedCode = codeStr.length() >= 2 ? codeStr.substring(0, 2) + "**" : "****";
+        log.info("Generated 4-digit verification code: {} (length: {})", maskedCode, codeStr.length());
         return codeStr;
     }
 

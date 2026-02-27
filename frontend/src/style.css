@@ -117,3 +117,11 @@ body {
     bottom: 70px !important;
   }
 }
+
+/* Прятать кнопку/виджет Jivo, когда открыто модальное окно согласия */
+body.ihome-policy-modal-open jdiv[class*="wrap__"],
+body.ihome-policy-modal-open [class*="jivoMobileButton"],
+body.ihome-policy-modal-open .jivo-widget-container {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

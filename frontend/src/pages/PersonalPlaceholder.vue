@@ -41,17 +41,21 @@ const title = computed(() => {
   justify-content: center;
   padding: 40px 20px;
   text-align: center;
+  background: #2E2826;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #fff;
 }
 
 .personal-placeholder h1 {
   font-size: 24px;
   font-weight: 600;
-  color: #2E2826;
+  color: #fff;
   margin: 0 0 12px;
 }
 
 .personal-placeholder p {
-  color: #6b7280;
+  color: #9d9390;
   margin: 0 0 24px;
 }
 

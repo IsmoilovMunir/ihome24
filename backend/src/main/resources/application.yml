@@ -70,11 +70,10 @@ server:
 
 # Конфигурация приложения
 app:
-  # SMS (для входа по номеру телефона)
-  # provider=mock — код логируется в консоль (для разработки)
   sms:
-    provider: ${APP_SMS_PROVIDER:mock}
-  # Конфигурация администратора по умолчанию
+    provider: smsru           # ВКЛЮЧАЕМ SmsRuService, выключаем MockSmsService
+    smsru:
+      api-id: "4E4D7C6D-21A4-FB1F-DFC0-0AF833C93E0D"
   admin:
     username: ${ADMIN_USERNAME:iHome24admin}
     email: ${ADMIN_EMAIL:ismoilov.munir97@gmail.com}

@@ -37,7 +37,18 @@ public class PhoneAuthService {
 
     public String normalizePhone(String phone) {
         if (phone == null) return null;
-        return phone.replaceAll("[^0-9]", "");
+        String digits = phone.replaceAll("[^0-9]", "");
+        // Приводим к формату 7XXXXXXXXXX (Россия)
+        if (digits.length() == 11) {
+            if (digits.startsWith("8")) {
+                return "7" + digits.substring(1);
+            }
+            if (digits.startsWith("7")) {
+                return digits;
+            }
+        }
+        // Неверный формат
+        return null;
     }
 
     /**
@@ -47,8 +58,8 @@ public class PhoneAuthService {
     public Map<String, Object> sendCode(String phone) {
         String normalized = normalizePhone(phone);
         log.info("sendCode: phone={}, normalized={}", phone, normalized);
-        if (normalized == null || normalized.length() < 10) {
-            return error("phone", "Введите корректный номер телефона (минимум 10 цифр)");
+        if (normalized == null) {
+            return error("phone", "Введите корректный номер телефона РФ в формате +7 9XX XXX-XX-XX");
         }
 
         LocalDateTime since = LocalDateTime.now().minusMinutes(60);
@@ -63,7 +74,7 @@ public class PhoneAuthService {
             return error("phone", "Код уже отправлен. Подождите 1 минуту.");
         }
 
-        String code = String.format("%06d", 100000 + RANDOM.nextInt(900000));
+        String code = String.format("%04d", 1000 + RANDOM.nextInt(9000));
         phoneVerificationCodeRepository.markAllAsUsedForPhone(normalized);
 
         PhoneVerificationCode entity = PhoneVerificationCode.builder()
@@ -87,11 +98,11 @@ public class PhoneAuthService {
     @Transactional
     public Map<String, Object> verifyCode(String phone, String code) {
         String normalized = normalizePhone(phone);
-        if (normalized == null || normalized.length() < 10) {
-            return error("phone", "Введите корректный номер телефона");
+        if (normalized == null) {
+            return error("phone", "Введите корректный номер телефона РФ в формате +7 9XX XXX-XX-XX");
         }
-        if (code == null || code.trim().length() != 6) {
-            return error("code", "Введите 6-значный код");
+        if (code == null || code.trim().length() != 4) {
+            return error("code", "Введите 4-значный код");
         }
 
         Optional<PhoneVerificationCode> opt = phoneVerificationCodeRepository

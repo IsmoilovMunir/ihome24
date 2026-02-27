@@ -9,7 +9,7 @@ public interface SmsService {
     /**
      * Отправить SMS с кодом подтверждения на указанный номер.
      * @param phone Номер в формате 79991234567
-     * @param code 6-значный код
+     * @param code 4-значный код
      * @return true если отправлено успешно
      */
     boolean sendVerificationCode(String phone, String code);

@@ -1,5 +1,5 @@
 <template>
-  <nav class="mobile-bottom-menu">
+  <nav v-if="!hideOnThisPage" class="mobile-bottom-menu">
     <router-link to="/" class="mobile-menu-item">
       <svg
         class="mobile-menu-icon"
@@ -83,11 +83,19 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { usePersonalMenuStore } from '../stores/personalMenu'
 
 const cartStore = useCartStore()
 const personalMenuStore = usePersonalMenuStore()
+const route = useRoute()
+
+const hideOnThisPage = computed(() => {
+  const authPages = ['/login', '/register']
+  return authPages.includes(route.path)
+})
 </script>
 
 <style scoped>

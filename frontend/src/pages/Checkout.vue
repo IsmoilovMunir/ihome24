@@ -349,7 +349,7 @@
               Номер заказа
             </p>
             <p class="text-xl font-semibold text-[#F47327] mb-4" data-test="checkout-order-success-number">
-              #{{ orderSuccessNumber }}
+              #{{ formatOrderNumber(orderSuccessNumber) }}
             </p>
             <p class="text-gray-400 text-sm mb-6">
               Подтверждение придёт на указанный email
@@ -413,6 +413,12 @@ const mapLocationLoading = ref(false)
 // Успешное оформление заказа
 const showOrderSuccess = ref(false)
 const orderSuccessNumber = ref('')
+const formatOrderNumber = (value) => {
+  if (value == null) return '—'
+  const n = Number(value)
+  if (!Number.isFinite(n)) return String(value)
+  return n.toString().padStart(3, '0')
+}
 function closeOrderSuccess() {
   showOrderSuccess.value = false
   router.push('/')
