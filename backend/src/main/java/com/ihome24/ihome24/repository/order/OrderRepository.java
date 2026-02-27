@@ -60,4 +60,9 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT o FROM Order o WHERE o.status IN ('DISPATCHED', 'OUT_FOR_DELIVERY', 'READY_TO_PICKUP') ORDER BY o.createdAt DESC")
     List<Order> findInDeliveryOrderByCreatedAtDesc(Pageable pageable);
+
+    /** Заказы текущего пользователя: точное совпадение по email или по телефону, сразу с позициями заказа и товарами */
+    @EntityGraph(attributePaths = {"items", "items.product"})
+    @Query("SELECT o FROM Order o WHERE (:email IS NOT NULL AND o.email = :email) OR (:phone IS NOT NULL AND o.phone = :phone)")
+    Page<Order> findOrdersByEmailOrPhone(@Param("email") String email, @Param("phone") String phone, Pageable pageable);
 }

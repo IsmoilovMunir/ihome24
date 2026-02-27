@@ -68,9 +68,12 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
-# Конфигурация администратора по умолчанию
-# Эти параметры используются только при первом запуске, если администратор еще не существует
+# Конфигурация приложения
 app:
+  sms:
+    provider: smsru           # ВКЛЮЧАЕМ SmsRuService, выключаем MockSmsService
+    smsru:
+      api-id: "4E4D7C6D-21A4-FB1F-DFC0-0AF833C93E0D"
   admin:
     username: ${ADMIN_USERNAME:iHome24admin}
     email: ${ADMIN_EMAIL:ismoilov.munir97@gmail.com}

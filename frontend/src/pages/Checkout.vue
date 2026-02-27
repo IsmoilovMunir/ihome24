@@ -16,41 +16,73 @@
     <form v-else class="grid grid-cols-1 lg:grid-cols-3 gap-6" @submit.prevent="submitOrder">
       <!-- Left column: 3 sections -->
       <div class="lg:col-span-2 space-y-6">
-        <!-- Section 1: Контактные данные -->
-        <div class="rounded-2xl shadow-md p-6" style="background-color: #3A3331;">
+        <!-- Section 1: Контактные данные (только для гостей; для авторизованных берём из профиля) -->
+        <div v-if="!authStore.isAuthenticated" class="rounded-2xl shadow-md p-6" style="background-color: #3A3331;">
           <h2 class="text-xl font-semibold mb-4 text-white">Контактные данные</h2>
-          <div class="space-y-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-1">ФИО *</label>
-              <input
-                v-model="form.fullName"
-                type="text"
-                required
-                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#F47327] focus:border-transparent"
-                placeholder="Иванов Иван Иванович"
-              />
+          <template v-if="guestStep === 'contacts'">
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">ФИО *</label>
+                <input
+                  v-model="form.fullName"
+                  type="text"
+                  required
+                  class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#F47327] focus:border-transparent"
+                  placeholder="Иванов Иван Иванович"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Email *</label>
+                <input
+                  v-model="form.email"
+                  type="email"
+                  required
+                  class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#F47327] focus:border-transparent"
+                  placeholder="example@mail.ru"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Телефон *</label>
+                <input
+                  v-model="form.phone"
+                  type="tel"
+                  required
+                  class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#F47327] focus:border-transparent"
+                  placeholder="+7 (999) 123-45-67"
+                />
+              </div>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-1">Email *</label>
-              <input
-                v-model="form.email"
-                type="email"
-                required
-                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#F47327] focus:border-transparent"
-                placeholder="example@mail.ru"
-              />
+          </template>
+          <template v-else>
+            <p class="text-gray-300 text-sm mb-2">Код отправлен на номер {{ formatPhoneDisplay(form.phone) }}</p>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-300 mb-1">Код из SMS *</label>
+                <input
+                  v-model="verificationCode"
+                  type="text"
+                  inputmode="numeric"
+                  maxlength="4"
+                  placeholder="0000"
+                  class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#F47327] focus:border-transparent text-center text-lg tracking-widest"
+                />
+              </div>
+              <button
+                type="button"
+                class="text-sm text-[#F47327] hover:underline disabled:opacity-50"
+                :disabled="smsCodeCooldown > 0"
+                @click="sendSmsCodeAgain"
+              >
+                {{ smsCodeCooldown > 0 ? `Отправить повторно через ${smsCodeCooldown} сек` : 'Отправить код повторно' }}
+              </button>
             </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-300 mb-1">Телефон *</label>
-              <input
-                v-model="form.phone"
-                type="tel"
-                required
-                class="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:ring-2 focus:ring-[#F47327] focus:border-transparent"
-                placeholder="+7 (999) 123-45-67"
-              />
-            </div>
-          </div>
+          </template>
+        </div>
+        <div v-else class="rounded-2xl shadow-md p-6" style="background-color: #3A3331;">
+          <h2 class="text-xl font-semibold mb-4 text-white">Контактные данные</h2>
+          <p class="text-gray-300 text-sm">
+            {{ authStore.user?.fullName }} · {{ authStore.user?.email || '—' }} · {{ formatPhoneDisplay(authStore.user?.phone) }}
+          </p>
         </div>
 
         <!-- Section 2: Способ доставки -->
@@ -137,7 +169,7 @@
           :disabled="loading"
           class="w-full bg-[#3A3331] text-white py-3 rounded-2xl border-2 border-[#F47327] hover:bg-[#F47327]/50 active:bg-[#F47327]/50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold"
         >
-          {{ loading ? 'Оформление...' : 'Оформить заказ' }}
+          {{ submitButtonText }}
         </button>
       </div>
 
@@ -317,7 +349,7 @@
               Номер заказа
             </p>
             <p class="text-xl font-semibold text-[#F47327] mb-4" data-test="checkout-order-success-number">
-              #{{ orderSuccessNumber }}
+              #{{ formatOrderNumber(orderSuccessNumber) }}
             </p>
             <p class="text-gray-400 text-sm mb-6">
               Подтверждение придёт на указанный email
@@ -338,12 +370,12 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
-import { fileApi, orderApi } from '../services/api'
+import { fileApi, orderApi, authApi } from '../services/api'
 
 const router = useRouter()
 const cartStore = useCartStore()
@@ -381,6 +413,12 @@ const mapLocationLoading = ref(false)
 // Успешное оформление заказа
 const showOrderSuccess = ref(false)
 const orderSuccessNumber = ref('')
+const formatOrderNumber = (value) => {
+  if (value == null) return '—'
+  const n = Number(value)
+  if (!Number.isFinite(n)) return String(value)
+  return n.toString().padStart(3, '0')
+}
 function closeOrderSuccess() {
   showOrderSuccess.value = false
   router.push('/')
@@ -603,6 +641,10 @@ watch(deliveryMapTab, (tab) => {
 
 onUnmounted(() => {
   destroyMap()
+  if (smsCodeCooldownTimer) {
+    clearInterval(smsCodeCooldownTimer)
+    smsCodeCooldownTimer = null
+  }
 })
 
 const paymentMethods = [
@@ -612,11 +654,56 @@ const paymentMethods = [
 const form = ref({
   fullName: authStore.user?.fullName || '',
   email: authStore.user?.email || '',
-  phone: '',
+  phone: authStore.user?.phone ? normalizePhoneForDisplay(authStore.user.phone) : '',
   address: '',
   pickupAddress: '',
   comment: '',
 })
+
+const submitButtonText = computed(() => {
+  if (loading.value) {
+    if (!authStore.isAuthenticated && guestStep.value === 'contacts') return 'Отправка кода...'
+    if (!authStore.isAuthenticated && guestStep.value === 'code') return 'Проверка кода...'
+    return 'Оформление...'
+  }
+  if (!authStore.isAuthenticated && guestStep.value === 'contacts') return 'Получить код'
+  if (!authStore.isAuthenticated && guestStep.value === 'code') return 'Подтвердить и оформить заказ'
+  return 'Оформить заказ'
+})
+
+// Гость: шаг "контакты" или "ввод кода"
+const guestStep = ref('contacts')
+const verificationCode = ref('')
+const smsCodeCooldown = ref(0)
+let smsCodeCooldownTimer = null
+
+function normalizePhoneForDisplay(phone) {
+  if (!phone) return ''
+  const digits = phone.replace(/\D/g, '')
+  if (digits.length === 11 && digits.startsWith('7')) return `+7 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7, 9)}-${digits.slice(9)}`
+  return phone
+}
+
+function formatPhoneDisplay(phone) {
+  if (!phone) return '—'
+  return normalizePhoneForDisplay(phone)
+}
+
+/** Нормализация телефона для API: только цифры (например 79991234567) */
+function normalizePhoneForApi(phone) {
+  if (!phone) return ''
+  const digits = String(phone).replace(/\D/g, '')
+  return digits.length === 11 && digits.startsWith('7') ? digits : digits.length === 10 ? '7' + digits : digits
+}
+
+// Синхронизация формы с данными пользователя при авторизации
+watch(() => authStore.user, (user) => {
+  if (user) {
+    form.value.fullName = user.fullName || form.value.fullName
+    form.value.email = user.email || form.value.email
+    form.value.phone = user.phone ? normalizePhoneForDisplay(user.phone) : form.value.phone
+  }
+}, { deep: true })
 
 const getImageUrl = (product) => {
   if (product.imageUrl) {
@@ -641,8 +728,25 @@ const formatPrice = (price) => {
   }).format(price)
 }
 
-const validateForm = () => {
+const validateForm = (forGuestCodeStep = false) => {
   const f = form.value
+  if (authStore.isAuthenticated) {
+    if (deliveryMethod.value === 'delivery' && !f.address?.trim()) {
+      error.value = 'Заполните адрес доставки'
+      return false
+    }
+    error.value = null
+    return true
+  }
+  if (forGuestCodeStep) {
+    const code = String(verificationCode.value || '').trim()
+    if (code.length !== 4) {
+      error.value = 'Введите 4-значный код из SMS'
+      return false
+    }
+    error.value = null
+    return true
+  }
   if (!f.fullName?.trim()) {
     error.value = 'Заполните ФИО'
     return false
@@ -651,8 +755,9 @@ const validateForm = () => {
     error.value = 'Заполните Email'
     return false
   }
-  if (!f.phone?.trim()) {
-    error.value = 'Заполните телефон'
+  const phoneNorm = normalizePhoneForApi(f.phone)
+  if (!phoneNorm || phoneNorm.length < 10) {
+    error.value = 'Введите корректный номер телефона'
     return false
   }
   if (deliveryMethod.value === 'delivery' && !f.address?.trim()) {
@@ -663,18 +768,116 @@ const validateForm = () => {
   return true
 }
 
+function startSmsCooldown() {
+  smsCodeCooldown.value = 60
+  if (smsCodeCooldownTimer) clearInterval(smsCodeCooldownTimer)
+  smsCodeCooldownTimer = setInterval(() => {
+    smsCodeCooldown.value = Math.max(0, smsCodeCooldown.value - 1)
+    if (smsCodeCooldown.value <= 0 && smsCodeCooldownTimer) {
+      clearInterval(smsCodeCooldownTimer)
+      smsCodeCooldownTimer = null
+    }
+  }, 1000)
+}
+
+async function sendSmsCodeAndGoToCodeStep() {
+  try {
+    await authApi.sendSmsCode(form.value.phone)
+  } catch (err) {
+    const msg = err.response?.data?.errors?.phone
+    error.value = Array.isArray(msg) ? msg[0] : msg || 'Не удалось отправить код. Проверьте номер.'
+    return false
+  }
+  guestStep.value = 'code'
+  verificationCode.value = ''
+  startSmsCooldown()
+  error.value = null
+  return true
+}
+
+async function sendSmsCodeAgain() {
+  if (smsCodeCooldown.value > 0) return
+  if (!normalizePhoneForApi(form.value.phone)) return
+  loading.value = true
+  error.value = null
+  try {
+    await authApi.sendSmsCode(form.value.phone)
+    startSmsCooldown()
+  } catch (err) {
+    const msg = err.response?.data?.errors?.phone
+    error.value = Array.isArray(msg) ? msg[0] : msg || 'Не удалось отправить код'
+  } finally {
+    loading.value = false
+  }
+}
+
 const submitOrder = async () => {
-  if (!validateForm()) return
+  const isGuest = !authStore.isAuthenticated
+  const guestOnCodeStep = isGuest && guestStep.value === 'code'
+
+  if (isGuest && guestStep.value === 'contacts') {
+    if (!validateForm(false)) return
+    loading.value = true
+    error.value = null
+    try {
+      await sendSmsCodeAndGoToCodeStep()
+    } catch (_) {
+      // ошибка уже выставлена в sendSmsCodeAndGoToCodeStep
+    } finally {
+      loading.value = false
+    }
+    return
+  }
+
+  if (guestOnCodeStep) {
+    if (!validateForm(true)) return
+    loading.value = true
+    error.value = null
+    const phone = normalizePhoneForApi(form.value.phone)
+    try {
+      const verifyRes = await authApi.verifySmsCode(form.value.phone, verificationCode.value.trim())
+      const data = verifyRes.data
+      if (data.needsRegistration && data.registrationToken) {
+        const completeRes = await authApi.completeRegistration({
+          registrationToken: data.registrationToken,
+          fullName: form.value.fullName.trim(),
+          email: form.value.email.trim(),
+        })
+        authStore.setAuth(completeRes.data.accessToken, completeRes.data.userData)
+      } else {
+        authStore.setAuth(data.accessToken, data.userData)
+      }
+  } catch (err) {
+    const errData = err.response?.data
+    const codeMsg = errData?.errors?.code
+    const phoneMsg = errData?.errors?.phone
+    error.value = (Array.isArray(codeMsg) ? codeMsg[0] : codeMsg) || (Array.isArray(phoneMsg) ? phoneMsg[0] : phoneMsg) || 'Неверный или истёкший код'
+    loading.value = false
+    return
+  }
+  } else if (!authStore.isAuthenticated) {
+    return
+  }
+
+  if (!validateForm(false)) return
+  if (deliveryMethod.value === 'delivery' && !form.value.address?.trim()) {
+    error.value = 'Заполните адрес доставки'
+    return
+  }
 
   loading.value = true
   error.value = null
 
   try {
+    const user = authStore.user
+    const fullName = user?.fullName ?? form.value.fullName?.trim()
+    const email = user?.email ?? form.value.email?.trim()
+    const phone = user?.phone ? normalizePhoneForApi(user.phone) : normalizePhoneForApi(form.value.phone)
     const address = deliveryMethod.value === 'delivery' ? form.value.address : form.value.pickupAddress
     const orderData = {
-      fullName: form.value.fullName.trim(),
-      email: form.value.email.trim(),
-      phone: form.value.phone.trim(),
+      fullName,
+      email,
+      phone: phone || form.value.phone?.trim(),
       address: address?.trim() || '',
       deliveryMethod: deliveryMethod.value,
       pickupAddress: form.value.pickupAddress?.trim() || '',

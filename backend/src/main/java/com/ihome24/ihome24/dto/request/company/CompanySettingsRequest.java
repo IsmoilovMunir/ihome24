@@ -4,6 +4,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class CompanySettingsRequest {
 
@@ -56,4 +58,7 @@ public class CompanySettingsRequest {
 
     @Size(max = 20, message = "БИК не должен превышать 20 символов")
     private String bik;
+
+    private BigDecimal currencyRate;
+    private BigDecimal currencyPercentAdjustment;
 }

@@ -17,6 +17,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -131,6 +133,89 @@ public class FileService {
         minIOService.uploadFile(bucketName, largeObjectName, largeBytes, variantContentType);
 
         return minIOService.getFileUrl(bucketName, mediumObjectName);
+    }
+
+    /**
+     * Загрузка аватара пользователя. Создаёт варианты small, medium, large.
+     * Сначала пробует MinIO; при недоступности — сохраняет локально (fallback для разработки).
+     * Возвращает путь для хранения в user.avatar.
+     */
+    @Transactional
+    public String uploadAvatar(MultipartFile file, Long userId) throws IOException {
+        validateImageFile(file);
+
+        String extension = normalizeExtension(getFileExtension(file.getOriginalFilename()), file.getContentType());
+        String variantFormat = getVariantFormat(file.getContentType(), extension);
+        String variantExtension = "." + variantFormat;
+        byte[] originalBytes = file.getBytes();
+        byte[] mediumBytes = resizeToFormat(originalBytes, 200, 0.85f, variantFormat);
+
+        try {
+            String baseName = "avatar";
+            String avatarFolder = "avatars/" + userId;
+            String bucketName = minIOService.getProductImagesBucket();
+
+            String originalObjectName = avatarFolder + "/original/" + baseName + extension;
+            minIOService.uploadFile(bucketName, originalObjectName, new ByteArrayInputStream(originalBytes), file.getContentType(), originalBytes.length);
+
+            String variantContentType = resolveImageContentType(variantFormat);
+            byte[] smallBytes = resizeToFormat(originalBytes, 80, 0.8f, variantFormat);
+            byte[] largeBytes = resizeToFormat(originalBytes, 400, 0.9f, variantFormat);
+
+            String smallObjectName = avatarFolder + "/small/" + baseName + variantExtension;
+            String mediumObjectName = avatarFolder + "/medium/" + baseName + variantExtension;
+            String largeObjectName = avatarFolder + "/large/" + baseName + variantExtension;
+
+            minIOService.uploadFile(bucketName, smallObjectName, smallBytes, variantContentType);
+            minIOService.uploadFile(bucketName, mediumObjectName, mediumBytes, variantContentType);
+            minIOService.uploadFile(bucketName, largeObjectName, largeBytes, variantContentType);
+
+            return bucketName + "/" + mediumObjectName;
+        } catch (RuntimeException e) {
+            log.warn("MinIO unavailable, saving avatar locally: {}", e.getMessage());
+            return saveAvatarLocally(userId, mediumBytes, variantExtension);
+        }
+    }
+
+    private static final String LOCAL_AVATARS_BASE = "ihome24-avatars";
+
+    /** Fallback: сохранить аватар при недоступности MinIO. Пробует uploads/, затем temp. */
+    private String saveAvatarLocally(Long userId, byte[] imageBytes, String extension) throws IOException {
+        for (Path baseDir : new Path[]{
+                Path.of("uploads", "avatars"),
+                Path.of(System.getProperty("java.io.tmpdir"), LOCAL_AVATARS_BASE)
+        }) {
+            try {
+                Path uploadsDir = baseDir.resolve(userId.toString());
+                Files.createDirectories(uploadsDir);
+                Path filePath = uploadsDir.resolve("avatar" + extension);
+                Files.write(filePath, imageBytes);
+                return "local:" + userId;
+            } catch (IOException e) {
+                if (baseDir.startsWith(Path.of(System.getProperty("java.io.tmpdir")))) throw e;
+                log.debug("Cannot write to {}, trying temp: {}", baseDir, e.getMessage());
+            }
+        }
+        throw new IOException("Failed to save avatar locally");
+    }
+
+    /** Получить локальный аватар. Ищет в uploads и temp. */
+    public Object[] getLocalAvatar(Long userId) throws IOException {
+        for (Path baseDir : new Path[]{
+                Path.of("uploads", "avatars"),
+                Path.of(System.getProperty("java.io.tmpdir"), LOCAL_AVATARS_BASE)
+        }) {
+            Path uploadsDir = baseDir.resolve(userId.toString());
+            String[] exts = {"jpg", "jpeg", "png", "webp"};
+            String[] contentTypes = {"image/jpeg", "image/jpeg", "image/png", "image/webp"};
+            for (int i = 0; i < exts.length; i++) {
+                Path p = uploadsDir.resolve("avatar." + exts[i]);
+                if (Files.exists(p)) {
+                    return new Object[]{Files.readAllBytes(p), contentTypes[i]};
+                }
+            }
+        }
+        throw new IOException("Local avatar not found for user " + userId);
     }
 
     @Transactional

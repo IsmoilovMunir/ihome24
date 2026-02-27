@@ -172,6 +172,44 @@ const resolveUserStatusVariant = stat => {
 
 const isAddNewUserDrawerVisible = ref(false)
 
+// API base URL для файлов и аватаров
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+
+const getAvatarUrl = avatar => {
+  if (!avatar)
+    return null
+
+  // Локальный аватар (fallback без MinIO)
+  if (avatar.startsWith('local:')) {
+    const userId = avatar.substring('local:'.length)
+    if (!userId)
+      return null
+    let url = `${API_BASE_URL}/api/avatars/${userId}`
+    const sep = url.includes('?') ? '&' : '?'
+    return `${url}${sep}t=${Date.now()}`
+  }
+
+  // Уже полный URL
+  if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+    let url = avatar
+    const sep = url.includes('?') ? '&' : '?'
+    return `${url}${sep}t=${Date.now()}`
+  }
+
+  // Пути от MinIO через /api/files
+  let filePath = avatar
+  if (filePath.startsWith('/api/files/'))
+    filePath = filePath.substring('/api/files/'.length)
+  if (filePath.startsWith('api/files/'))
+    filePath = filePath.substring('api/files/'.length)
+  if (filePath.startsWith('/'))
+    filePath = filePath.substring(1)
+
+  let url = `${API_BASE_URL}/api/files/${filePath}`
+  const sep = url.includes('?') ? '&' : '?'
+  return `${url}${sep}t=${Date.now()}`
+}
+
 const addNewUser = async userData => {
   await $api('/apps/users', {
     method: 'POST',
@@ -406,7 +444,7 @@ const widgetData = ref([
             >
               <VImg
                 v-if="item.avatar"
-                :src="item.avatar"
+                :src="getAvatarUrl(item.avatar)"
               />
               <span v-else>{{ avatarText(item.fullName) }}</span>
             </VAvatar>

@@ -1,6 +1,7 @@
 package com.ihome24.ihome24.controller.admin.company;
 
 import com.ihome24.ihome24.dto.request.company.CompanySettingsRequest;
+import com.ihome24.ihome24.dto.request.company.CurrencySettingsRequest;
 import com.ihome24.ihome24.dto.response.company.CompanySettingsResponse;
 import com.ihome24.ihome24.service.company.CompanySettingsService;
 import jakarta.validation.Valid;
@@ -37,6 +38,19 @@ public class AdminCompanySettingsRestController {
     public ResponseEntity<CompanySettingsResponse> updateCompanySettings(
             @Valid @RequestBody CompanySettingsRequest request) {
         CompanySettingsResponse settings = companySettingsService.createOrUpdateCompanySettings(request);
+        return ResponseEntity.ok(settings);
+    }
+
+    @GetMapping("/currency")
+    public ResponseEntity<CompanySettingsResponse> getCurrencySettings() {
+        CompanySettingsResponse settings = companySettingsService.getOrCreateCurrencySettings();
+        return ResponseEntity.ok(settings);
+    }
+
+    @PutMapping(value = "/currency", consumes = "application/json")
+    public ResponseEntity<CompanySettingsResponse> updateCurrencySettings(
+            @Valid @RequestBody CurrencySettingsRequest request) {
+        CompanySettingsResponse settings = companySettingsService.updateCurrencySettings(request);
         return ResponseEntity.ok(settings);
     }
 }

@@ -15,6 +15,10 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
+  // FormData: не задавать Content-Type — браузер сам добавит boundary
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type']
+  }
   return config
 })
 
@@ -47,10 +51,27 @@ export const authApi = {
   logout: () => api.post('/api/auth/logout'),
   getMe: () => api.get('/api/auth/me'),
   updateMe: (userData) => api.put('/api/auth/me', userData),
+  sendSmsCode: (phone) => api.post('/api/auth/send-sms-code', { phone }),
+  verifySmsCode: (phone, code) => api.post('/api/auth/verify-sms-code', { phone, code }),
+  completeRegistration: (data) => api.post('/api/auth/complete-registration', data),
+  uploadAvatar: (file) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    // FormData: interceptor уберёт Content-Type, браузер сам подставит boundary
+    return api.post('/api/auth/me/avatar', formData)
+  },
 }
 
 export const orderApi = {
   create: (orderData) => api.post('/api/apps/ecommerce/orders', orderData),
+  list: (params) => api.get('/api/apps/ecommerce/orders', { params }),
+  /** Список заказов текущего пользователя (по токену). Только свои заказы. */
+  listMy: (params) => api.get('/api/apps/ecommerce/orders/me', { params }),
+  getById: (idOrOrderNumber) => api.get(`/api/apps/ecommerce/orders/${idOrOrderNumber}`),
+}
+
+export const geoApi = {
+  getLocation: () => api.get('/api/geo/location'),
 }
 
 export const cartApi = {
@@ -68,23 +89,38 @@ export const cartApi = {
 export const fileApi = {
   getFileUrl: (filePath) => {
     if (!filePath || filePath.trim() === '') return null
-    if (filePath.startsWith('http://') || filePath.startsWith('https://')) return filePath
-    
+    // Нормализация старых URL аватаров вида /api/avatars/:2
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      // Убираем лишние двоеточия перед ID: /api/avatars/:2 -> /api/avatars/2
+      return filePath.replace(/(\/api\/avatars\/):+(\d+)/, '$1$2')
+    }
+
+    // Локальный аватар (fallback при недоступности MinIO)
+    if (filePath.startsWith('local:')) {
+      let userId = filePath.substring(5)
+      // Защита от некорректных значений вида "local::2" -> ":2"
+      if (typeof userId === 'string') {
+        userId = userId.replace(/^:+/, '')
+      }
+      if (!userId) return null
+      return `${API_BASE_URL}/api/avatars/${userId}`
+    }
+
     // Если путь уже начинается с /api/files/, убираем этот префикс
     if (filePath.startsWith('/api/files/')) {
       filePath = filePath.substring('/api/files/'.length)
     }
-    
+
     // Если путь начинается с api/files/, убираем этот префикс
     if (filePath.startsWith('api/files/')) {
       filePath = filePath.substring('api/files/'.length)
     }
-    
+
     // Убираем начальный слеш если есть
     if (filePath.startsWith('/')) {
       filePath = filePath.substring(1)
     }
-    
+
     return `${API_BASE_URL}/api/files/${filePath}`
   },
   /** URL варианта large (1200px) — для прогрессивной загрузки главного фото */

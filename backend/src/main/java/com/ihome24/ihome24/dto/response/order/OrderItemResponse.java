@@ -17,4 +17,6 @@ public class OrderItemResponse {
     private Integer quantity;
     private BigDecimal price;
     private BigDecimal total;
+    /** Основное изображение товара на момент заказа (может быть null) */
+    private String imageUrl;
 }

@@ -18,6 +18,7 @@ import com.ihome24.ihome24.entity.product.Product;
 import com.ihome24.ihome24.entity.product.ProductImage;
 import com.ihome24.ihome24.repository.category.CategoryRepository;
 import com.ihome24.ihome24.repository.product.ProductRepository;
+import com.ihome24.ihome24.service.company.CompanySettingsService;
 import com.ihome24.ihome24.service.storage.FileService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -41,6 +42,7 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ObjectMapper objectMapper;
     private final FileService fileService;
+    private final CompanySettingsService companySettingsService;
 
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
@@ -188,7 +190,7 @@ public class ProductService {
             savedProduct = productRepository.save(savedProduct);
         }
 
-        return mapToResponse(savedProduct);
+        return mapToResponse(savedProduct, false);
     }
 
     @Transactional(readOnly = true)
@@ -196,9 +198,8 @@ public class ProductService {
         List<Product> products = productRepository.findAllWithCategory();
         return products.stream()
                 .map(product -> {
-                    // Инициализируем lazy коллекцию изображений
                     product.getImages().size();
-                    return mapToResponse(product);
+                    return mapToResponse(product, false);
                 })
                 .collect(Collectors.toList());
     }
@@ -227,7 +228,7 @@ public class ProductService {
         List<ProductResponse> products = productPage.getContent().stream()
                 .map(product -> {
                     product.getImages().size();
-                    return mapToResponse(product);
+                    return mapToResponse(product, false);
                 })
                 .collect(Collectors.toList());
 
@@ -254,9 +255,8 @@ public class ProductService {
         List<Product> products = productRepository.findByIsActiveTrue();
         return products.stream()
                 .map(product -> {
-                    // Инициализируем lazy коллекцию изображений
                     product.getImages().size();
-                    return mapToResponse(product);
+                    return mapToResponse(product, true);
                 })
                 .collect(Collectors.toList());
     }
@@ -275,16 +275,21 @@ public class ProductService {
         return products.stream()
                 .map(product -> {
                     product.getImages().size();
-                    return mapToResponse(product);
+                    return mapToResponse(product, true);
                 })
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public ProductResponse getProductById(Long id) {
+        return getProductById(id, false);
+    }
+
+    @Transactional(readOnly = true)
+    public ProductResponse getProductById(Long id, boolean applyCurrency) {
         Product product = productRepository.findByIdWithImages(id)
                 .orElseThrow(() -> new IllegalArgumentException("Товар с ID " + id + " не найден"));
-        return mapToResponse(product);
+        return mapToResponse(product, applyCurrency);
     }
 
     @Transactional
@@ -430,7 +435,7 @@ public class ProductService {
         }
 
         Product updatedProduct = productRepository.save(product);
-        return mapToResponse(updatedProduct);
+        return mapToResponse(updatedProduct, false);
     }
 
     @Transactional
@@ -442,13 +447,19 @@ public class ProductService {
         productRepository.deleteById(id);
     }
 
-    private ProductResponse mapToResponse(Product product) {
+    private ProductResponse mapToResponse(Product product, boolean applyCurrency) {
+        BigDecimal price = product.getPrice();
+        BigDecimal oldPrice = product.getOldPrice();
+        if (applyCurrency) {
+            price = companySettingsService.getDisplayPrice(price);
+            oldPrice = oldPrice != null ? companySettingsService.getDisplayPrice(oldPrice) : null;
+        }
         ProductResponse.ProductResponseBuilder builder = ProductResponse.builder()
                 .id(product.getId())
                 .name(product.getName())
                 .description(product.getDescription())
-                .price(product.getPrice())
-                .oldPrice(product.getOldPrice())
+                .price(price)
+                .oldPrice(oldPrice)
                 .sku(product.getSku())
                 .brand(product.getBrand())
                 .stockQuantity(product.getStockQuantity())
@@ -512,11 +523,17 @@ public class ProductService {
                                     .sku(vReq.getSku())
                                     .attributes(vReq.getAttributes() != null ? vReq.getAttributes() : new HashMap<>());
                             
-                            // Преобразуем цену
+                            // Преобразуем цену (при applyCurrency — отображаемая цена по курсу и проценту)
                             if (vReq.getPrice() != null) {
+                                BigDecimal base = vReq.getPrice().getBase();
+                                BigDecimal sale = vReq.getPrice().getSale();
+                                if (applyCurrency) {
+                                    base = base != null ? companySettingsService.getDisplayPrice(base) : null;
+                                    sale = sale != null ? companySettingsService.getDisplayPrice(sale) : null;
+                                }
                                 variantBuilder.price(VariantResponse.PriceResponse.builder()
-                                        .base(vReq.getPrice().getBase())
-                                        .sale(vReq.getPrice().getSale())
+                                        .base(base)
+                                        .sale(sale)
                                         .currency(vReq.getPrice().getCurrency())
                                         .vat(vReq.getPrice().getVat())
                                         .build());

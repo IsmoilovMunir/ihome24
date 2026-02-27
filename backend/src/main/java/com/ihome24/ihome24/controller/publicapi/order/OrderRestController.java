@@ -7,10 +7,14 @@ import com.ihome24.ihome24.dto.response.order.OrderListResponse;
 import com.ihome24.ihome24.dto.response.order.OrderResponse;
 import com.ihome24.ihome24.dto.response.order.OrderCountResponse;
 import com.ihome24.ihome24.dto.response.order.OrderStatsResponse;
+import com.ihome24.ihome24.entity.user.User;
+import com.ihome24.ihome24.repository.user.UserRepository;
 import com.ihome24.ihome24.service.order.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class OrderRestController {
 
     private final OrderService orderService;
+    private final UserRepository userRepository;
 
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(@Valid @RequestBody CreateOrderRequest request) {
@@ -59,6 +64,27 @@ public class OrderRestController {
             @RequestParam(required = false) Boolean completed) {
 
         OrderListResponse response = orderService.getOrders(q, page, itemsPerPage, sortBy, orderBy, completed);
+        return ResponseEntity.ok(response);
+    }
+
+    /** Список заказов текущего пользователя (по токену). Только свои заказы. */
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyOrders(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "20") Integer itemsPerPage,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String orderBy) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth.getPrincipal() == null) {
+            return ResponseEntity.status(401).body(java.util.Map.of("error", "Требуется авторизация"));
+        }
+        String username = auth.getName();
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(401).body(java.util.Map.of("error", "Пользователь не найден"));
+        }
+        OrderListResponse response = orderService.getOrdersByEmailOrPhone(
+                user.getEmail(), user.getPhone(), page, itemsPerPage, sortBy, orderBy != null ? orderBy : "desc");
         return ResponseEntity.ok(response);
     }
 

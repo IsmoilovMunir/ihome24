@@ -11,6 +11,18 @@
     <div id="app"></div>
     <script type="module" src="/src/main.js"></script>
     <!-- Jivo чат для поддержки клиентов -->
+    <script>
+      // Не открывать чат автоматически при загрузке, только по клику пользователя
+      function jivo_onLoad() {
+        try {
+          if (window.jivo_api && typeof window.jivo_api.close === 'function') {
+            window.jivo_api.close();
+          }
+        } catch (e) {
+          console.error('Jivo close error', e);
+        }
+      }
+    </script>
     <script src="https://code.jivo.ru/widget/LEJJlqxi8u" async></script>
     <!-- Yandex.Metrika counter -->
     <script type="text/javascript">

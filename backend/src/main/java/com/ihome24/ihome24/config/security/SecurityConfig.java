@@ -26,6 +26,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final TokenAuthenticationFilter tokenAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -44,10 +45,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/publicapi/**").permitAll() // Разрешаем публичные API endpoints (регистрация и т.д.)
                         .requestMatchers("/api/auth/**").permitAll() // Разрешаем аутентификацию
                         .requestMatchers("/api/apps/**").permitAll() // Orders, admin - permit for frontend checkout and admin
-                        .requestMatchers("/api/files/**").permitAll() // Публичный доступ к файлам
+                        .requestMatchers("/api/files/**", "/api/avatars/**").permitAll() // Публичный доступ к файлам и аватарам
                         .requestMatchers("/api/products", "/api/products/**").permitAll() // Публичный доступ к продуктам
                         .requestMatchers("/api/cart", "/api/cart/**").permitAll() // Валидация корзины
                         .requestMatchers("/api/categories", "/api/categories/**").permitAll() // Публичный доступ к категориям
+                        .requestMatchers("/api/geo", "/api/geo/**").permitAll() // Геолокация по IP
                         .requestMatchers("/api/admin/categories", "/api/admin/categories/**").permitAll() // Временно разрешаем доступ к категориям для разработки
                         .requestMatchers("/api/admin/products", "/api/admin/products/**").permitAll() // Временно разрешаем доступ к продуктам для разработки
                         .requestMatchers("/api/admin/files/**").permitAll() // Временно разрешаем загрузку файлов для разработки
@@ -57,6 +59,7 @@ public class SecurityConfig {
                         // Используем stateless сессии для REST API, но разрешаем сессии для аутентификации
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )
+                .addFilterBefore(tokenAuthenticationFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
                 .authenticationProvider(authenticationProvider());
 
         // Для H2 консоли (только для разработки)

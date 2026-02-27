@@ -178,6 +178,9 @@ coverage/
 *.orig
 *.save
 
+# Local uploads (avatars fallback when MinIO unavailable)
+uploads/
+
 # Application specific
 *.pid
 *.seed
