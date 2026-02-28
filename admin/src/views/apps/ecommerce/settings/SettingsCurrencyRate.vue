@@ -59,7 +59,10 @@ onMounted(load)
 <template>
   <VCard>
     <VCardTitle class="text-h6 d-flex align-center gap-2">
-      <i class="bi bi-currency-dollar text-primary" style="font-size: 20px;"></i>
+      <i
+        class="bi bi-currency-dollar text-primary"
+        style="font-size: 20px;"
+      />
       <span>Курс валюты</span>
     </VCardTitle>
     <VCardText>

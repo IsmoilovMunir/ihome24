@@ -36,7 +36,7 @@
               :key="item.product.id"
               class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 border-b border-white/20 pb-3 md:pb-4"
             >
-              <router-link :to="`/products/${item.product.id}`" class="flex-shrink-0 flex items-center gap-3 sm:block">
+              <router-link :to="productPath(item.product)" class="flex-shrink-0 flex items-center gap-3 sm:block">
                 <img
                   v-if="getImageUrl(item.product)"
                   :src="getImageUrl(item.product)"
@@ -63,26 +63,26 @@
                 </div>
                 <div class="flex-1 min-w-0 sm:hidden">
                   <router-link
-                    :to="`/products/${item.product.id}`"
+                    :to="productPath(item.product)"
                     class="text-base font-semibold text-white hover:text-[#C56129] transition-colors line-clamp-2"
                   >
                     {{ item.product.name }}
                   </router-link>
                   <p class="text-gray-400 text-sm mt-0.5">
-                    {{ formatPrice(item.product.price) }}
+                    {{ formatPrice(settingsStore.unitPriceForQuantity(item.product.price, item.quantity)) }} за шт.
                   </p>
                 </div>
               </router-link>
 
               <div class="flex-1 min-w-0 hidden sm:block">
                 <router-link
-                  :to="`/products/${item.product.id}`"
+                  :to="productPath(item.product)"
                   class="text-base md:text-lg font-semibold text-white hover:text-[#C56129] transition-colors"
                 >
                   {{ item.product.name }}
                 </router-link>
                 <p class="text-gray-400 text-sm mt-1">
-                  {{ formatPrice(item.product.price) }}
+                  {{ formatPrice(settingsStore.unitPriceForQuantity(item.product.price, item.quantity)) }} за шт.
                 </p>
               </div>
 
@@ -105,7 +105,7 @@
                 </div>
                 <div class="flex items-center gap-2">
                   <p class="text-base md:text-lg font-semibold text-white">
-                    {{ formatPrice(item.product.price * item.quantity) }}
+                    {{ formatPrice(getItemTotal(item)) }}
                   </p>
                   <button
                     @click="cartStore.removeFromCart(item.product.id)"
@@ -157,13 +157,22 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useCartStore } from '../stores/cart'
+import { useSettingsStore } from '../stores/settings'
 import { fileApi } from '../services/api'
+import { productPath } from '../utils/productUrl'
 
 const cartStore = useCartStore()
+const settingsStore = useSettingsStore()
 
-onMounted(() => {
+onMounted(async () => {
+  await settingsStore.fetchPriceTiers()
   cartStore.validateCart()
 })
+
+function getItemTotal(item) {
+  const unitPrice = settingsStore.unitPriceForQuantity(item.product?.price ?? 0, item.quantity ?? 0)
+  return Math.round(unitPrice * (item.quantity ?? 0) * 100) / 100
+}
 
 const getImageUrl = (product) => {
   if (product.imageUrl) {

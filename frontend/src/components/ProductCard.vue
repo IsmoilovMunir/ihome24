@@ -1,6 +1,6 @@
 <template>
   <div class="product-tile rounded-lg overflow-hidden relative">
-    <router-link :to="`/products/${product.id}`">
+    <router-link :to="productPath(product)">
       <div class="product-card-image-container w-full h-[410px] relative flex items-center justify-center overflow-hidden group rounded-xl" style="background-color: var(--product-tile-background);">
         <img
           v-if="imageUrl"
@@ -82,7 +82,7 @@
     
     <!-- Текст внизу картинки -->
     <div class="px-0 py-0 mt-4" style="background-color: var(--siteBg);">
-      <router-link :to="`/products/${product.id}`">
+      <router-link :to="productPath(product)">
         <h3 class="text-sm mb-0 hover:opacity-90 transition-opacity pl-0 product-name" style="color: var(--product-tile-title-color);">
           {{ product.name }}
         </h3>
@@ -118,6 +118,7 @@ import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { fileApi } from '../services/api'
+import { productPath } from '../utils/productUrl'
 
 const props = defineProps({
   product: {

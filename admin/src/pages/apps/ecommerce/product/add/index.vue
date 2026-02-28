@@ -1022,7 +1022,10 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
 <template>
   <div>
     <!-- Debug info -->
-    <div v-if="false" class="pa-2 mb-2 bg-info text-white">
+    <div
+      v-if="false"
+      class="pa-2 mb-2 bg-info text-white"
+    >
       DEBUG: Страница загружена. Route: {{ route.path }}, Name: {{ route.name }}
     </div>
     
@@ -1591,7 +1594,7 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
                   :product-id="productId"
                   file-type="IMAGE"
                   :multiple="false"
-                :max-size="10485760"
+                  :max-size="10485760"
                   @uploaded="handleImagesUploaded"
                   @deleted="handleImageDeleted"
                 />

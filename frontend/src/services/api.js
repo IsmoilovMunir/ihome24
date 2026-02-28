@@ -74,6 +74,11 @@ export const geoApi = {
   getLocation: () => api.get('/api/geo/location'),
 }
 
+/** Уровни цен (розница / мелкий опт / крупный опт) для расчёта цены по количеству */
+export const settingsApi = {
+  getPriceTiers: () => api.get('/api/settings/price-tiers'),
+}
+
 export const cartApi = {
   /** Валидирует корзину: проверяет существование товаров, возвращает актуальные данные и список удалённых */
   validate: (items) => api.post('/api/cart/validate', {

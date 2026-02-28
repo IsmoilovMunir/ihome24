@@ -1,8 +1,13 @@
 package com.ihome24.ihome24.service.company;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ihome24.ihome24.dto.request.company.CompanySettingsRequest;
 import com.ihome24.ihome24.dto.request.company.CurrencySettingsRequest;
+import com.ihome24.ihome24.dto.request.company.PriceTierItem;
+import com.ihome24.ihome24.dto.request.company.PriceTiersSettingsRequest;
 import com.ihome24.ihome24.dto.response.company.CompanySettingsResponse;
+import com.ihome24.ihome24.dto.response.company.PriceTiersSettingsResponse;
 import com.ihome24.ihome24.entity.company.CompanySettings;
 import com.ihome24.ihome24.repository.company.CompanySettingsRepository;
 import lombok.RequiredArgsConstructor;
@@ -11,12 +16,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class CompanySettingsService {
 
+    private static final TypeReference<List<PriceTierItem>> PRICE_TIERS_TYPE = new TypeReference<>() {};
+
     private final CompanySettingsRepository companySettingsRepository;
+    private final ObjectMapper objectMapper;
 
     @Transactional(readOnly = true)
     public CompanySettingsResponse getCompanySettings() {
@@ -68,6 +78,7 @@ public class CompanySettingsService {
                 .bik(request.getBik())
                 .currencyRate(rate)
                 .currencyPercentAdjustment(percent)
+                .priceTiersJson(current != null ? current.getPriceTiersJson() : null)
                 .isActive(true)
                 .build();
 
@@ -80,8 +91,6 @@ public class CompanySettingsService {
         CompanySettings settings = companySettingsRepository.findFirstByIsActiveTrue()
                 .orElseGet(() -> companySettingsRepository.findFirstByOrderByIdAsc().orElse(null));
 
-        // Если настроек ещё нет совсем — создаём запись по умолчанию,
-        // чтобы можно было задать только валюту и процент.
         if (settings == null) {
             settings = CompanySettings.builder()
                     .name("Мой магазин")
@@ -142,6 +151,82 @@ public class CompanySettingsService {
         BigDecimal rate = settings != null && settings.getCurrencyRate() != null ? settings.getCurrencyRate() : BigDecimal.ONE;
         BigDecimal percent = settings != null && settings.getCurrencyPercentAdjustment() != null ? settings.getCurrencyPercentAdjustment() : BigDecimal.ZERO;
         return basePrice.multiply(rate).multiply(BigDecimal.ONE.add(percent.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP))).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    /**
+     * Цена за единицу с учётом объёмной скидки: сначала курс валюты, затем скидка по уровню (розница/мелкий опт/крупный опт).
+     * Если уровни не настроены — возвращается цена только с курсом (без скидки по количеству).
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal getUnitPriceForQuantity(BigDecimal basePrice, int quantity) {
+        if (basePrice == null) return BigDecimal.ZERO;
+        BigDecimal displayPrice = getDisplayPrice(basePrice);
+        List<PriceTierItem> tiers = getPriceTiersList();
+        if (tiers == null || tiers.isEmpty()) {
+            tiers = getDefaultPriceTiers();
+        }
+        if (tiers.isEmpty()) {
+            return displayPrice;
+        }
+        for (PriceTierItem tier : tiers) {
+            int min = tier.getMinQty() != null ? tier.getMinQty() : 0;
+            Integer max = tier.getMaxQty();
+            if (quantity >= min && (max == null || quantity <= max)) {
+                BigDecimal discount = tier.getDiscountPercent() != null ? tier.getDiscountPercent() : BigDecimal.ZERO;
+                return displayPrice.multiply(BigDecimal.ONE.subtract(discount.divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP))).setScale(2, RoundingMode.HALF_UP);
+            }
+        }
+        return displayPrice;
+    }
+
+    @Transactional(readOnly = true)
+    public PriceTiersSettingsResponse getPriceTiers() {
+        List<PriceTierItem> tiers = getPriceTiersList();
+        return PriceTiersSettingsResponse.builder().tiers(tiers != null ? tiers : getDefaultPriceTiers()).build();
+    }
+
+    @Transactional
+    public PriceTiersSettingsResponse updatePriceTiers(PriceTiersSettingsRequest request) {
+        if (request == null || request.getTiers() == null || request.getTiers().isEmpty()) {
+            throw new IllegalArgumentException("Список уровней цен не может быть пустым");
+        }
+        CompanySettings settings = companySettingsRepository.findFirstByIsActiveTrue()
+                .orElseGet(() -> companySettingsRepository.findFirstByOrderByIdAsc().orElse(null));
+        if (settings == null) {
+            settings = CompanySettings.builder()
+                    .name("Мой магазин")
+                    .country("Russia")
+                    .isActive(true)
+                    .build();
+        }
+        try {
+            settings.setPriceTiersJson(objectMapper.writeValueAsString(request.getTiers()));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Некорректные данные уровней цен", e);
+        }
+        settings = companySettingsRepository.save(settings);
+        return PriceTiersSettingsResponse.builder().tiers(request.getTiers()).build();
+    }
+
+    private List<PriceTierItem> getPriceTiersList() {
+        CompanySettings settings = companySettingsRepository.findFirstByIsActiveTrue()
+                .orElseGet(() -> companySettingsRepository.findFirstByOrderByIdAsc().orElse(null));
+        if (settings == null || settings.getPriceTiersJson() == null || settings.getPriceTiersJson().isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(settings.getPriceTiersJson(), PRICE_TIERS_TYPE);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private List<PriceTierItem> getDefaultPriceTiers() {
+        List<PriceTierItem> list = new ArrayList<>();
+        list.add(PriceTierItem.builder().minQty(1).maxQty(10).discountPercent(BigDecimal.ZERO).label("Розничная").build());
+        list.add(PriceTierItem.builder().minQty(11).maxQty(100).discountPercent(BigDecimal.TEN).label("Мелкий опт").build());
+        list.add(PriceTierItem.builder().minQty(101).maxQty(null).discountPercent(BigDecimal.valueOf(15)).label("Крупный опт").build());
+        return list;
     }
 
     private CompanySettingsResponse mapToResponse(CompanySettings settings) {

@@ -456,7 +456,10 @@ const handleSubmit = async () => {
                       :alt="categoryTitle || 'Изображение категории'"
                       style="width: 100%; height: 100%; object-fit: cover;"
                     >
-                    <span v-else class="text-body-2 text-medium-emphasis">
+                    <span
+                      v-else
+                      class="text-body-2 text-medium-emphasis"
+                    >
                       Нет фото
                     </span>
                   </VAvatar>
@@ -469,7 +472,10 @@ const handleSubmit = async () => {
                       accept="image/png,image/jpeg,image/jpg,image/webp"
                       @change="handleCategoryFileChange"
                     >
-                    <VBtn variant="tonal" @click="triggerCategoryFileSelect">
+                    <VBtn
+                      variant="tonal"
+                      @click="triggerCategoryFileSelect"
+                    >
                       {{ currentImageUrl || selectedCategoryFile ? 'Изменить' : 'Загрузить' }}
                     </VBtn>
                     <VBtn

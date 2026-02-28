@@ -18,16 +18,19 @@ public class ProductRestController {
 
     @GetMapping
     public ResponseEntity<List<ProductResponse>> getAllProducts() {
-        // Получаем только активные товары для публичной страницы
-        List<ProductResponse> products = productService.getActiveProducts();
+        // Только активные товары в наличии (stockQuantity == null или > 0)
+        List<ProductResponse> products = productService.getActiveProductsInStock();
         return ResponseEntity.ok(products);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ProductResponse> getProductById(@PathVariable Long id) {
         ProductResponse product = productService.getProductById(id, true);
-        // Проверяем, что товар активен (для публичной страницы)
         if (product.getIsActive() == null || !product.getIsActive()) {
+            return ResponseEntity.notFound().build();
+        }
+        // Не показывать товары не в наличии (как в каталоге)
+        if (product.getStockQuantity() != null && product.getStockQuantity() <= 0) {
             return ResponseEntity.notFound().build();
         }
         return ResponseEntity.ok(product);

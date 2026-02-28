@@ -33,7 +33,10 @@ watch(dashboardData, d => {
     </template>
 
     <VCardText>
-      <div v-if="isLoading" class="d-flex justify-center py-8">
+      <div
+        v-if="isLoading"
+        class="d-flex justify-center py-8"
+      >
         <VProgressCircular indeterminate />
       </div>
       <VRow v-else>

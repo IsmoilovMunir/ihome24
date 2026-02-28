@@ -261,11 +261,17 @@ const handleDeleteOrder = async () => {
 </script>
 
 <template>
-  <div v-if="isLoading" class="d-flex justify-center py-12">
+  <div
+    v-if="isLoading"
+    class="d-flex justify-center py-12"
+  >
     <VProgressCircular indeterminate />
   </div>
 
-  <div v-else-if="orderData" class="mb-6">
+  <div
+    v-else-if="orderData"
+    class="mb-6"
+  >
     <div class="d-flex justify-space-between align-center flex-wrap gap-y-4 mb-6">
       <div>
         <div class="d-flex gap-2 align-center mb-2 flex-wrap">
@@ -305,11 +311,16 @@ const handleDeleteOrder = async () => {
     </div>
 
     <VRow>
-      <VCol cols="12" md="8">
+      <VCol
+        cols="12"
+        md="8"
+      >
         <VCard class="mb-6">
           <VCardItem>
             <template #title>
-              <h5 class="text-h5">Детали заказа</h5>
+              <h5 class="text-h5">
+                Детали заказа
+              </h5>
             </template>
           </VCardItem>
           <VDivider />
@@ -322,13 +333,19 @@ const handleDeleteOrder = async () => {
                 <th class="text-left">
                   Цена
                 </th>
-                <th class="text-left" style="width: 120px;">
+                <th
+                  class="text-left"
+                  style="width: 120px;"
+                >
                   Количество
                 </th>
                 <th class="text-left">
                   Всего
                 </th>
-                <th class="text-left" style="width: 56px;" />
+                <th
+                  class="text-left"
+                  style="width: 56px;"
+                />
               </tr>
             </thead>
             <tbody>
@@ -372,7 +389,10 @@ const handleDeleteOrder = async () => {
                 </td>
               </tr>
               <tr>
-                <td colspan="5" class="pt-4">
+                <td
+                  colspan="5"
+                  class="pt-4"
+                >
                   <div class="d-flex align-center gap-2 flex-wrap">
                     <VSelect
                       v-model="addProductId"
@@ -415,7 +435,10 @@ const handleDeleteOrder = async () => {
                 <table class="text-high-emphasis">
                   <tbody>
                     <tr>
-                      <td class="text-high-emphasis font-weight-medium" width="200">
+                      <td
+                        class="text-high-emphasis font-weight-medium"
+                        width="200"
+                      >
                         Итого:
                       </td>
                       <td class="font-weight-medium">
@@ -438,7 +461,10 @@ const handleDeleteOrder = async () => {
         </VCard>
       </VCol>
 
-      <VCol cols="12" md="4">
+      <VCol
+        cols="12"
+        md="4"
+      >
         <VCard class="mb-6">
           <VCardItem>
             <VCardTitle>Статус заказа</VCardTitle>
@@ -461,15 +487,23 @@ const handleDeleteOrder = async () => {
 
         <VCard class="mb-6">
           <VCardText class="d-flex flex-column gap-y-6">
-            <h5 class="text-h5">Данные клиента</h5>
+            <h5 class="text-h5">
+              Данные клиента
+            </h5>
             <div class="d-flex align-center">
               <VAvatar
                 :variant="!orderData.avatar ? 'tonal' : undefined"
                 :rounded="1"
                 class="me-3"
               >
-                <VImg v-if="orderData.avatar" :src="orderData.avatar" />
-                <span v-else class="font-weight-medium">{{ avatarText(orderData.customer) }}</span>
+                <VImg
+                  v-if="orderData.avatar"
+                  :src="orderData.avatar"
+                />
+                <span
+                  v-else
+                  class="font-weight-medium"
+                >{{ avatarText(orderData.customer) }}</span>
               </VAvatar>
               <div>
                 <h6 class="text-h6">
@@ -481,7 +515,9 @@ const handleDeleteOrder = async () => {
               </div>
             </div>
             <div class="d-flex flex-column gap-y-1">
-              <h6 class="text-h6">Контактная информация</h6>
+              <h6 class="text-h6">
+                Контактная информация
+              </h6>
               <span>Email: {{ orderData.email }}</span>
               <span v-if="orderData.phone">Телефон: {{ orderData.phone }}</span>
             </div>
@@ -501,7 +537,9 @@ const handleDeleteOrder = async () => {
 
         <VCard>
           <VCardText>
-            <h5 class="text-h5 mb-1">Способ оплаты</h5>
+            <h5 class="text-h5 mb-1">
+              Способ оплаты
+            </h5>
             <div class="text-body-1">
               {{ orderData.method === 'cash' ? 'Наличные при получении' : orderData.method || '—' }}
             </div>
@@ -522,7 +560,10 @@ const handleDeleteOrder = async () => {
   </div>
 
   <section v-else>
-    <VAlert type="error" variant="tonal">
+    <VAlert
+      type="error"
+      variant="tonal"
+    >
       {{ loadError || `Заказ #${route.params.id} не найден или недоступен!` }}
     </VAlert>
   </section>

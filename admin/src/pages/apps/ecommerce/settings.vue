@@ -7,6 +7,7 @@ import SettingsShippingAndDelivery from '@/views/apps/ecommerce/settings/Setting
 import SettingsStoreDetails from '@/views/apps/ecommerce/settings/SettingsStoreDetails.vue'
 import SettingsCompanyInfo from '@/views/apps/ecommerce/settings/SettingsCompanyInfo.vue'
 import SettingsCurrencyRate from '@/views/apps/ecommerce/settings/SettingsCurrencyRate.vue'
+import SettingsPriceTiers from '@/views/apps/ecommerce/settings/SettingsPriceTiers.vue'
 
 const tabsData = [
   {
@@ -40,6 +41,10 @@ const tabsData = [
   {
     icon: 'tabler-currency-dollar',
     title: 'Курс валюты',
+  },
+  {
+    icon: 'tabler-chart-line',
+    title: 'Ценовые уровни',
   },
 ]
 
@@ -110,6 +115,10 @@ const activeTab = ref(null)
 
         <VWindowItem>
           <SettingsCurrencyRate />
+        </VWindowItem>
+
+        <VWindowItem>
+          <SettingsPriceTiers />
         </VWindowItem>
       </VWindow>
     </VCol>

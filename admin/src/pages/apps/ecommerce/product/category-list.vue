@@ -112,8 +112,8 @@ const deleteCategory = async categoryId => {
               :items="[5, 10, 15].map(n => ({ value: n, title: String(n) }))"
               item-value="value"
               item-title="title"
-              @update:model-value="itemsPerPage = Number($event)"
               style="max-inline-size: 100px; min-inline-size: 100px;"
+              @update:model-value="itemsPerPage = Number($event)"
             />
             <VBtn
               prepend-icon="tabler-plus"
@@ -217,7 +217,10 @@ const deleteCategory = async categoryId => {
       @drawer-closed="closeDrawer"
     />
 
-    <VDialog v-model="isDetailsDialogOpen" max-width="520">
+    <VDialog
+      v-model="isDetailsDialogOpen"
+      max-width="520"
+    >
       <VCard>
         <VCardTitle>Детали категории</VCardTitle>
         <VCardText v-if="selectedCategory">
@@ -239,7 +242,12 @@ const deleteCategory = async categoryId => {
         </VCardText>
         <VCardActions>
           <VSpacer />
-          <VBtn variant="tonal" @click="isDetailsDialogOpen = false">Закрыть</VBtn>
+          <VBtn
+            variant="tonal"
+            @click="isDetailsDialogOpen = false"
+          >
+            Закрыть
+          </VBtn>
         </VCardActions>
       </VCard>
     </VDialog>

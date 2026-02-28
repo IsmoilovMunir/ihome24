@@ -78,6 +78,9 @@ public class CompanySettings {
     @Builder.Default
     private BigDecimal currencyPercentAdjustment = BigDecimal.ZERO;
 
+    @Column(name = "price_tiers_json", columnDefinition = "TEXT")
+    private String priceTiersJson;
+
     @Column(name = "is_active")
     @Builder.Default
     private Boolean isActive = true;
