@@ -155,7 +155,8 @@ public class OrderService {
             for (Map.Entry<Long, Integer> e : productIdToQty.entrySet()) {
                 Product product = productRepository.findById(e.getKey())
                         .orElseThrow(() -> new ResourceNotFoundException("Товар не найден: " + e.getKey()));
-                BigDecimal price = companySettingsService.getDisplayPrice(product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO);
+                BigDecimal basePrice = product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
+                BigDecimal price = companySettingsService.getUnitPriceForQuantity(basePrice, e.getValue());
                 int qty = e.getValue();
                 OrderItem item = OrderItem.builder()
                         .order(order)
@@ -235,7 +236,8 @@ public class OrderService {
             if (product.getIsActive() == null || !product.getIsActive()) {
                 throw new IllegalArgumentException("Товар недоступен для заказа: " + product.getName());
             }
-            BigDecimal price = companySettingsService.getDisplayPrice(product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO);
+            BigDecimal basePrice = product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
+            BigDecimal price = companySettingsService.getUnitPriceForQuantity(basePrice, itemReq.getQuantity());
             BigDecimal itemTotal = price.multiply(BigDecimal.valueOf(itemReq.getQuantity()));
             totalSpent = totalSpent.add(itemTotal);
 

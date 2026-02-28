@@ -2,7 +2,9 @@ package com.ihome24.ihome24.controller.admin.company;
 
 import com.ihome24.ihome24.dto.request.company.CompanySettingsRequest;
 import com.ihome24.ihome24.dto.request.company.CurrencySettingsRequest;
+import com.ihome24.ihome24.dto.request.company.PriceTiersSettingsRequest;
 import com.ihome24.ihome24.dto.response.company.CompanySettingsResponse;
+import com.ihome24.ihome24.dto.response.company.PriceTiersSettingsResponse;
 import com.ihome24.ihome24.service.company.CompanySettingsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,5 +54,16 @@ public class AdminCompanySettingsRestController {
             @Valid @RequestBody CurrencySettingsRequest request) {
         CompanySettingsResponse settings = companySettingsService.updateCurrencySettings(request);
         return ResponseEntity.ok(settings);
+    }
+
+    @GetMapping("/price-tiers")
+    public ResponseEntity<PriceTiersSettingsResponse> getPriceTiers() {
+        return ResponseEntity.ok(companySettingsService.getPriceTiers());
+    }
+
+    @PutMapping(value = "/price-tiers", consumes = "application/json")
+    public ResponseEntity<PriceTiersSettingsResponse> updatePriceTiers(
+            @Valid @RequestBody PriceTiersSettingsRequest request) {
+        return ResponseEntity.ok(companySettingsService.updatePriceTiers(request));
     }
 }

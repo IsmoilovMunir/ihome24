@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { cartApi } from '../services/api'
+import { useSettingsStore } from './settings'
 
 export const useCartStore = defineStore('cart', {
   state: () => ({
@@ -11,9 +12,14 @@ export const useCartStore = defineStore('cart', {
       return state.items.reduce((sum, item) => sum + item.quantity, 0)
     },
     totalPrice: (state) => {
-      return state.items.reduce((sum, item) => {
-        return sum + (item.product.price * item.quantity)
+      const settingsStore = useSettingsStore()
+      const total = state.items.reduce((sum, item) => {
+        const price = item.product?.price ?? 0
+        const qty = item.quantity ?? 0
+        const unitPrice = settingsStore.unitPriceForQuantity(price, qty)
+        return sum + unitPrice * qty
       }, 0)
+      return Math.round(total * 100) / 100
     },
     isEmpty: (state) => state.items.length === 0,
   },

@@ -261,6 +261,18 @@ public class ProductService {
                 .collect(Collectors.toList());
     }
 
+    /** Активные товары в наличии для публичного каталога (stockQuantity IS NULL или > 0). */
+    @Transactional(readOnly = true)
+    public List<ProductResponse> getActiveProductsInStock() {
+        List<Product> products = productRepository.findByIsActiveTrueAndInStock();
+        return products.stream()
+                .map(product -> {
+                    product.getImages().size();
+                    return mapToResponse(product, true);
+                })
+                .collect(Collectors.toList());
+    }
+
     /**
      * Возвращает только активные товары по списку ID.
      * Используется для валидации корзины — несуществующие или неактивные товары не попадут в результат.

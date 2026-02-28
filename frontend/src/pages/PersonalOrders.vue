@@ -184,6 +184,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useAuthStore } from '../stores/auth'
 import { orderApi, fileApi } from '../services/api'
+import { productPath } from '../utils/productUrl'
 
 const authStore = useAuthStore()
 
@@ -315,6 +316,8 @@ const getProductImage = (item) => {
 }
 
 const getProductLink = (item) => {
+  if (!item) return '#'
+  if (item.product?.id) return productPath(item.product)
   const id = getProductId(item)
   return id ? `/products/${id}` : '#'
 }

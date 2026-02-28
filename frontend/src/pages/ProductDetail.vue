@@ -100,12 +100,12 @@
           class="lg:hidden mt-4 p-4 rounded-lg flex flex-col gap-4"
           style="background-color: #26211E;"
         >
-          <div class="flex items-center space-x-4">
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span
               class="text-2xl font-normal"
               style="color: #9E9390; font-family: helvetica, sans-serif;"
             >
-              {{ formatPrice(totalPrice) }}
+              {{ formatPrice(unitPriceCurrent) }}/шт
             </span>
             <span
               v-if="product.oldPrice && product.oldPrice > product.price"
@@ -114,7 +114,23 @@
               {{ formatPrice(product.oldPrice) }}
             </span>
           </div>
-          <h1 class="text-lg text-white font-bold product-detail-title">{{ product.name }}</h1>
+          <div
+            v-if="(priceTiersDisplay || []).length"
+            class="mt-3 pt-3 border-t border-white/10"
+          >
+            <p class="text-xs text-gray-500 mb-1.5" style="font-family: helvetica, sans-serif;">
+              Чем больше штук — тем выгоднее цена за штуку:
+            </p>
+            <ul class="text-sm text-gray-300 space-y-1" style="font-family: helvetica, sans-serif;">
+              <li
+                v-for="(tier, i) in priceTiersDisplay"
+                :key="i"
+              >
+                {{ tier.range }} — {{ tier.label }}: {{ formatPrice(tier.unitPrice) }}/шт
+              </li>
+            </ul>
+          </div>
+          <h1 class="text-lg text-white font-bold product-detail-title mt-2">{{ product.name }}</h1>
         </div>
       </div>
 
@@ -122,19 +138,37 @@
       <div>
         <h1 class="hidden lg:block text-3xl text-white mb-4 product-detail-title">{{ product.name }}</h1>
         
-        <div class="hidden lg:flex items-center space-x-4 mb-4">
-          <span
-            class="text-2xl font-normal"
-            style="color: #9E9390; font-family: helvetica, sans-serif;"
+        <div class="hidden lg:block mb-4">
+          <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <span
+              class="text-2xl font-normal"
+              style="color: #9E9390; font-family: helvetica, sans-serif;"
+            >
+              {{ formatPrice(unitPriceCurrent) }}/шт
+            </span>
+            <span
+              v-if="product.oldPrice && product.oldPrice > product.price"
+              class="text-xl text-gray-500 line-through"
+            >
+              {{ formatPrice(product.oldPrice) }}
+            </span>
+          </div>
+          <div
+            v-if="(priceTiersDisplay || []).length"
+            class="mt-3 pt-3 border-t border-white/10"
           >
-            {{ formatPrice(totalPrice) }}
-          </span>
-          <span
-            v-if="product.oldPrice && product.oldPrice > product.price"
-            class="text-xl text-gray-500 line-through"
-          >
-            {{ formatPrice(product.oldPrice) }}
-          </span>
+            <p class="text-xs text-gray-500 mb-1.5" style="font-family: helvetica, sans-serif;">
+              Чем больше штук — тем выгоднее цена за штуку:
+            </p>
+            <ul class="text-sm text-gray-300 space-y-1" style="font-family: helvetica, sans-serif;">
+              <li
+                v-for="(tier, i) in priceTiersDisplay"
+                :key="i"
+              >
+                {{ tier.range }} — {{ tier.label }}: {{ formatPrice(tier.unitPrice) }}/шт
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div class="mb-6">
@@ -463,12 +497,15 @@ import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '../stores/products'
 import { useCartStore } from '../stores/cart'
+import { useSettingsStore } from '../stores/settings'
 import { fileApi } from '../services/api'
+import { parseProductIdFromRoute, productPath } from '../utils/productUrl'
 
 const route = useRoute()
 const router = useRouter()
 const productsStore = useProductsStore()
 const cartStore = useCartStore()
+const settingsStore = useSettingsStore()
 
 const quantity = ref(1)
 const selectedImageIndex = ref(0)
@@ -828,9 +865,33 @@ const maxQuantity = computed(() => {
   return product.value.stockQuantity
 })
 
-const totalPrice = computed(() => {
+/** Цена за 1 шт. по текущей категории в зависимости от выбранного количества (реакция на quantity и на загрузку tiers) */
+const unitPriceCurrent = computed(() => {
+  const tiers = settingsStore.priceTiers
   if (!product.value?.price) return 0
-  return (product.value.price * (quantity.value || 1))
+  const q = quantity.value || 1
+  return settingsStore.unitPriceForQuantity(product.value.price, q)
+})
+
+const totalPrice = computed(() => {
+  const unit = unitPriceCurrent.value
+  const q = quantity.value || 1
+  return Math.round(unit * q * 100) / 100
+})
+
+/** Уровни цен с диапазоном, названием и ценой за штуку — чтобы было понятно покупателю */
+const priceTiersDisplay = computed(() => {
+  const tiers = settingsStore.priceTiers
+  const basePrice = product.value?.price
+  if (!tiers?.length || basePrice == null) return []
+  return tiers.map((t) => {
+    const min = t.minQty ?? 0
+    const max = t.maxQty
+    const label = t.label || '—'
+    const range = max != null ? `${min}–${max} шт.` : `от ${min} шт.`
+    const unitPrice = settingsStore.unitPriceForQuantity(basePrice, min)
+    return { range, label, unitPrice }
+  })
 })
 
 const formatPrice = (price) => {
@@ -888,9 +949,19 @@ onMounted(async () => {
   window.scrollTo(0, 0)
   document.documentElement.scrollTop = 0
   document.body.scrollTop = 0
-  const productId = Number(route.params.id)
+  await settingsStore.fetchPriceTiers()
+  const productId = parseProductIdFromRoute(route.params.id)
+  if (productId == null) {
+    router.push('/products')
+    return
+  }
   try {
     await productsStore.fetchProductById(productId)
+    const p = productsStore.selectedProduct
+    if (p && !route.params.id.includes('-')) {
+      const canonical = productPath(p)
+      if (route.path !== canonical) router.replace({ path: canonical })
+    }
   } catch (error) {
     router.push('/products')
   }

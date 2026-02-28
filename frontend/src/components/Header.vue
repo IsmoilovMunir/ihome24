@@ -358,7 +358,7 @@
                   <router-link
                     v-for="product in searchResultsProducts"
                     :key="'prod-' + product.id"
-                    :to="`/products/${product.id}`"
+                    :to="productPath(product)"
                     class="search-result-item search-result-product"
                     @click="closeSearch"
                   >
@@ -448,6 +448,7 @@ import { useAuthStore } from '../stores/auth'
 import { useProductsStore } from '../stores/products'
 import { usePersonalMenuStore } from '../stores/personalMenu'
 import { fileApi, geoApi } from '../services/api'
+import { productPath } from '../utils/productUrl'
 
 const route = useRoute()
 const router = useRouter()

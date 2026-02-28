@@ -183,7 +183,7 @@
               :key="item.product.id"
               class="flex gap-3 items-center"
             >
-              <router-link :to="`/products/${item.product.id}`" class="flex-shrink-0 w-14 h-14 rounded overflow-hidden">
+              <router-link :to="productPath(item.product)" class="flex-shrink-0 w-14 h-14 rounded overflow-hidden">
                 <img
                   v-if="getImageUrl(item.product)"
                   :src="getImageUrl(item.product)"
@@ -204,7 +204,7 @@
                   {{ item.product.name }}
                 </span>
                 <span class="text-gray-400 text-xs">
-                  {{ item.quantity }} шт. · {{ formatPrice(item.product.price * item.quantity) }}
+                  {{ item.quantity }} шт. · {{ formatPrice(getItemTotal(item)) }}
                 </span>
               </div>
             </div>
@@ -375,17 +375,21 @@ import { useRouter } from 'vue-router'
 import { onMounted } from 'vue'
 import { useCartStore } from '../stores/cart'
 import { useAuthStore } from '../stores/auth'
+import { useSettingsStore } from '../stores/settings'
 import { fileApi, orderApi, authApi } from '../services/api'
+import { productPath } from '../utils/productUrl'
 
 const router = useRouter()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
+const settingsStore = useSettingsStore()
 
 const YANDEX_MAPS_API_KEY = import.meta.env.VITE_YANDEX_MAPS_API_KEY || ''
 const MOSCOW_CENTER = [37.6173, 55.7558]
 const DEFAULT_ZOOM = 12
 
-onMounted(() => {
+onMounted(async () => {
+  await settingsStore.fetchPriceTiers()
   cartStore.validateCart()
 })
 
@@ -726,6 +730,11 @@ const formatPrice = (price) => {
     currency: 'RUB',
     minimumFractionDigits: 0,
   }).format(price)
+}
+
+function getItemTotal(item) {
+  const unitPrice = settingsStore.unitPriceForQuantity(item.product?.price ?? 0, item.quantity ?? 0)
+  return Math.round(unitPrice * (item.quantity ?? 0) * 100) / 100
 }
 
 const validateForm = (forGuestCodeStep = false) => {
