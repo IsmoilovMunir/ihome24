@@ -89,78 +89,78 @@
               </VChip>
             </div>
 
-          <!-- Image Preview -->
-          <div
-            v-if="file.fileType === 'IMAGE'"
-            class="file-preview-image"
-          >
-            <VImg
-              :src="file.thumbnailUrl || file.url"
-              :alt="file.originalName"
-              cover
-              height="200"
-              class="file-preview-img"
-            />
-            <VOverlay
-              :model-value="file.uploading"
-              contained
-              class="align-center justify-center"
+            <!-- Image Preview -->
+            <div
+              v-if="file.fileType === 'IMAGE'"
+              class="file-preview-image"
             >
-              <VProgressCircular
-                v-if="file.uploading"
-                indeterminate
-                color="white"
+              <VImg
+                :src="file.thumbnailUrl || file.url"
+                :alt="file.originalName"
+                cover
+                height="200"
+                class="file-preview-img"
               />
-            </VOverlay>
-          </div>
-
-          <!-- Video Preview -->
-          <div
-            v-else-if="file.fileType === 'VIDEO'"
-            class="file-preview-video"
-          >
-            <VIcon
-              icon="tabler-video"
-              size="64"
-              color="primary"
-              class="mb-2"
-            />
-            <video
-              v-if="file.url"
-              :src="file.url"
-              class="d-none"
-              preload="metadata"
-            />
-          </div>
-
-          <!-- File Info -->
-          <VCardText class="pa-2">
-            <div class="text-caption text-truncate">
-              {{ file.originalName }}
+              <VOverlay
+                :model-value="file.uploading"
+                contained
+                class="align-center justify-center"
+              >
+                <VProgressCircular
+                  v-if="file.uploading"
+                  indeterminate
+                  color="white"
+                />
+              </VOverlay>
             </div>
-            <div class="text-caption text-medium-emphasis">
-              {{ formatFileSize(file.fileSize) }}
-            </div>
-          </VCardText>
 
-          <!-- Actions -->
-          <VCardActions class="pa-2">
-            <VSpacer />
-            <VBtn
-              icon="tabler-eye"
-              size="small"
-              variant="text"
-              :href="file.url"
-              target="_blank"
-            />
-            <VBtn
-              icon="tabler-trash"
-              size="small"
-              variant="text"
-              color="error"
-              :loading="file.deleting"
-              @click="removeFile(file, index)"
-            />
+            <!-- Video Preview -->
+            <div
+              v-else-if="file.fileType === 'VIDEO'"
+              class="file-preview-video"
+            >
+              <VIcon
+                icon="tabler-video"
+                size="64"
+                color="primary"
+                class="mb-2"
+              />
+              <video
+                v-if="file.url"
+                :src="file.url"
+                class="d-none"
+                preload="metadata"
+              />
+            </div>
+
+            <!-- File Info -->
+            <VCardText class="pa-2">
+              <div class="text-caption text-truncate">
+                {{ file.originalName }}
+              </div>
+              <div class="text-caption text-medium-emphasis">
+                {{ formatFileSize(file.fileSize) }}
+              </div>
+            </VCardText>
+
+            <!-- Actions -->
+            <VCardActions class="pa-2">
+              <VSpacer />
+              <VBtn
+                icon="tabler-eye"
+                size="small"
+                variant="text"
+                :href="file.url"
+                target="_blank"
+              />
+              <VBtn
+                icon="tabler-trash"
+                size="small"
+                variant="text"
+                color="error"
+                :loading="file.deleting"
+                @click="removeFile(file, index)"
+              />
             </VCardActions>
           </VCard>
         </VCol>

@@ -122,7 +122,10 @@ const deleteOrder = async id => {
     <VCard class="mb-6">
       <VCardText>
         <VRow>
-          <VCol cols="12" md="4">
+          <VCol
+            cols="12"
+            md="4"
+          >
             <div class="d-flex justify-space-between">
               <div class="d-flex flex-column">
                 <h4 class="text-h4">
@@ -132,8 +135,16 @@ const deleteOrder = async id => {
                   Завершено
                 </div>
               </div>
-              <VAvatar variant="tonal" rounded size="42">
-                <VIcon icon="tabler-checks" size="26" class="text-high-emphasis" />
+              <VAvatar
+                variant="tonal"
+                rounded
+                size="42"
+              >
+                <VIcon
+                  icon="tabler-checks"
+                  size="26"
+                  class="text-high-emphasis"
+                />
               </VAvatar>
             </div>
           </VCol>
@@ -184,30 +195,67 @@ const deleteOrder = async id => {
         </template>
         <template #item.customers="{ item }">
           <div class="d-flex align-center gap-x-3">
-            <VAvatar size="34" :color="!item.avatar?.length ? 'primary' : ''" :variant="!item.avatar?.length ? 'tonal' : undefined">
-              <VImg v-if="item.avatar" :src="item.avatar" />
-              <span v-else class="font-weight-medium">{{ avatarText(item.customer) }}</span>
+            <VAvatar
+              size="34"
+              :color="!item.avatar?.length ? 'primary' : ''"
+              :variant="!item.avatar?.length ? 'tonal' : undefined"
+            >
+              <VImg
+                v-if="item.avatar"
+                :src="item.avatar"
+              />
+              <span
+                v-else
+                class="font-weight-medium"
+              >{{ avatarText(item.customer) }}</span>
             </VAvatar>
             <div class="d-flex flex-column">
-              <div class="text-body-1 font-weight-medium">{{ item.customer }}</div>
-              <div class="text-body-2">{{ item.email }}</div>
+              <div class="text-body-1 font-weight-medium">
+                {{ item.customer }}
+              </div>
+              <div class="text-body-2">
+                {{ item.email }}
+              </div>
             </div>
           </div>
         </template>
         <template #item.payment="{ item }">
-          <div :class="`text-${resolvePaymentStatus(item.payment)?.color}`" class="font-weight-medium d-flex align-center gap-x-2">
-            <VIcon icon="tabler-circle-filled" size="10" />
-            <div style="line-height: 22px;">{{ resolvePaymentStatus(item.payment)?.text }}</div>
+          <div
+            :class="`text-${resolvePaymentStatus(item.payment)?.color}`"
+            class="font-weight-medium d-flex align-center gap-x-2"
+          >
+            <VIcon
+              icon="tabler-circle-filled"
+              size="10"
+            />
+            <div style="line-height: 22px;">
+              {{ resolvePaymentStatus(item.payment)?.text }}
+            </div>
           </div>
         </template>
         <template #item.status="{ item }">
-          <VChip v-bind="resolveStatus(item.status)" label size="small" />
+          <VChip
+            v-bind="resolveStatus(item.status)"
+            label
+            size="small"
+          />
         </template>
         <template #item.method="{ item }">
           <div class="d-flex align-center gap-x-2">
-            <img v-if="item.method === 'mastercard'" :src="mastercard" height="18">
-            <img v-else-if="item.method === 'paypalLogo'" :src="paypal" height="18">
-            <span v-else class="text-body-1">Наличные</span>
+            <img
+              v-if="item.method === 'mastercard'"
+              :src="mastercard"
+              height="18"
+            >
+            <img
+              v-else-if="item.method === 'paypalLogo'"
+              :src="paypal"
+              height="18"
+            >
+            <span
+              v-else
+              class="text-body-1"
+            >Наличные</span>
           </div>
         </template>
         <template #item.actions="{ item }">

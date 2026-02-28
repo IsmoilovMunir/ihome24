@@ -47,7 +47,10 @@ watch([
       >
         <Component :is="Component" />
         <template #fallback>
-          <div class="d-flex align-center justify-center" style="min-height: 200px;">
+          <div
+            class="d-flex align-center justify-center"
+            style="min-height: 200px;"
+          >
             <VProgressCircular
               indeterminate
               color="primary"

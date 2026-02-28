@@ -186,8 +186,7 @@ const deleteInvoice = async id => {
   <section v-if="invoices">
     <!-- 👉 Invoice Widgets -->
     <VCard class="mb-6">
-      <VCardText class="px-3">
-      </VCardText>
+      <VCardText class="px-3" />
     </VCard>
 
     <VCard id="invoice-list">

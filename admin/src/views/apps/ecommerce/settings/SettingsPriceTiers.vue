@@ -7,15 +7,6 @@ const loading = ref(false)
 const saving = ref(false)
 const error = ref(null)
 
-function defaultTier() {
-  return {
-    minQty: 1,
-    maxQty: null,
-    discountPercent: 0,
-    label: '',
-  }
-}
-
 async function load() {
   loading.value = true
   error.value = null
@@ -89,7 +80,10 @@ onMounted(load)
 <template>
   <VCard>
     <VCardTitle class="text-h6 d-flex align-center gap-2">
-      <i class="tabler-chart-line text-primary" style="font-size: 20px;" />
+      <i
+        class="tabler-chart-line text-primary"
+        style="font-size: 20px;"
+      />
       <span>Ценовые уровни (объёмные скидки)</span>
     </VCardTitle>
     <VCardText>

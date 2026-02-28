@@ -405,7 +405,10 @@ const deleteOrder = async id => {
               :src="paypal"
               height="18"
             >
-            <span v-else class="text-body-1">Наличные</span>
+            <span
+              v-else
+              class="text-body-1"
+            >Наличные</span>
             <span class="text-body-1">
               {{ item.method === 'mastercard' ? '...' + (item.methodNumber || '') : item.method === 'paypalLogo' ? '@gmail.com' : '' }}
             </span>

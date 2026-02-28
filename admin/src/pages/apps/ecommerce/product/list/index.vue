@@ -304,8 +304,7 @@ const exportToExcel = async () => {
   <div>
     <!-- 👉 widgets -->
     <VCard class="mb-6">
-      <VCardText class="px-3">
-      </VCardText>
+      <VCardText class="px-3" />
     </VCard>
 
     <!-- 👉 products -->
@@ -405,7 +404,6 @@ const exportToExcel = async () => {
           >
             Добавить товар
           </VBtn>
-
         </div>
       </div>
 
@@ -433,9 +431,18 @@ const exportToExcel = async () => {
               rounded
               :image="item.image"
             />
-            <div class="d-flex flex-column min-w-0" style="max-width: 280px;">
-              <span class="text-body-1 font-weight-medium text-high-emphasis" :title="item.productName">{{ truncateWords(item.productName, 3) }}</span>
-              <span class="text-body-2 text-truncate" :title="item.productBrand">{{ truncateWords(item.productBrand, 3) }}</span>
+            <div
+              class="d-flex flex-column min-w-0"
+              style="max-width: 280px;"
+            >
+              <span
+                class="text-body-1 font-weight-medium text-high-emphasis"
+                :title="item.productName"
+              >{{ truncateWords(item.productName, 3) }}</span>
+              <span
+                class="text-body-2 text-truncate"
+                :title="item.productBrand"
+              >{{ truncateWords(item.productBrand, 3) }}</span>
             </div>
           </div>
         </template>

@@ -178,7 +178,7 @@ const currentBillingAddress = {
       </VCard>
     </VCol>
 
-      <!-- 👉 Payment Methods -->
+    <!-- 👉 Payment Methods -->
     <VCol cols="12">
       <VCard title="Способы оплаты">
         <template #append>

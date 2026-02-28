@@ -156,24 +156,24 @@ const deleteInvoice = async id => {
   >
     <VCardText>
       <div class="d-flex justify-space-between flex-wrap gap-4">
-          <div class="d-flex gap-4 align-center">
-            <div class="d-flex align-center gap-x-2">
-              <div>
-                Показать
-              </div>
-              <AppSelect
-                :model-value="itemsPerPage"
-                :items="[
-                  { value: 6, title: '6' },
-                  { value: 10, title: '10' },
-                  { value: 25, title: '25' },
-                  { value: 50, title: '50' },
-                  { value: 100, title: '100' },
-                  { value: -1, title: 'Все' },
-                ]"
-                @update:model-value="itemsPerPage = parseInt($event, 10)"
-              />
+        <div class="d-flex gap-4 align-center">
+          <div class="d-flex align-center gap-x-2">
+            <div>
+              Показать
             </div>
+            <AppSelect
+              :model-value="itemsPerPage"
+              :items="[
+                { value: 6, title: '6' },
+                { value: 10, title: '10' },
+                { value: 25, title: '25' },
+                { value: 50, title: '50' },
+                { value: 100, title: '100' },
+                { value: -1, title: 'Все' },
+              ]"
+              @update:model-value="itemsPerPage = parseInt($event, 10)"
+            />
+          </div>
           <!-- 👉 Create invoice -->
           <VBtn
             prepend-icon="tabler-plus"

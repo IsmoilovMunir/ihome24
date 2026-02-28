@@ -234,7 +234,6 @@ const onSubmit = () => {
       </VCard>
     </VCol>
   </VRow>
-
 </template>
 
 <style lang="scss">
