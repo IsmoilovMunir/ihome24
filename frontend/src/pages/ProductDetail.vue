@@ -290,7 +290,14 @@
               >
                 −
               </button>
-              <span class="w-8 text-center text-white font-semibold">{{ cartQuantity }}</span>
+              <input
+                :value="cartQuantity"
+                type="number"
+                min="1"
+                :max="maxQuantity"
+                class="w-10 text-center text-white font-semibold bg-transparent focus:outline-none"
+                @input="onCartQuantityInput"
+              >
               <button
                 type="button"
                 @click="increaseCartQuantity"
@@ -349,7 +356,14 @@
             >
               −
             </button>
-            <span class="w-8 text-center text-white font-semibold">{{ cartQuantity }}</span>
+            <input
+              :value="cartQuantity"
+              type="number"
+              min="1"
+              :max="maxQuantity"
+              class="w-10 text-center text-white font-semibold bg-transparent focus:outline-none"
+              @input="onCartQuantityInput"
+            >
             <button
               type="button"
               @click="increaseCartQuantity"
@@ -841,6 +855,63 @@ const cartQuantity = computed(() => {
   return item?.quantity ?? 0
 })
 
+// Анимации изменения количества в корзине на странице товара
+const cartQuantityAnimations = {}
+
+const onCartQuantityInput = (event) => {
+  if (!product.value?.id) return
+
+  const raw = event.target.value
+  let value = parseInt(raw, 10)
+
+  if (Number.isNaN(value)) {
+    value = 1
+  }
+  if (value < 1) value = 1
+
+  const hasStockLimit = typeof product.value.stockQuantity === 'number'
+  const max = hasStockLimit ? product.value.stockQuantity : 999999
+
+  // Если нет ограничения по складу или значение в пределах склада — просто устанавливаем
+  if (!hasStockLimit || value <= max) {
+    cartStore.updateQuantity(product.value.id, value)
+    return
+  }
+
+  const productId = product.value.id
+
+  // Останавливаем предыдущую анимацию для этого товара, если была
+  if (cartQuantityAnimations[productId]) {
+    cancelAnimationFrame(cartQuantityAnimations[productId])
+    delete cartQuantityAnimations[productId]
+  }
+
+  // Анимация от введённого значения до максимума за фиксированное время (1 секунда)
+  const start = value
+  const end = max
+  const duration = 1000 // мс
+  const startTime = performance.now()
+
+  const animate = (time) => {
+    const elapsed = time - startTime
+    const t = Math.min(elapsed / duration, 1) // 0..1
+
+    const current = Math.round(start + (end - start) * t)
+
+    cartStore.updateQuantity(productId, current)
+    event.target.value = String(current)
+
+    if (t >= 1) {
+      delete cartQuantityAnimations[productId]
+      return
+    }
+
+    cartQuantityAnimations[productId] = requestAnimationFrame(animate)
+  }
+
+  cartQuantityAnimations[productId] = requestAnimationFrame(animate)
+}
+
 const decreaseCartQuantity = () => {
   if (product.value?.id && cartQuantity.value > 1) {
     cartStore.updateQuantity(product.value.id, cartQuantity.value - 1)
@@ -1022,5 +1093,17 @@ onUnmounted(() => {
 }
 .product-images-gallery::-webkit-scrollbar-thumb:hover {
   background: rgba(158, 147, 144, 0.6);
+}
+
+/* Убираем стрелки у input[type=number] (количество) */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 </style>

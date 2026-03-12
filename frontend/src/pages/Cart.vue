@@ -89,14 +89,21 @@
               <div class="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
                 <div class="flex items-center space-x-2">
                   <button
-                    @click="cartStore.updateQuantity(item.product.id, item.quantity - 1)"
+                    @click="cartStore.updateQuantity(item.product.id, Math.max(1, item.quantity - 1))"
                     class="px-2 py-1 md:px-3 md:py-1 border border-white/30 rounded text-white hover:bg-white/10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     -
                   </button>
-                  <span class="w-8 md:w-12 text-center text-white text-sm md:text-base">{{ item.quantity }}</span>
+                  <input
+                    :value="item.quantity"
+                    type="number"
+                    min="1"
+                    :max="item.product?.stockQuantity ?? 999999"
+                    class="w-12 md:w-16 text-center text-white text-sm md:text-base bg-transparent border border-white/30 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-white/60"
+                    @input="event => onQuantityInput(item, event)"
+                  >
                   <button
-                    @click="cartStore.updateQuantity(item.product.id, item.quantity + 1)"
+                    @click="cartStore.updateQuantity(item.product.id, Math.min((item.product?.stockQuantity ?? 999999), item.quantity + 1))"
                     :disabled="item.quantity >= (item.product?.stockQuantity ?? 999999)"
                     class="px-2 py-1 md:px-3 md:py-1 border border-white/30 rounded text-white hover:bg-white/10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -196,4 +203,74 @@ const formatPrice = (price) => {
     minimumFractionDigits: 0,
   }).format(price)
 }
+
+// Храним активные анимации по ID товара, чтобы анимации не наслаивались
+const quantityAnimations = {}
+
+function onQuantityInput(item, event) {
+  const raw = event.target.value
+  let value = parseInt(raw, 10)
+
+  if (Number.isNaN(value)) {
+    value = 1
+  }
+  if (value < 1) value = 1
+
+  const hasStockLimit = typeof item.product?.stockQuantity === 'number'
+  const max = hasStockLimit ? item.product.stockQuantity : 999999
+
+  // Если нет ограничения по складу или значение в пределах склада — просто устанавливаем
+  if (!hasStockLimit || value <= max) {
+    cartStore.updateQuantity(item.product.id, value)
+    return
+  }
+
+  const productId = item.product.id
+
+  // Останавливаем предыдущую анимацию для этого товара, если была
+  if (quantityAnimations[productId]) {
+    cancelAnimationFrame(quantityAnimations[productId])
+    delete quantityAnimations[productId]
+  }
+
+  // Анимация от введённого значения до максимума за фиксированное время (1 секунда)
+  const start = value
+  const end = max
+  const duration = 1000 // мс
+  const startTime = performance.now()
+
+  const animate = (time) => {
+    const elapsed = time - startTime
+    const t = Math.min(elapsed / duration, 1) // 0..1
+
+    // Линейная интерполяция между start и end
+    const current = Math.round(start + (end - start) * t)
+
+    cartStore.updateQuantity(productId, current)
+    event.target.value = String(current)
+
+    if (t >= 1) {
+      delete quantityAnimations[productId]
+      return
+    }
+
+    quantityAnimations[productId] = requestAnimationFrame(animate)
+  }
+
+  quantityAnimations[productId] = requestAnimationFrame(animate)
+}
 </script>
+
+<style scoped>
+/* Убираем стрелки у input[type=number] в разных браузерах */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+</style>

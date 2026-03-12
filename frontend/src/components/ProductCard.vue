@@ -91,7 +91,7 @@
       <div class="flex items-center justify-between px-0">
         <div class="flex items-center space-x-2">
           <span class="text-sm product-price" style="color: var(--product-tile-price-color);">
-            {{ formatPrice(product.price) }}
+            {{ formatPrice(maxDiscountUnitPrice ?? product.price) }}
           </span>
           <span
             v-if="product.oldPrice && product.oldPrice > product.price"
@@ -114,11 +114,12 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { fileApi } from '../services/api'
 import { productPath } from '../utils/productUrl'
+import { useSettingsStore } from '../stores/settings'
 
 const props = defineProps({
   product: {
@@ -129,6 +130,11 @@ const props = defineProps({
 
 const router = useRouter()
 const cartStore = useCartStore()
+const settingsStore = useSettingsStore()
+
+onMounted(() => {
+  settingsStore.fetchPriceTiers()
+})
 
 const imageUrl = computed(() => {
   // Проверяем imageUrl
@@ -171,6 +177,21 @@ const cartQuantity = computed(() => {
 const maxQuantity = computed(() => {
   if (props.product.stockQuantity == null) return 999
   return props.product.stockQuantity
+})
+
+// Цена за единицу с учётом максимальной возможной скидки (по самому выгодному уровню)
+const maxDiscountUnitPrice = computed(() => {
+  const basePrice = props.product?.price
+  if (!basePrice || basePrice <= 0) return null
+
+  const tiers = settingsStore.tiersForCalculation
+  if (!tiers?.length) return basePrice
+
+  const best = [...tiers].sort((a, b) => Number(b.discountPercent ?? 0) - Number(a.discountPercent ?? 0))[0]
+  if (!best || !best.discountPercent) return basePrice
+
+  const discount = Number(best.discountPercent) / 100
+  return Math.round(basePrice * (1 - discount) * 100) / 100
 })
 
 const decreaseQuantity = () => {
