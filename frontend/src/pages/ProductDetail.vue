@@ -114,6 +114,27 @@
               {{ formatPrice(product.oldPrice) }}
             </span>
           </div>
+          <!-- Переключатель вариантов (размеров/атрибутов) для мобильной версии — показываем только если вариантов больше одного -->
+          <div
+            v-if="variants.length > 1"
+            class="mt-2 flex flex-wrap items-center gap-2"
+          >
+            <span class="text-xs text-gray-400">
+              Размер / вариант:
+            </span>
+            <button
+              v-for="(v, idx) in variants"
+              :key="v.variantId || v.sku || idx"
+              type="button"
+              class="px-2 py-1 rounded border text-xs"
+              :class="idx === selectedVariantIndex
+                ? 'bg-[#C56129] border-[#C56129] text-white'
+                : 'border-white/30 text-gray-200 hover:border-[#C56129] hover:text-[#C56129]'"
+              @click="selectVariant(idx)"
+            >
+              {{ v.attributes?.size || v.attributes?.color || v.sku || `Вариант ${idx + 1}` }}
+            </button>
+          </div>
           <div
             v-if="(priceTiersDisplay || []).length"
             class="mt-3 pt-3 border-t border-white/10"
@@ -130,13 +151,13 @@
               </li>
             </ul>
           </div>
-          <h1 class="text-lg text-white font-bold product-detail-title mt-2">{{ product.name }}</h1>
+          <h1 class="text-lg text-white font-bold product-detail-title mt-2">{{ displayName }}</h1>
         </div>
       </div>
 
       <!-- Product Info -->
       <div>
-        <h1 class="hidden lg:block text-3xl text-white mb-4 product-detail-title">{{ product.name }}</h1>
+        <h1 class="hidden lg:block text-3xl text-white mb-4 product-detail-title">{{ displayName }}</h1>
         
         <div class="hidden lg:block mb-4">
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -152,6 +173,27 @@
             >
               {{ formatPrice(product.oldPrice) }}
             </span>
+          </div>
+          <!-- Переключатель вариантов (размеров/атрибутов) — показываем только если вариантов больше одного -->
+          <div
+            v-if="variants.length > 1"
+            class="mt-3 flex flex-wrap items-center gap-2"
+          >
+            <span class="text-xs text-gray-400">
+              Размер / вариант:
+            </span>
+            <button
+              v-for="(v, idx) in variants"
+              :key="v.variantId || v.sku || idx"
+              type="button"
+              class="px-2 py-1 rounded border text-xs"
+              :class="idx === selectedVariantIndex
+                ? 'bg-[#C56129] border-[#C56129] text-white'
+                : 'border-white/30 text-gray-200 hover:border-[#C56129] hover:text-[#C56129]'"
+              @click="selectVariant(idx)"
+            >
+              {{ v.attributes?.size || v.attributes?.color || v.sku || `Вариант ${idx + 1}` }}
+            </button>
           </div>
           <div
             v-if="(priceTiersDisplay || []).length"
@@ -226,9 +268,9 @@
               <span class="text-gray-400 text-sm font-medium capitalize">Артикул</span>
               <div class="flex items-center gap-2">
                 <button
-                  v-if="product.sku"
+                  v-if="selectedVariant?.sku || product.sku"
                   type="button"
-                  @click="copyArticle(product.sku)"
+                  @click="copyArticle(selectedVariant?.sku || product.sku)"
                   class="p-1.5 rounded hover:bg-white/10 transition-colors text-gray-400 hover:text-[#C56129]"
                   :title="articleCopied ? 'Скопировано!' : 'Копировать артикул'"
                 >
@@ -239,7 +281,9 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                   </svg>
                 </button>
-                <span class="text-gray-200 text-sm capitalize">{{ product.sku || 'Не указан' }}</span>
+                <span class="text-gray-200 text-sm capitalize">
+                  {{ selectedVariant?.sku || product.sku || 'Не указан' }}
+                </span>
               </div>
             </div>
             <div v-if="product.brand" class="flex justify-between items-center py-2 border-b border-white/10">
@@ -252,7 +296,9 @@
             </div>
             <div class="flex justify-between items-center py-2">
               <span class="text-gray-400 text-sm font-medium capitalize">Наличие</span>
-              <span class="text-sm capitalize" :style="{ color: isAvailable ? '#C56129' : '#9d9390' }">{{ isAvailable ? 'В наличии' : 'Нет в наличии' }}</span>
+              <span class="text-sm capitalize" :style="{ color: isAvailable ? '#C56129' : '#9d9390' }">
+                {{ isAvailable ? `В наличии: ${maxQuantity} шт.` : 'Нет в наличии' }}
+              </span>
             </div>
           </div>
         </div>
@@ -290,7 +336,14 @@
               >
                 −
               </button>
-              <span class="w-8 text-center text-white font-semibold">{{ cartQuantity }}</span>
+              <input
+                :value="cartQuantity"
+                type="number"
+                min="1"
+                :max="maxQuantity"
+                class="w-10 text-center text-white font-semibold bg-transparent focus:outline-none"
+                @input="onCartQuantityInput"
+              >
               <button
                 type="button"
                 @click="increaseCartQuantity"
@@ -349,7 +402,14 @@
             >
               −
             </button>
-            <span class="w-8 text-center text-white font-semibold">{{ cartQuantity }}</span>
+            <input
+              :value="cartQuantity"
+              type="number"
+              min="1"
+              :max="maxQuantity"
+              class="w-10 text-center text-white font-semibold bg-transparent focus:outline-none"
+              @input="onCartQuantityInput"
+            >
             <button
               type="button"
               @click="increaseCartQuantity"
@@ -532,10 +592,34 @@ const ZOOM_STEP = 0.25
 
 const product = computed(() => productsStore.selectedProduct)
 
-
+// Варианты товара и выбранный вариант
+const variants = computed(() => product.value?.variants ?? [])
+const selectedVariantIndex = ref(0)
+const selectedVariant = computed(() => variants.value[selectedVariantIndex.value] ?? null)
 const mainImageTransformStyle = computed(() => ({
   transform: `translate(${mainImagePan.value.x}px, ${mainImagePan.value.y}px) scale(${mainImageZoom.value})`,
 }))
+
+const displayName = computed(() => {
+  const base = product.value?.name || ''
+  const label = selectedVariant.value?.attributes?.size
+    || selectedVariant.value?.attributes?.color
+    || ''
+  return label ? `${base} ${label}` : base
+})
+
+const selectVariant = (index) => {
+  selectedVariantIndex.value = index
+
+  const sku = selectedVariant.value?.sku
+  const basePath = productPath(product.value)
+
+  if (sku) {
+    router.replace({ path: `${basePath}/${sku}`, query: route.query })
+  } else {
+    router.replace({ path: basePath, query: route.query })
+  }
+}
 
 const getTouchDistance = (t1, t2) => {
   return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY)
@@ -830,47 +914,138 @@ const goToNextImage = () => {
   if (showFullscreenGallery.value) fullscreenPan.value = { x: 0, y: 0 }
 }
 
+const currentVariantKey = computed(() => {
+  return (
+    selectedVariant.value?.variantId ||
+    selectedVariant.value?.sku ||
+    selectedVariant.value?.attributes?.size ||
+    selectedVariant.value?.attributes?.color ||
+    null
+  )
+})
+
 const isInCart = computed(() => {
   if (!product.value?.id) return false
-  return cartStore.items.some(item => item.product.id === product.value.id)
+  return cartStore.items.some(item =>
+    item.product.id === product.value.id &&
+    (item.variantKey ?? null) === (currentVariantKey.value ?? null),
+  )
 })
 
 const cartQuantity = computed(() => {
   if (!product.value?.id) return 0
-  const item = cartStore.items.find(item => item.product.id === product.value.id)
+  const item = cartStore.items.find(item =>
+    item.product.id === product.value.id &&
+    (item.variantKey ?? null) === (currentVariantKey.value ?? null),
+  )
   return item?.quantity ?? 0
 })
 
+// Анимации изменения количества в корзине на странице товара
+const cartQuantityAnimations = {}
+
+const onCartQuantityInput = (event) => {
+  if (!product.value?.id) return
+
+  const raw = event.target.value
+  let value = parseInt(raw, 10)
+
+  if (Number.isNaN(value)) {
+    value = 1
+  }
+  if (value < 1) value = 1
+
+  const hasStockLimit = typeof maxQuantity.value === 'number'
+  const max = hasStockLimit ? maxQuantity.value : 999999
+
+  // Если нет ограничения по складу или значение в пределах склада — просто устанавливаем
+  if (!hasStockLimit || value <= max) {
+    cartStore.updateQuantity(product.value.id, value, currentVariantKey.value)
+    return
+  }
+
+  const productId = product.value.id
+
+  // Останавливаем предыдущую анимацию для этого товара, если была
+  if (cartQuantityAnimations[productId]) {
+    cancelAnimationFrame(cartQuantityAnimations[productId])
+    delete cartQuantityAnimations[productId]
+  }
+
+  // Анимация от введённого значения до максимума за фиксированное время (1 секунда)
+  const start = value
+  const end = max
+  const duration = 1000 // мс
+  const startTime = performance.now()
+
+  const animate = (time) => {
+    const elapsed = time - startTime
+    const t = Math.min(elapsed / duration, 1) // 0..1
+
+    const current = Math.round(start + (end - start) * t)
+
+    cartStore.updateQuantity(productId, current, currentVariantKey.value)
+    event.target.value = String(current)
+
+    if (t >= 1) {
+      delete cartQuantityAnimations[productId]
+      return
+    }
+
+    cartQuantityAnimations[productId] = requestAnimationFrame(animate)
+  }
+
+  cartQuantityAnimations[productId] = requestAnimationFrame(animate)
+}
+
 const decreaseCartQuantity = () => {
   if (product.value?.id && cartQuantity.value > 1) {
-    cartStore.updateQuantity(product.value.id, cartQuantity.value - 1)
+    cartStore.updateQuantity(product.value.id, cartQuantity.value - 1, currentVariantKey.value)
   } else if (product.value?.id && cartQuantity.value === 1) {
-    cartStore.removeFromCart(product.value.id)
+    cartStore.removeFromCart(product.value.id, currentVariantKey.value)
   }
 }
 
 const increaseCartQuantity = () => {
   if (product.value?.id && cartQuantity.value < maxQuantity.value) {
-    cartStore.updateQuantity(product.value.id, cartQuantity.value + 1)
+    cartStore.updateQuantity(product.value.id, cartQuantity.value + 1, currentVariantKey.value)
   }
 }
 
 const isAvailable = computed(() => {
-  return product.value?.isActive && 
-         (product.value?.stockQuantity === null || product.value?.stockQuantity > 0)
+  if (!product.value?.isActive) return false
+
+  const variantQty = selectedVariant.value?.stock?.quantity
+  if (typeof variantQty === 'number')
+    return variantQty > 0
+
+  // Фолбэк на общее количество товара
+  return product.value?.stockQuantity === null || product.value?.stockQuantity > 0
 })
 
 const maxQuantity = computed(() => {
-  if (!product.value?.stockQuantity) return 999
-  return product.value.stockQuantity
+  // Приоритет: количество на складе у варианта, затем общее количество товара
+  const variantQty = selectedVariant.value?.stock?.quantity
+  if (typeof variantQty === 'number' && !Number.isNaN(variantQty)) return variantQty
+
+  if (product.value?.stockQuantity != null) return product.value.stockQuantity
+
+  return 999
+})
+
+// Базовая цена: сначала из выбранного варианта, если есть, иначе из товара
+const basePriceForVariant = computed(() => {
+  if (selectedVariant.value?.price?.base != null)
+    return Number(selectedVariant.value.price.base)
+
+  return product.value?.price ?? 0
 })
 
 /** Цена за 1 шт. по текущей категории в зависимости от выбранного количества (реакция на quantity и на загрузку tiers) */
 const unitPriceCurrent = computed(() => {
-  const tiers = settingsStore.priceTiers
-  if (!product.value?.price) return 0
+  if (!basePriceForVariant.value) return 0
   const q = quantity.value || 1
-  return settingsStore.unitPriceForQuantity(product.value.price, q)
+  return settingsStore.unitPriceForQuantity(basePriceForVariant.value, q)
 })
 
 const totalPrice = computed(() => {
@@ -882,7 +1057,7 @@ const totalPrice = computed(() => {
 /** Уровни цен с диапазоном, названием и ценой за штуку — чтобы было понятно покупателю */
 const priceTiersDisplay = computed(() => {
   const tiers = settingsStore.priceTiers
-  const basePrice = product.value?.price
+  const basePrice = basePriceForVariant.value
   if (!tiers?.length || basePrice == null) return []
   return tiers.map((t) => {
     const min = t.minQty ?? 0
@@ -917,7 +1092,7 @@ const decreaseQuantity = () => {
 
 const addToCart = () => {
   if (isAvailable.value && product.value) {
-    cartStore.addToCart(product.value, quantity.value)
+    cartStore.addToCart(product.value, quantity.value, selectedVariant.value)
   }
 }
 
@@ -945,6 +1120,7 @@ watch(selectedImageIndex, () => {
   scrollThumbnailIntoView()
 })
 
+
 onMounted(async () => {
   window.scrollTo(0, 0)
   document.documentElement.scrollTop = 0
@@ -958,9 +1134,25 @@ onMounted(async () => {
   try {
     await productsStore.fetchProductById(productId)
     const p = productsStore.selectedProduct
-    if (p && !route.params.id.includes('-')) {
-      const canonical = productPath(p)
-      if (route.path !== canonical) router.replace({ path: canonical })
+    if (p) {
+      const canonicalBase = productPath(p)
+      const currentSku = route.params.variantSku
+
+      // Выставляем вариант по SKU из URL, если он есть
+      if (currentSku && Array.isArray(p.variants) && p.variants.length > 0) {
+        const idx = p.variants.findIndex(v => v.sku === currentSku)
+        if (idx !== -1) {
+          selectedVariantIndex.value = idx
+        }
+      }
+
+      // Формируем канонический путь с учётом slug и SKU
+      const sku = selectedVariant.value?.sku
+      const canonical = sku ? `${canonicalBase}/${sku}` : canonicalBase
+
+      if (route.path !== canonical) {
+        router.replace({ path: canonical, query: route.query })
+      }
     }
   } catch (error) {
     router.push('/products')
@@ -1022,5 +1214,17 @@ onUnmounted(() => {
 }
 .product-images-gallery::-webkit-scrollbar-thumb:hover {
   background: rgba(158, 147, 144, 0.6);
+}
+
+/* Убираем стрелки у input[type=number] (количество) */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
 }
 </style>

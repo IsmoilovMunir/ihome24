@@ -50,6 +50,10 @@ const headers = [
     key: 'sku',
   },
   {
+    title: 'Вариант',
+    key: 'variant',
+  },
+  {
     title: 'Цена',
     key: 'price',
   },
@@ -193,14 +197,9 @@ const products = computed(() => {
   }
   
   return list.map(product => {
-    // Форматируем цену (BigDecimal -> строка с 2 знаками после запятой)
-    let priceFormatted = '₽0'
-    if (product.price) {
-      const priceValue = typeof product.price === 'number' 
-        ? product.price 
-        : parseFloat(product.price)
-      priceFormatted = `₽${priceValue.toFixed(2)}`
-    }
+    const priceValue = product.price != null
+      ? (typeof product.price === 'number' ? product.price : parseFloat(product.price))
+      : 0
     
     return {
       id: product.id,
@@ -209,10 +208,12 @@ const products = computed(() => {
       category: product.category?.name || 'Uncategorized',
       stock: (product.stockQuantity || 0) > 0,
       sku: product.sku || '',
-      price: priceFormatted,
-      qty: product.stockQuantity || 0,
+      priceNumber: Number.isNaN(priceValue) ? 0 : priceValue,
+      qtyTotal: product.stockQuantity || 0,
       status: product.isActive ? 'Published' : 'Inactive',
       image: product.imageUrl || '',
+      variants: product.variants || [],
+      raw: product,
     }
   })
 })
@@ -296,6 +297,123 @@ const exportToExcel = async () => {
     console.error('Ошибка экспорта:', error)
     // eslint-disable-next-line no-alert
     alert('Ошибка при экспорте. Проверьте консоль.')
+  }
+}
+
+const selectedVariantKeyByProductId = ref({})
+
+const getVariantList = item => {
+  return item.variants || item.raw?.variants || []
+}
+
+const getSelectedVariant = item => {
+  const variants = getVariantList(item)
+  if (!variants.length)
+    return null
+
+  const currentKey = selectedVariantKeyByProductId.value[item.id]
+  let idx = 0
+
+  if (currentKey != null) {
+    const foundIndex = variants.findIndex(v =>
+      v.sku === currentKey || v.variantId === currentKey,
+    )
+    if (foundIndex !== -1)
+      idx = foundIndex
+  }
+
+  const selected = variants[idx]
+  selectedVariantKeyByProductId.value[item.id] = selected.sku || selected.variantId || String(idx)
+  return selected
+}
+
+const formatCurrency = value => {
+  const num = typeof value === 'number' ? value : parseFloat(String(value || '0').replace(/[^\d.-]/g, '') || 0)
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+    minimumFractionDigits: 2,
+  }).format(Number.isNaN(num) ? 0 : num)
+}
+
+const getVariantPrice = item => {
+  const v = getSelectedVariant(item)
+  if (v?.price?.base != null)
+    return typeof v.price.base === 'number' ? v.price.base : parseFloat(v.price.base)
+  return item.priceNumber ?? 0
+}
+
+const getVariantQty = item => {
+  const v = getSelectedVariant(item)
+  if (v?.stock?.quantity != null)
+    return v.stock.quantity
+  return item.qtyTotal ?? 0
+}
+
+const editingPriceId = ref(null)
+const editingQtyId = ref(null)
+
+const handlePriceInputBlur = (item, event) => {
+  const value = event?.target?.value
+  updateVariantPrice(item, value)
+}
+
+const handleQtyInputBlur = (item, event) => {
+  const value = event?.target?.value
+  updateVariantQty(item, value)
+}
+
+const updateVariantPrice = async (item, newPrice) => {
+  try {
+    const numericPrice = typeof newPrice === 'number'
+      ? newPrice
+      : parseFloat(String(newPrice).replace(/[^\d.-]/g, '') || 0)
+    if (Number.isNaN(numericPrice))
+      return
+
+    const v = getSelectedVariant(item)
+    if (!v?.sku)
+      return
+
+    await $api(`/admin/products/${item.id}/variant/price`, {
+      method: 'PATCH',
+      body: {
+        sku: v.sku,
+        price: numericPrice,
+      },
+    })
+    await fetchProducts()
+  } catch (error) {
+    console.error('Ошибка при обновлении цены варианта:', error)
+  } finally {
+    editingPriceId.value = null
+  }
+}
+
+const updateVariantQty = async (item, newQty) => {
+  try {
+    const numericQty = typeof newQty === 'number'
+      ? newQty
+      : parseInt(String(newQty).replace(/[^\d]/g, '') || '0', 10)
+    if (Number.isNaN(numericQty) || numericQty < 0)
+      return
+
+    const v = getSelectedVariant(item)
+    if (!v?.sku)
+      return
+
+    await $api(`/admin/products/${item.id}/variant/stock`, {
+      method: 'PATCH',
+      body: {
+        sku: v.sku,
+        stockQuantity: numericQty,
+      },
+    })
+    await fetchProducts()
+  } catch (error) {
+    console.error('Ошибка при обновлении количества варианта:', error)
+  } finally {
+    editingQtyId.value = null
   }
 }
 </script>
@@ -421,6 +539,88 @@ const exportToExcel = async () => {
         class="text-no-wrap"
         @update:options="updateOptions"
       >
+        <!-- variant selector -->
+        <template #item.variant="{ item }">
+          <AppSelect
+            v-if="getVariantList(item).length"
+            :items="getVariantList(item).map(v => ({
+              title: v.attributes?.size || v.attributes?.color || v.sku || v.variantId || 'Вариант',
+              value: v.sku || v.variantId,
+            }))"
+            :model-value="selectedVariantKeyByProductId[item.id] || (getVariantList(item)[0].sku || getVariantList(item)[0].variantId)"
+            density="compact"
+            hide-details
+            style="max-width: 160px;"
+            @update:model-value="val => { selectedVariantKeyByProductId[item.id] = val }"
+          />
+          <span
+            v-else
+            class="text-body-2 text-medium-emphasis"
+          >
+            —
+          </span>
+        </template>
+
+        <!-- inline editable price -->
+        <template #item.price="{ item }">
+          <div class="editable-cell d-flex align-center justify-space-between">
+            <template v-if="editingPriceId === item.id">
+              <VTextField
+                :model-value="getVariantPrice(item)"
+                type="number"
+                density="compact"
+                variant="underlined"
+                hide-details
+                style="max-width: 110px;"
+                autofocus
+                @blur="event => handlePriceInputBlur(item, event)"
+                @keyup.enter="event => handlePriceInputBlur(item, event)"
+              />
+            </template>
+            <template v-else>
+              <span class="text-body-2 text-high-emphasis">
+                {{ formatCurrency(getVariantPrice(item)) }}
+              </span>
+              <VIcon
+                icon="tabler-pencil"
+                size="16"
+                class="ms-1 editable-cell__icon"
+                @click.stop="editingPriceId = item.id"
+              />
+            </template>
+          </div>
+        </template>
+
+        <!-- inline editable qty -->
+        <template #item.qty="{ item }">
+          <div class="editable-cell d-flex align-center justify-space-between">
+            <template v-if="editingQtyId === item.id">
+              <VTextField
+                :model-value="getVariantQty(item)"
+                type="number"
+                density="compact"
+                variant="underlined"
+                hide-details
+                style="max-width: 80px;"
+                autofocus
+                @blur="event => handleQtyInputBlur(item, event)"
+                @keyup.enter="event => handleQtyInputBlur(item, event)"
+              />
+            </template>
+            <template v-else>
+              <span class="text-body-2 text-high-emphasis">
+                {{ getVariantQty(item) }}
+              </span>
+              <VIcon
+                icon="tabler-pencil"
+                size="16"
+                class="ms-1 editable-cell__icon"
+                @click.stop="editingQtyId = item.id"
+              />
+            </template>
+          </div>
+        </template>
+
         <!-- product  -->
         <template #item.product="{ item }">
           <div class="d-flex align-center gap-x-4">
@@ -526,3 +726,23 @@ const exportToExcel = async () => {
     </VCard>
   </div>
 </template>
+
+<style lang="scss" scoped>
+.border {
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  border-radius: 6px;
+}
+
+.editable-cell {
+  cursor: default;
+}
+
+.editable-cell__icon {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.editable-cell:hover .editable-cell__icon {
+  opacity: 1;
+}
+</style>

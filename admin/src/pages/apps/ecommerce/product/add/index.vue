@@ -280,8 +280,8 @@ const variants = ref([
     attributes: { color: '', size: '' },
     price: { base: '', sale: '', currency: 'RUB', vat: 20 },
     stock: { quantity: 0 },
-    barcodes: { 
-      skuBarcode: '', 
+    barcodes: {
+      skuBarcode: '',
       ean13: '' // Будет сгенерирован автоматически
     },
     logistics: {
@@ -292,25 +292,41 @@ const variants = ref([
   }
 ])
 
-// Инициализируем EAN-13, ID и SKU для первого варианта после определения функций
-if (variants.value.length > 0) {
-  const firstVariant = variants.value[0]
-  if (!firstVariant.barcodes.ean13 || firstVariant.barcodes.ean13 === '') {
-    firstVariant.barcodes.ean13 = generateEAN13()
+const fetchNextSku = async () => {
+  try {
+    const res = await $api('/admin/products/next-sku', { method: 'GET' })
+    return res?.sku || ''
+  } catch (e) {
+    console.error('Не удалось получить следующий SKU:', e)
+    return ''
   }
-  if (!firstVariant.variantId || firstVariant.variantId.trim() === '') {
-    firstVariant.variantId = generateVariantId(0)
+}
+
+const getNextLocalSku = () => {
+  const nums = []
+
+  const collect = s => {
+    const v = (s || '').toString().trim()
+    if (/^\d{5}$/.test(v)) {
+      const n = parseInt(v, 10)
+      if (!Number.isNaN(n)) nums.push(n)
+    }
   }
-  if (!firstVariant.sku || firstVariant.sku.trim() === '') {
-    firstVariant.sku = generateVariantSku(productSku.value, firstVariant.attributes, 0)
-  }
+
+  collect(productSku.value)
+  variants.value.forEach(v => collect(v.sku))
+
+  const max = nums.length ? Math.max(...nums) : 0
+  const next = max + 1
+  return String(next > 0 ? next : 1).padStart(5, '0')
 }
 
 const addVariant = () => {
   const variantIndex = variants.value.length
+  const nextSku = getNextLocalSku()
   const newVariant = {
     variantId: generateVariantId(variantIndex), // Автоматически генерируем ID варианта
-    sku: generateVariantSku(productSku.value, { color: '', size: '' }, variantIndex), // Автоматически генерируем SKU варианта
+    sku: nextSku, // Автоматически генерируем SKU варианта (5-значный, следующий после текущих)
     attributes: { color: '', size: '' },
     price: { base: '', sale: '', currency: 'RUB', vat: 20 },
     stock: { quantity: 0 },
@@ -325,7 +341,7 @@ const addVariant = () => {
     }
   }
   variants.value.push(newVariant)
-  
+
   // Генерируем SKU штрихкод для нового варианта
   if (newVariant.sku && newVariant.sku.trim()) {
     newVariant.barcodes.skuBarcode = generateSKUBarcode(newVariant.sku)
@@ -923,42 +939,6 @@ const cancel = () => {
 // Флаг для предотвращения генерации штрихкодов при загрузке данных
 const isLoadingData = ref(false)
 
-// Автоматическая генерация SKU варианта при изменении основного SKU товара
-watch(() => productSku.value, (newSku, oldSku) => {
-  if (isLoadingData.value || !oldSku) return // Пропускаем при загрузке данных и первую инициализацию
-  
-  variants.value.forEach((variant, index) => {
-    // Генерируем SKU варианта только если он пустой или был сгенерирован автоматически
-    if (!variant.sku || variant.sku.trim() === '' || variant.sku.startsWith('VARIANT-')) {
-      variant.sku = generateVariantSku(newSku, variant.attributes, index)
-      // Генерируем SKU штрихкод
-      if (variant.sku && variant.sku.trim()) {
-        variant.barcodes.skuBarcode = generateSKUBarcode(variant.sku)
-      }
-    }
-  })
-})
-
-// Автоматическая генерация SKU варианта при изменении атрибутов (цвет, размер)
-watch(() => variants.value.map(v => ({ color: v.attributes?.color || '', size: v.attributes?.size || '' })), (newAttrs, oldAttrs) => {
-  if (isLoadingData.value || !oldAttrs) return // Пропускаем при загрузке данных и первую инициализацию
-  
-  newAttrs.forEach((attrs, index) => {
-    const variant = variants.value[index]
-    if (variant) {
-      const oldAttrs = oldAttrs[index]
-      // Если изменились атрибуты, генерируем новый SKU
-      if (oldAttrs && (oldAttrs.color !== attrs.color || oldAttrs.size !== attrs.size)) {
-        variant.sku = generateVariantSku(productSku.value, variant.attributes, index)
-        // Генерируем SKU штрихкод
-        if (variant.sku && variant.sku.trim()) {
-          variant.barcodes.skuBarcode = generateSKUBarcode(variant.sku)
-        }
-      }
-    }
-  })
-}, { deep: true })
-
 // Автоматическая генерация штрихкодов при изменении SKU (только если данные не загружаются)
 watch(() => variants.value.map(v => v.sku), (newSkus, oldSkus) => {
   if (isLoadingData.value || !oldSkus) return // Пропускаем при загрузке данных и первую инициализацию
@@ -994,7 +974,7 @@ watch(() => variants.value.length, (newLength, oldLength) => {
   }
 })
 
-onMounted(() => {
+onMounted(async () => {
   console.log('Product Add page mounted')
   // Загружаем категории без await, чтобы не блокировать рендеринг
   loadCategories().catch(err => {
@@ -1013,6 +993,18 @@ onMounted(() => {
   } else {
     isEditMode.value = false
     productId.value = null
+
+    // Новый товар: генерируем SKU товара и первого варианта
+    const sku = await fetchNextSku()
+    if (sku) {
+      productSku.value = sku
+      if (variants.value.length > 0 && (!variants.value[0].sku || variants.value[0].sku.trim() === '')) {
+        variants.value[0].sku = sku
+        variants.value[0].barcodes.ean13 = generateEAN13()
+        variants.value[0].barcodes.skuBarcode = generateSKUBarcode(sku)
+        variants.value[0].variantId = generateVariantId(0)
+      }
+    }
   }
 })
 
@@ -1121,7 +1113,8 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
                 <AppTextField
                   v-model="productSku"
                   label="SKU"
-                  placeholder="TSHIRT-001"
+                  placeholder="00001"
+                  readonly
                 />
               </VCol>
               <VCol
@@ -1346,12 +1339,8 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
                   <AppTextField
                     v-model="variant.sku"
                     label="SKU варианта"
-                    placeholder="TSHIRT-001-BLK-M"
-                    @blur="() => {
-                      if (variant.sku && variant.sku.trim() && (!variant.barcodes.skuBarcode || variant.barcodes.skuBarcode.trim() === '')) {
-                        variant.barcodes.skuBarcode = generateSKUBarcode(variant.sku)
-                      }
-                    }"
+                  placeholder="00002"
+                  readonly
                   />
                 </VCol>
                 <VCol

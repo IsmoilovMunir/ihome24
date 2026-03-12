@@ -33,14 +33,14 @@
           <div class="space-y-3 md:space-y-4">
             <div
               v-for="item in cartStore.items"
-              :key="item.product.id"
+              :key="`${item.product.id}-${item.variantKey ?? 'default'}`"
               class="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 border-b border-white/20 pb-3 md:pb-4"
             >
               <router-link :to="productPath(item.product)" class="flex-shrink-0 flex items-center gap-3 sm:block">
                 <img
                   v-if="getImageUrl(item.product)"
                   :src="getImageUrl(item.product)"
-                  :alt="item.product.name"
+                  :alt="getDisplayName(item)"
                   class="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 object-cover rounded flex-shrink-0"
                 />
                 <div
@@ -66,10 +66,10 @@
                     :to="productPath(item.product)"
                     class="text-base font-semibold text-white hover:text-[#C56129] transition-colors line-clamp-2"
                   >
-                    {{ item.product.name }}
+                    {{ getDisplayName(item) }}
                   </router-link>
                   <p class="text-gray-400 text-sm mt-0.5">
-                    {{ formatPrice(settingsStore.unitPriceForQuantity(item.product.price, item.quantity)) }} за шт.
+                    {{ formatPrice(settingsStore.unitPriceForQuantity(item.priceBase ?? item.product.price, item.quantity)) }} за шт.
                   </p>
                 </div>
               </router-link>
@@ -79,25 +79,32 @@
                   :to="productPath(item.product)"
                   class="text-base md:text-lg font-semibold text-white hover:text-[#C56129] transition-colors"
                 >
-                  {{ item.product.name }}
+                  {{ getDisplayName(item) }}
                 </router-link>
                 <p class="text-gray-400 text-sm mt-1">
-                  {{ formatPrice(settingsStore.unitPriceForQuantity(item.product.price, item.quantity)) }} за шт.
+                  {{ formatPrice(settingsStore.unitPriceForQuantity(item.priceBase ?? item.product.price, item.quantity)) }} за шт.
                 </p>
               </div>
 
               <div class="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
                 <div class="flex items-center space-x-2">
                   <button
-                    @click="cartStore.updateQuantity(item.product.id, item.quantity - 1)"
+                    @click="cartStore.updateQuantity(item.product.id, Math.max(1, item.quantity - 1), item.variantKey)"
                     class="px-2 py-1 md:px-3 md:py-1 border border-white/30 rounded text-white hover:bg-white/10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     -
                   </button>
-                  <span class="w-8 md:w-12 text-center text-white text-sm md:text-base">{{ item.quantity }}</span>
+                  <input
+                    :value="item.quantity"
+                    type="number"
+                    min="1"
+                    :max="item.variantStockQuantity ?? item.product?.stockQuantity ?? 999999"
+                    class="w-12 md:w-16 text-center text-white text-sm md:text-base bg-transparent border border-white/30 rounded px-1 py-0.5 focus:outline-none focus:ring-1 focus:ring-white/60"
+                    @input="event => onQuantityInput(item, event)"
+                  >
                   <button
-                    @click="cartStore.updateQuantity(item.product.id, item.quantity + 1)"
-                    :disabled="item.quantity >= (item.product?.stockQuantity ?? 999999)"
+                    @click="cartStore.updateQuantity(item.product.id, Math.min((item.variantStockQuantity ?? item.product?.stockQuantity ?? 999999), item.quantity + 1), item.variantKey)"
+                    :disabled="item.quantity >= (item.variantStockQuantity ?? item.product?.stockQuantity ?? 999999)"
                     class="px-2 py-1 md:px-3 md:py-1 border border-white/30 rounded text-white hover:bg-white/10 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     +
@@ -108,7 +115,7 @@
                     {{ formatPrice(getItemTotal(item)) }}
                   </p>
                   <button
-                    @click="cartStore.removeFromCart(item.product.id)"
+                    @click="cartStore.removeFromCart(item.product.id, item.variantKey)"
                     class="text-gray-400 hover:text-gray-300 text-xs md:text-sm"
                   >
                     Удалить
@@ -169,8 +176,15 @@ onMounted(async () => {
   cartStore.validateCart()
 })
 
+const getDisplayName = (item) => {
+  const base = item.product?.name || ''
+  const label = item.variantLabel || ''
+  return label ? `${base} ${label}` : base
+}
+
 function getItemTotal(item) {
-  const unitPrice = settingsStore.unitPriceForQuantity(item.product?.price ?? 0, item.quantity ?? 0)
+  const price = item.priceBase ?? item.product?.price ?? 0
+  const unitPrice = settingsStore.unitPriceForQuantity(price, item.quantity ?? 0)
   return Math.round(unitPrice * (item.quantity ?? 0) * 100) / 100
 }
 
@@ -196,4 +210,77 @@ const formatPrice = (price) => {
     minimumFractionDigits: 0,
   }).format(price)
 }
+
+// Храним активные анимации по ID товара, чтобы анимации не наслаивались
+const quantityAnimations = {}
+
+function onQuantityInput(item, event) {
+  const raw = event.target.value
+  let value = parseInt(raw, 10)
+
+  if (Number.isNaN(value)) {
+    value = 1
+  }
+  if (value < 1) value = 1
+
+  const stock = typeof item.variantStockQuantity === 'number'
+    ? item.variantStockQuantity
+    : item.product?.stockQuantity
+  const hasStockLimit = typeof stock === 'number'
+  const max = hasStockLimit ? stock : 999999
+
+  // Если нет ограничения по складу или значение в пределах склада — просто устанавливаем
+  if (!hasStockLimit || value <= max) {
+    cartStore.updateQuantity(item.product.id, value, item.variantKey)
+    return
+  }
+
+  const productId = item.product.id
+
+  // Останавливаем предыдущую анимацию для этого товара, если была
+  if (quantityAnimations[productId]) {
+    cancelAnimationFrame(quantityAnimations[productId])
+    delete quantityAnimations[productId]
+  }
+
+  // Анимация от введённого значения до максимума за фиксированное время (1 секунда)
+  const start = value
+  const end = max
+  const duration = 1000 // мс
+  const startTime = performance.now()
+
+  const animate = (time) => {
+    const elapsed = time - startTime
+    const t = Math.min(elapsed / duration, 1) // 0..1
+
+    // Линейная интерполяция между start и end
+    const current = Math.round(start + (end - start) * t)
+
+    cartStore.updateQuantity(productId, current, item.variantKey)
+    event.target.value = String(current)
+
+    if (t >= 1) {
+      delete quantityAnimations[productId]
+      return
+    }
+
+    quantityAnimations[productId] = requestAnimationFrame(animate)
+  }
+
+  quantityAnimations[productId] = requestAnimationFrame(animate)
+}
 </script>
+
+<style scoped>
+/* Убираем стрелки у input[type=number] в разных браузерах */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+</style>
