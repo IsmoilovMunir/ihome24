@@ -7,6 +7,8 @@ import com.ihome24.ihome24.dto.request.product.DescriptionRequest;
 import com.ihome24.ihome24.dto.request.product.ProductInfoRequest;
 import com.ihome24.ihome24.dto.request.product.ProductRequest;
 import com.ihome24.ihome24.dto.request.product.VariantRequest;
+import com.ihome24.ihome24.dto.request.product.PriceRequest;
+import com.ihome24.ihome24.dto.request.product.StockRequest;
 import com.ihome24.ihome24.dto.response.category.CategoryResponse;
 import com.ihome24.ihome24.dto.response.product.CharacteristicResponse;
 import com.ihome24.ihome24.dto.response.product.ProductImageResponse;
@@ -30,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -450,6 +453,119 @@ public class ProductService {
         return mapToResponse(updatedProduct, false);
     }
 
+    /**
+     * Частичное обновление цены варианта по SKU.
+     */
+    @Transactional
+    public ProductResponse updateVariantPrice(Long productId, String variantSku, BigDecimal price) {
+        if (variantSku == null || variantSku.isEmpty()) {
+            throw new IllegalArgumentException("SKU варианта обязателен");
+        }
+        if (price == null) {
+            throw new IllegalArgumentException("Новая цена обязательна");
+        }
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Товар с ID " + productId + " не найден"));
+
+        if (product.getVariantsJson() == null || product.getVariantsJson().isEmpty()) {
+            throw new IllegalArgumentException("У товара нет вариантов для обновления");
+        }
+
+        try {
+            List<VariantRequest> variants = objectMapper.readValue(
+                    product.getVariantsJson(),
+                    new TypeReference<List<VariantRequest>>() {}
+            );
+
+            boolean found = false;
+            for (int i = 0; i < variants.size(); i++) {
+                VariantRequest v = variants.get(i);
+                if (variantSku.equals(v.getSku())) {
+                    if (v.getPrice() == null) {
+                        v.setPrice(new PriceRequest());
+                    }
+                    v.getPrice().setBase(price);
+
+                    // Если это первый вариант, синхронизируем с полями товара
+                    if (i == 0) {
+                        product.setPrice(price);
+                        if (v.getPrice().getSale() != null) {
+                            product.setOldPrice(v.getPrice().getSale());
+                        }
+                    }
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                throw new IllegalArgumentException("Вариант с SKU " + variantSku + " не найден у товара");
+            }
+
+            product.setVariantsJson(objectMapper.writeValueAsString(variants));
+            Product saved = productRepository.save(product);
+            return mapToResponse(saved, false);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Ошибка при обновлении варианта: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Частичное обновление количества на складе варианта по SKU.
+     */
+    @Transactional
+    public ProductResponse updateVariantStock(Long productId, String variantSku, Integer stockQuantity) {
+        if (variantSku == null || variantSku.isEmpty()) {
+            throw new IllegalArgumentException("SKU варианта обязателен");
+        }
+        if (stockQuantity == null || stockQuantity < 0) {
+            throw new IllegalArgumentException("Количество на складе должно быть неотрицательным");
+        }
+
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("Товар с ID " + productId + " не найден"));
+
+        if (product.getVariantsJson() == null || product.getVariantsJson().isEmpty()) {
+            throw new IllegalArgumentException("У товара нет вариантов для обновления");
+        }
+
+        try {
+            List<VariantRequest> variants = objectMapper.readValue(
+                    product.getVariantsJson(),
+                    new TypeReference<List<VariantRequest>>() {}
+            );
+
+            boolean found = false;
+            for (int i = 0; i < variants.size(); i++) {
+                VariantRequest v = variants.get(i);
+                if (variantSku.equals(v.getSku())) {
+                    if (v.getStock() == null) {
+                        v.setStock(new StockRequest());
+                    }
+                    v.getStock().setQuantity(stockQuantity);
+
+                    // Если это первый вариант, синхронизируем с полем товара
+                    if (i == 0) {
+                        product.setStockQuantity(stockQuantity);
+                    }
+                    found = true;
+                    break;
+                }
+            }
+
+            if (!found) {
+                throw new IllegalArgumentException("Вариант с SKU " + variantSku + " не найден у товара");
+            }
+
+            product.setVariantsJson(objectMapper.writeValueAsString(variants));
+            Product saved = productRepository.save(product);
+            return mapToResponse(saved, false);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Ошибка при обновлении варианта: " + e.getMessage());
+        }
+    }
+
     @Transactional
     public void deleteProduct(Long id) {
         if (!productRepository.existsById(id)) {
@@ -647,5 +763,54 @@ public class ProductService {
                 .createdAt(category.getCreatedAt())
                 .updatedAt(category.getUpdatedAt())
                 .build();
+    }
+
+    /**
+     * Генерирует следующий свободный SKU в виде 5-значного числа (00001, 00002, ...),
+     * основываясь на уже существующих SKU товаров и вариантов.
+     */
+    @Transactional(readOnly = true)
+    public String generateNextSku() {
+        List<Product> allProducts = productRepository.findAll();
+        int max = 0;
+
+        for (Product product : allProducts) {
+            // SKU самого товара
+            String sku = product.getSku();
+            if (sku != null && sku.matches("\\d{5}")) {
+                try {
+                    max = Math.max(max, Integer.parseInt(sku));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+
+            // SKU вариантов из JSON
+            if (product.getVariantsJson() != null && !product.getVariantsJson().isEmpty()) {
+                try {
+                    List<VariantRequest> variants = objectMapper.readValue(
+                            product.getVariantsJson(),
+                            new TypeReference<List<VariantRequest>>() {}
+                    );
+                    for (VariantRequest v : variants) {
+                        String vSku = v.getSku();
+                        if (vSku != null && vSku.matches("\\d{5}")) {
+                            try {
+                                max = Math.max(max, Integer.parseInt(vSku));
+                            } catch (NumberFormatException ignored) {
+                            }
+                        }
+                    }
+                } catch (Exception e) {
+                    // Если не удалось распарсить JSON вариантов — просто пропускаем их
+                    System.err.println("Ошибка при чтении variantsJson для SKU: " + e.getMessage());
+                }
+            }
+        }
+
+        int next = max + 1;
+        if (next <= 0) {
+            next = 1;
+        }
+        return String.format("%05d", next);
     }
 }

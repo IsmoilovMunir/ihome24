@@ -101,13 +101,6 @@
             {{ formatPrice(product.oldPrice) }}
           </span>
         </div>
-        <span
-          v-if="product.stockQuantity !== null && product.stockQuantity > 0 && product.stockQuantity <= 10"
-          class="text-xs font-semibold"
-          style="color: var(--product-tile-title-color);"
-        >
-          Осталось: {{ product.stockQuantity }}
-        </span>
       </div>
     </div>
   </div>
