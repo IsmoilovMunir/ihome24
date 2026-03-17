@@ -48,6 +48,15 @@ public class User implements UserDetails {
     @Column(name = "contact")
     private String contact;
 
+    @Column(name = "address")
+    private String address;
+
+    @Column(name = "state")
+    private String state;
+
+    @Column(name = "zip")
+    private String zip;
+
     @Column(name = "phone", unique = true, nullable = true)
     private String phone;
 

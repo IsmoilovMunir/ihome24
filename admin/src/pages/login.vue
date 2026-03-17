@@ -42,6 +42,12 @@ const credentials = ref({
 
 const rememberMe = ref(false)
 
+const isTwoFactorStep = ref(false)
+const twoFactorToken = ref('')
+const emailCode = ref('')
+const twoFactorError = ref()
+const isVerifyingTwoFactor = ref(false)
+
 const login = async () => {
   try {
     const res = await $api('/auth/login', {
@@ -59,6 +65,14 @@ const login = async () => {
         }
       },
     })
+
+    // Если для администратора включена двухфакторная авторизация по email
+    if (res?.twoFactorRequired) {
+      twoFactorToken.value = res.twoFactorToken
+      isTwoFactorStep.value = true
+      twoFactorError.value = undefined
+      return
+    }
 
     const { accessToken, userData, userAbilityRules } = res
 
@@ -78,6 +92,45 @@ const login = async () => {
   }
 }
 
+const verifyEmailCode = async () => {
+  if (!twoFactorToken.value)
+    return
+
+  try {
+    if (isVerifyingTwoFactor.value)
+      return
+
+    isVerifyingTwoFactor.value = true
+    twoFactorError.value = undefined
+
+    const res = await $api('/auth/verify-email-code', {
+      method: 'POST',
+      body: {
+        twoFactorToken: twoFactorToken.value,
+        code: emailCode.value,
+      },
+      onResponseError({ response }) {
+        const apiErrors = response._data?.errors
+        twoFactorError.value = (apiErrors?.code && apiErrors.code[0]) || (apiErrors?.twoFactorToken && apiErrors.twoFactorToken[0]) || 'Неверный код'
+      },
+    })
+
+    const { accessToken, userData, userAbilityRules } = res
+
+    useCookie('userAbilityRules').value = userAbilityRules
+    ability.update(userAbilityRules)
+    useCookie('userData').value = userData
+    useCookie('accessToken').value = accessToken
+
+    await nextTick(() => {
+      router.replace(route.query.to ? String(route.query.to) : '/')
+    })
+  } catch (err) {
+    console.error(err)
+  } finally {
+    isVerifyingTwoFactor.value = false
+  }
+}
 
 const onSubmit = () => {
   refVForm.value?.validate().then(({ valid: isValid }) => {
@@ -151,83 +204,94 @@ const onSubmit = () => {
             @submit.prevent="onSubmit"
           >
             <VRow>
-              <!-- username -->
-              <VCol cols="12">
-                <AppTextField
-                  v-model="credentials.username"
-                  label="Имя пользователя"
-                  placeholder="Введите имя пользователя"
-                  type="text"
-                  autofocus
-                  :rules="[requiredValidator]"
-                  :error-messages="errors.username || errors.email"
-                />
-              </VCol>
-
-              <!-- password -->
-              <VCol cols="12">
-                <AppTextField
-                  v-model="credentials.password"
-                  label="Пароль"
-                  placeholder="············"
-                  :rules="[requiredValidator]"
-                  :type="isPasswordVisible ? 'text' : 'password'"
-                  autocomplete="password"
-                  :error-messages="errors.password"
-                  :append-inner-icon="isPasswordVisible ? 'tabler-eye-off' : 'tabler-eye'"
-                  @click:append-inner="isPasswordVisible = !isPasswordVisible"
-                />
-
-                <div class="d-flex align-center flex-wrap justify-space-between my-6">
-                  <VCheckbox
-                    v-model="rememberMe"
-                    label="Запомнить меня"
+              <template v-if="!isTwoFactorStep">
+                <!-- username -->
+                <VCol cols="12">
+                  <AppTextField
+                    v-model="credentials.username"
+                    label="Имя пользователя"
+                    placeholder="Введите имя пользователя"
+                    type="text"
+                    autofocus
+                    :rules="[requiredValidator]"
+                    :error-messages="errors.username || errors.email"
                   />
-                  <RouterLink
-                    class="text-primary ms-2 mb-1"
-                    :to="{ name: 'forgot-password' }"
+                </VCol>
+
+                <!-- password -->
+                <VCol cols="12">
+                  <AppTextField
+                    v-model="credentials.password"
+                    label="Пароль"
+                    placeholder="············"
+                    :rules="[requiredValidator]"
+                    :type="isPasswordVisible ? 'text' : 'password'"
+                    autocomplete="password"
+                    :error-messages="errors.password"
+                    :append-inner-icon="isPasswordVisible ? 'tabler-eye-off' : 'tabler-eye'"
+                    @click:append-inner="isPasswordVisible = !isPasswordVisible"
+                  />
+
+                  <div class="d-flex align-center flex-wrap justify-space-between my-6">
+                    <VCheckbox
+                      v-model="rememberMe"
+                      label="Запомнить меня"
+                    />
+                    <RouterLink
+                      class="text-primary ms-2 mb-1"
+                      :to="{ name: 'forgot-password' }"
+                    >
+                      Забыли пароль?
+                    </RouterLink>
+                  </div>
+
+                  <VBtn
+                    block
+                    type="submit"
                   >
-                    Забыли пароль?
-                  </RouterLink>
-                </div>
+                    Войти
+                  </VBtn>
+                </VCol>
+              </template>
 
-                <VBtn
-                  block
-                  type="submit"
-                >
-                  Войти
-                </VBtn>
-              </VCol>
+              <template v-else>
+                <VCol cols="12">
+                  <p class="mb-2">
+                    На ваш email отправлен код подтверждения входа. Введите его ниже, чтобы завершить авторизацию.
+                  </p>
+                  <AppTextField
+                    v-model="emailCode"
+                    label="Код из письма"
+                    placeholder="Введите 6-значный код"
+                    type="text"
+                    maxlength="6"
+                    :error-messages="twoFactorError"
+                  />
+                </VCol>
+                <VCol cols="12">
+                  <VBtn
+                    block
+                    type="button"
+                    :loading="isVerifyingTwoFactor"
+                    :disabled="isVerifyingTwoFactor"
+                    @click="verifyEmailCode"
+                  >
+                    Подтвердить код
+                  </VBtn>
+                  <VBtn
+                    block
+                    variant="tonal"
+                    color="secondary"
+                    class="mt-2"
+                    type="button"
+                    @click="isTwoFactorStep = false"
+                  >
+                    Назад к вводу логина и пароля
+                  </VBtn>
+                </VCol>
+              </template>
 
-              <!-- create account -->
-              <VCol
-                cols="12"
-                class="text-center"
-              >
-                <span>Впервые на нашей платформе?</span>
-                <RouterLink
-                  class="text-primary ms-1"
-                  :to="{ name: 'register' }"
-                >
-                  Создать аккаунт
-                </RouterLink>
-              </VCol>
-              <VCol
-                cols="12"
-                class="d-flex align-center"
-              >
-                <VDivider />
-                <span class="mx-4">или</span>
-                <VDivider />
-              </VCol>
-
-              <!-- auth providers -->
-              <VCol
-                cols="12"
-                class="text-center"
-              >
-                <AuthProvider />
-              </VCol>
+              <!-- блок соц-сетей и альтернативных провайдеров авторизации скрыт в админ-панели -->
             </VRow>
           </VForm>
         </VCardText>

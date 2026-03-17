@@ -22,6 +22,7 @@ const accountDataLocal = ref({
   currency: 'RUB',
 })
 const originalAccountData = ref(null)
+const isSaveSuccessSnackbarVisible = ref(false)
 const isAccountDeactivated = ref(false)
 const validateAccountDeactivation = [v => !!v || 'Пожалуйста, подтвердите деактивацию аккаунта']
 
@@ -44,16 +45,16 @@ const loadUserData = async () => {
         email: data.email || '',
         org: data.company || '',
         phone: data.contact || '',
-        address: '',
-        state: '',
-        zip: '',
+        address: data.address || '',
+        state: data.state || '',
+        zip: data.zip || '',
         country: data.country || 'Россия',
         language: 'Русский',
         timezone: '(GMT+03:00) Москва',
         currency: 'RUB',
       }
       
-      originalAccountData.value = structuredClone(accountDataLocal.value)
+      originalAccountData.value = JSON.parse(JSON.stringify(accountDataLocal.value))
     }
   } catch (error) {
     console.error('Ошибка при загрузке данных пользователя:', error)
@@ -64,7 +65,7 @@ const loadUserData = async () => {
 
 const resetForm = () => {
   if (originalAccountData.value) {
-    accountDataLocal.value = structuredClone(originalAccountData.value)
+    accountDataLocal.value = JSON.parse(JSON.stringify(originalAccountData.value))
   }
 }
 
@@ -84,22 +85,26 @@ const saveAccountData = async () => {
       company: accountDataLocal.value.org,
       country: accountDataLocal.value.country,
       contact: accountDataLocal.value.phone,
-      avatar: accountDataLocal.value.avatarImg !== avatar1 ? accountDataLocal.value.avatarImg : null,
+      address: accountDataLocal.value.address,
+      state: accountDataLocal.value.state,
+      zip: accountDataLocal.value.zip,
     }
     
-    await $api('/auth/me', {
+    const saved = await $api('/auth/me', {
       method: 'PUT',
       body: updateData,
     })
     
     // Обновляем originalAccountData после успешного сохранения
-    originalAccountData.value = structuredClone(accountDataLocal.value)
-    
-    // Показываем уведомление об успехе
-    alert('Данные успешно сохранены!')
+    if (saved) {
+      originalAccountData.value = JSON.parse(JSON.stringify(accountDataLocal.value))
+      isSaveSuccessSnackbarVisible.value = true
+      setTimeout(() => {
+        isSaveSuccessSnackbarVisible.value = false
+      }, 3000)
+    }
   } catch (error) {
     console.error('Ошибка при сохранении данных:', error)
-    alert('Ошибка при сохранении данных: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
   } finally {
     isSaving.value = false
   }
@@ -121,23 +126,22 @@ const changeAvatar = async file => {
       return
     }
     
-    fileReader.readAsDataURL(selectedFile)
-    fileReader.onload = async () => {
-      if (typeof fileReader.result === 'string') {
-        accountDataLocal.value.avatarImg = fileReader.result
-        
-        // Автоматически сохраняем аватар на бэкенд
-        try {
-          await $api('/auth/me', {
-            method: 'PUT',
-            body: {
-              avatar: fileReader.result,
-            },
-          })
-        } catch (error) {
-          console.error('Ошибка при сохранении аватара:', error)
-        }
+    // Отправляем файл как multipart/form-data на отдельный endpoint для аватара
+    const formData = new FormData()
+    formData.append('file', selectedFile)
+
+    try {
+      const res = await $api('/auth/me/avatar', {
+        method: 'POST',
+        body: formData,
+      })
+
+      // В ответе приходит обновлённый пользователь с путём к аватару
+      if (res?.avatar) {
+        accountDataLocal.value.avatarImg = res.avatar
       }
+    } catch (error) {
+      console.error('Ошибка при сохранении аватара:', error)
     }
   }
 }
@@ -188,6 +192,26 @@ const currencies = [
   <VRow>
     <VCol cols="12">
       <VCard>
+        <VSnackbar
+          v-model="isSaveSuccessSnackbarVisible"
+          color="success"
+          timeout="3000"
+          location="top right"
+        >
+          Данные аккаунта успешно сохранены.
+        </VSnackbar>
+
+        <VCardText>
+          <VAlert
+            v-if="!accountDataLocal.fullName && (!accountDataLocal.firstName || !accountDataLocal.email)"
+            type="warning"
+            variant="tonal"
+            class="mb-4"
+          >
+            Пожалуйста, заполните основные данные аккаунта (имя и E-mail), прежде чем продолжать работу в админ‑панели.
+          </VAlert>
+        </VCardText>
+
         <VCardText class="d-flex">
           <!-- 👉 Avatar -->
           <VAvatar
@@ -283,18 +307,6 @@ const currencies = [
                 />
               </VCol>
 
-              <!-- 👉 Organization -->
-              <VCol
-                cols="12"
-                md="6"
-              >
-                <AppTextField
-                  v-model="accountDataLocal.org"
-                  label="Организация"
-                  placeholder="Название компании"
-                />
-              </VCol>
-
               <!-- 👉 Phone -->
               <VCol
                 cols="12"
@@ -343,59 +355,7 @@ const currencies = [
                 />
               </VCol>
 
-              <!-- 👉 Country -->
-              <VCol
-                cols="12"
-                md="6"
-              >
-                <AppSelect
-                  v-model="accountDataLocal.country"
-                  label="Страна"
-                  :items="['Россия', 'Казахстан', 'Беларусь', 'Украина']"
-                  placeholder="Выберите страну"
-                />
-              </VCol>
-
-              <!-- 👉 Language -->
-              <VCol
-                cols="12"
-                md="6"
-              >
-                <AppSelect
-                  v-model="accountDataLocal.language"
-                  label="Язык"
-                  placeholder="Выберите язык"
-                  :items="['Русский', 'English', 'Қазақша']"
-                />
-              </VCol>
-
-              <!-- 👉 Timezone -->
-              <VCol
-                cols="12"
-                md="6"
-              >
-                <AppSelect
-                  v-model="accountDataLocal.timezone"
-                  label="Часовой пояс"
-                  placeholder="Выберите часовой пояс"
-                  :items="timezones"
-                  :menu-props="{ maxHeight: 200 }"
-                />
-              </VCol>
-
-              <!-- 👉 Currency -->
-              <VCol
-                cols="12"
-                md="6"
-              >
-                <AppSelect
-                  v-model="accountDataLocal.currency"
-                  label="Валюта"
-                  placeholder="Выберите валюту"
-                  :items="currencies"
-                  :menu-props="{ maxHeight: 200 }"
-                />
-              </VCol>
+              <!-- поля организация, язык, валюта и часовой пояс скрыты -->
 
               <!-- 👉 Form Actions -->
               <VCol

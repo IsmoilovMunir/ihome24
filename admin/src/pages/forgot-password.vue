@@ -8,6 +8,9 @@ import authV2MaskDark from '@images/pages/misc-mask-dark.png'
 import authV2MaskLight from '@images/pages/misc-mask-light.png'
 
 const email = ref('')
+const loading = ref(false)
+const success = ref(false)
+const errorMessage = ref('')
 const authThemeImg = useGenerateImageVariant(authV2ForgotPasswordIllustrationLight, authV2ForgotPasswordIllustrationDark)
 const authThemeMask = useGenerateImageVariant(authV2MaskLight, authV2MaskDark)
 
@@ -17,6 +20,37 @@ definePage({
     unauthenticatedOnly: true,
   },
 })
+
+const onSubmit = async () => {
+  if (!email.value) {
+    errorMessage.value = 'Укажите email или имя пользователя'
+    return
+  }
+  loading.value = true
+  errorMessage.value = ''
+  success.value = false
+
+  try {
+    const res = await $api('/auth/forgot-password', {
+      method: 'POST',
+      body: {
+        email: email.value,
+      },
+      onResponseError({ response }) {
+        const errors = response._data?.errors
+        errorMessage.value = (errors?.email && errors.email[0]) || 'Не удалось отправить письмо для сброса пароля'
+      },
+    })
+    if (res?.success)
+      success.value = true
+  } catch (err) {
+    console.error(err)
+    if (!errorMessage.value)
+      errorMessage.value = 'Не удалось отправить письмо для сброса пароля'
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
@@ -79,24 +113,37 @@ definePage({
         </VCardText>
 
         <VCardText>
-          <VForm @submit.prevent="() => {}">
+          <VForm
+            @submit.prevent="onSubmit"
+          >
             <VRow>
-              <!-- email -->
               <VCol cols="12">
                 <AppTextField
                   v-model="email"
                   autofocus
-                  label="Email"
-                  type="email"
-                  placeholder="johndoe@email.com"
+                  label="Email или имя пользователя"
+                  type="text"
+                  placeholder="admin@example.com"
+                  :error-messages="errorMessage"
                 />
               </VCol>
 
-              <!-- Reset link -->
+              <VCol cols="12">
+                <VAlert
+                  v-if="success"
+                  type="success"
+                  variant="tonal"
+                  class="mb-4"
+                >
+                  Мы отправили письмо с инструкциями по сбросу пароля.
+                </VAlert>
+              </VCol>
+
               <VCol cols="12">
                 <VBtn
                   block
                   type="submit"
+                  :loading="loading"
                 >
                   Отправить ссылку для сброса
                 </VBtn>

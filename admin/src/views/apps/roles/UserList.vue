@@ -1,6 +1,8 @@
 <script setup>
 import AddNewUserDrawer from '@/views/apps/user/list/AddNewUserDrawer.vue'
 
+const router = useRouter()
+
 const searchQuery = ref('')
 const selectedRole = ref()
 const selectedPlan = ref()
@@ -178,6 +180,10 @@ const deleteUser = async id => {
   // refetch User
   fetchUsers()
 }
+
+const viewUser = id => {
+  router.push({ name: 'apps-user-view-id', params: { id } })
+}
 </script>
 
 <template>
@@ -313,7 +319,7 @@ const deleteUser = async id => {
             <VIcon icon="tabler-trash" />
           </IconBtn>
 
-          <IconBtn>
+          <IconBtn @click="viewUser(item.id)">
             <VIcon icon="tabler-eye" />
           </IconBtn>
 

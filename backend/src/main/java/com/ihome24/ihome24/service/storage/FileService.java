@@ -170,10 +170,13 @@ public class FileService {
             minIOService.uploadFile(bucketName, mediumObjectName, mediumBytes, variantContentType);
             minIOService.uploadFile(bucketName, largeObjectName, largeBytes, variantContentType);
 
-            return bucketName + "/" + mediumObjectName;
+            // Возвращаем URL, доступный через FileController (/api/files/{bucket}/{path})
+            return "/api/files/" + bucketName + "/" + mediumObjectName;
         } catch (RuntimeException e) {
             log.warn("MinIO unavailable, saving avatar locally: {}", e.getMessage());
-            return saveAvatarLocally(userId, mediumBytes, variantExtension);
+            // В режиме fallback сохраняем локально и отдаём URL /api/avatars/{userId}
+            saveAvatarLocally(userId, mediumBytes, variantExtension);
+            return "/api/avatars/" + userId;
         }
     }
 

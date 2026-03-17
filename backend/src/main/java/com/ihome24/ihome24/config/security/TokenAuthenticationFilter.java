@@ -16,8 +16,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
-
+import java.time.ZoneId;
 /**
  * Фильтр для аутентификации по Bearer токену (token_userId_timestamp).
  */
@@ -28,12 +27,14 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
 
+    private static final long TOKEN_TTL_MILLIS = 60L * 60L * 1000L; // 1 час
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
             String token = extractToken(request);
-            if (StringUtils.hasText(token)) {
+            if (StringUtils.hasText(token) && !isExpired(token)) {
                 Long userId = parseUserId(token);
                 if (userId != null) {
                     User user = userRepository.findById(userId).orElse(null);
@@ -41,7 +42,7 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
                         user = userRepository.findByUsernameWithRoleAndPermissions(user.getUsername())
                                 .orElse(user);
                     }
-                    if (user != null) {
+                    if (user != null && !isTokenIssuedBeforeLastPasswordChange(token, user)) {
                         UserPrincipal principal = UserPrincipal.create(user);
                         UsernamePasswordAuthenticationToken auth =
                                 new UsernamePasswordAuthenticationToken(
@@ -78,5 +79,43 @@ public class TokenAuthenticationFilter extends OncePerRequestFilter {
             }
         }
         return null;
+    }
+
+    private boolean isExpired(String token) {
+        if (token == null || !token.startsWith("token_")) return true;
+        String[] parts = token.split("_");
+        if (parts.length < 3) {
+            return true;
+        }
+        try {
+            long issuedAt = Long.parseLong(parts[2]);
+            long now = System.currentTimeMillis();
+            return now - issuedAt > TOKEN_TTL_MILLIS;
+        } catch (NumberFormatException e) {
+            return true;
+        }
+    }
+
+    /**
+     * Если пароль менялся после выдачи токена, старый токен должен стать недействительным.
+     */
+    private boolean isTokenIssuedBeforeLastPasswordChange(String token, User user) {
+        if (token == null || user == null || user.getUpdatedAt() == null) {
+            return false;
+        }
+        String[] parts = token.split("_");
+        if (parts.length < 3) {
+            return true;
+        }
+        try {
+            long issuedAt = Long.parseLong(parts[2]);
+            long updatedAt = user.getUpdatedAt()
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli();
+            return issuedAt < updatedAt;
+        } catch (NumberFormatException e) {
+            return true;
+        }
     }
 }

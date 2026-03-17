@@ -1,5 +1,6 @@
 <script setup>
 import laptopGirl from '@images/illustrations/laptop-girl.png'
+import { $api } from '@/utils/api'
 
 const isCurrentPasswordVisible = ref(false)
 const isNewPasswordVisible = ref(false)
@@ -9,9 +10,9 @@ const newPassword = ref('')
 const confirmPassword = ref('')
 
 const passwordRequirements = [
-  'Minimum 8 characters long - the more, the better',
-  'At least one lowercase character',
-  'At least one number, symbol, or whitespace character',
+  'Минимум 8 символов — чем больше, тем лучше',
+  'Хотя бы одна строчная буква',
+  'Хотя бы одна цифра, символ или пробел',
 ]
 
 const serverKeys = [
@@ -37,94 +38,59 @@ const serverKeys = [
 
 const recentDevicesHeaders = [
   {
-    title: 'BROWSER',
+    title: 'Браузер',
     key: 'browser',
   },
   {
-    title: 'DEVICE',
+    title: 'Устройство',
     key: 'device',
   },
   {
-    title: 'LOCATION',
+    title: 'Местоположение',
     key: 'location',
   },
   {
-    title: 'RECENT ACTIVITY',
+    title: 'Недавняя активность',
     key: 'recentActivity',
   },
 ]
 
-const recentDevices = [
-  {
-    browser: 'Chrome on Windows',
-    device: 'HP Spectre 360',
-    location: 'New York, NY',
-    recentActivity: '28 Apr 2022, 18:20',
-    deviceIcon: {
-      icon: 'tabler-brand-windows',
-      color: 'primary',
-    },
-  },
-  {
-    browser: 'Chrome on iPhone',
-    device: 'iPhone 12x',
-    location: 'Los Angeles, CA',
-    recentActivity: '20 Apr 2022, 10:20',
-    deviceIcon: {
-      icon: 'tabler-device-mobile',
-      color: 'error',
-    },
-  },
-  {
-    browser: 'Chrome on Android',
-    device: 'Oneplus 9 Pro',
-    location: 'San Francisco, CA',
-    recentActivity: '16 Apr 2022, 04:20',
-    deviceIcon: {
-      icon: 'tabler-brand-android',
-      color: 'success',
-    },
-  },
-  {
-    browser: 'Chrome on macOS',
-    device: 'Apple iMac',
-    location: 'New York, NY',
-    recentActivity: '28 Apr 2022, 18:20',
-    deviceIcon: {
-      icon: 'tabler-brand-apple',
-      color: 'secondary',
-    },
-  },
-  {
-    browser: 'Chrome on Windows',
-    device: 'HP Spectre 360',
-    location: 'Los Angeles, CA',
-    recentActivity: '20 Apr 2022, 10:20',
-    deviceIcon: {
-      icon: 'tabler-brand-windows',
-      color: 'primary',
-    },
-  },
-  {
-    browser: 'Chrome on Android',
-    device: 'Oneplus 9 Pro',
-    location: 'San Francisco, CA',
-    recentActivity: '16 Apr 2022, 04:20',
-    deviceIcon: {
-      icon: 'tabler-brand-android',
-      color: 'success',
-    },
-  },
-]
+const recentDevices = ref([])
+const isLoadingDevices = ref(false)
 
 const isOneTimePasswordDialogVisible = ref(false)
+
+const loadRecentDevices = async () => {
+  try {
+    isLoadingDevices.value = true
+    const res = await $api('/auth/login-devices')
+    recentDevices.value = (res || []).map(item => ({
+      browser: item.browser || 'Неизвестный браузер',
+      device: item.device || 'Устройство',
+      location: item.location || 'Неизвестно',
+      recentActivity: item.recentActivity || '—',
+      deviceIcon: item.deviceIcon || {
+        icon: 'tabler-device-laptop',
+        color: 'info',
+      },
+    }))
+  } catch (err) {
+    console.error('Не удалось загрузить недавние устройства', err)
+  } finally {
+    isLoadingDevices.value = false
+  }
+}
+
+onMounted(() => {
+  loadRecentDevices()
+})
 </script>
 
 <template>
   <VRow>
     <!-- SECTION: Change Password -->
     <VCol cols="12">
-      <VCard title="Change Password">
+      <VCard title="Смена пароля">
         <VForm>
           <VCardText class="pt-0">
             <!-- 👉 Current Password -->
@@ -138,7 +104,7 @@ const isOneTimePasswordDialogVisible = ref(false)
                   v-model="currentPassword"
                   :type="isCurrentPasswordVisible ? 'text' : 'password'"
                   :append-inner-icon="isCurrentPasswordVisible ? 'tabler-eye-off' : 'tabler-eye'"
-                  label="Current Password"
+                  label="Текущий пароль"
                   autocomplete="on"
                   placeholder="············"
                   @click:append-inner="isCurrentPasswordVisible = !isCurrentPasswordVisible"
@@ -157,7 +123,7 @@ const isOneTimePasswordDialogVisible = ref(false)
                   v-model="newPassword"
                   :type="isNewPasswordVisible ? 'text' : 'password'"
                   :append-inner-icon="isNewPasswordVisible ? 'tabler-eye-off' : 'tabler-eye'"
-                  label="New Password"
+                  label="Новый пароль"
                   autocomplete="on"
                   placeholder="············"
                   @click:append-inner="isNewPasswordVisible = !isNewPasswordVisible"
@@ -173,7 +139,7 @@ const isOneTimePasswordDialogVisible = ref(false)
                   v-model="confirmPassword"
                   :type="isConfirmPasswordVisible ? 'text' : 'password'"
                   :append-inner-icon="isConfirmPasswordVisible ? 'tabler-eye-off' : 'tabler-eye'"
-                  label="Confirm New Password"
+                  label="Подтверждение нового пароля"
                   autocomplete="on"
                   placeholder="············"
                   @click:append-inner="isConfirmPasswordVisible = !isConfirmPasswordVisible"
@@ -185,7 +151,7 @@ const isOneTimePasswordDialogVisible = ref(false)
           <!-- 👉 Password Requirements -->
           <VCardText>
             <h6 class="text-h6 text-medium-emphasis mb-4">
-              Password Requirements:
+              Требования к паролю:
             </h6>
 
             <VList class="card-list">
@@ -207,14 +173,14 @@ const isOneTimePasswordDialogVisible = ref(false)
 
           <!-- 👉 Action Buttons -->
           <VCardText class="d-flex flex-wrap gap-4">
-            <VBtn>Save changes</VBtn>
+            <VBtn>Сохранить изменения</VBtn>
 
             <VBtn
               type="reset"
               color="secondary"
               variant="tonal"
             >
-              Reset
+              Сбросить
             </VBtn>
           </VCardText>
         </VForm>
@@ -224,22 +190,18 @@ const isOneTimePasswordDialogVisible = ref(false)
 
     <!-- SECTION Two-steps verification -->
     <VCol cols="12">
-      <VCard title="Two-steps verification">
+      <VCard title="Двухфакторная аутентификация">
         <VCardText>
           <h5 class="text-h5 text-medium-emphasis mb-4">
-            Two factor authentication is not enabled yet.
+            Двухфакторная аутентификация пока не включена.
           </h5>
           <p class="mb-6">
-            Two-factor authentication adds an additional layer of security to your account by
-            requiring more than just a password to log in.
-            <a
-              href="javascript:void(0)"
-              class="text-decoration-none"
-            >Learn more.</a>
+            Двухфакторная аутентификация добавляет дополнительный уровень безопасности,
+            требуя при входе не только пароль, но и одноразовый код.
           </p>
 
           <VBtn @click="isOneTimePasswordDialogVisible = true">
-            Enable two-factor authentication
+            Включить двухфакторную аутентификацию
           </VBtn>
         </VCardText>
       </VCard>
@@ -248,7 +210,7 @@ const isOneTimePasswordDialogVisible = ref(false)
 
     <VCol cols="12">
       <!-- SECTION: Create an API key -->
-      <VCard title="Create an API key">
+      <VCard title="Создать API‑ключ">
         <VRow no-gutters>
           <!-- 👉 Choose API Key -->
           <VCol
@@ -263,17 +225,17 @@ const isOneTimePasswordDialogVisible = ref(false)
                   <!-- 👉 Choose API Key -->
                   <VCol cols="12">
                     <AppSelect
-                      label="Choose the API key type you want to create"
-                      placeholder="Select API key type"
-                      :items="['Full Control', 'Modify', 'Read & Execute', 'List Folder Contents', 'Read Only', 'Read & Write']"
+                      label="Выберите тип API‑ключа"
+                      placeholder="Выберите тип API‑ключа"
+                      :items="['Полный доступ', 'Изменение', 'Чтение и выполнение', 'Список содержимого папки', 'Только чтение', 'Чтение и запись']"
                     />
                   </VCol>
 
                   <!-- 👉 Name the API Key -->
                   <VCol cols="12">
                     <AppTextField
-                      label="Name the API key"
-                      placeholder="Name the API key"
+                      label="Название API‑ключа"
+                      placeholder="Введите название API‑ключа"
                     />
                   </VCol>
 
@@ -283,7 +245,7 @@ const isOneTimePasswordDialogVisible = ref(false)
                       type="submit"
                       block
                     >
-                      Create Key
+                      Создать ключ
                     </VBtn>
                   </VCol>
                 </VRow>
@@ -314,12 +276,12 @@ const isOneTimePasswordDialogVisible = ref(false)
       <!-- SECTION: API Keys List -->
       <VCard>
         <VCardItem class="pb-4">
-          <VCardTitle>API Key List & Access</VCardTitle>
+          <VCardTitle>Список API‑ключей и доступ</VCardTitle>
         </VCardItem>
         <VCardText>
-          An API key is a simple encrypted string that identifies an application without any principal. They are useful
-          for accessing public data anonymously, and are used to associate API requests with your project for quota and
-          billing.
+          API‑ключ — это зашифрованная строка, которая идентифицирует приложение.
+          Ключи используются для доступа к данным и привязки запросов к вашему проекту
+          для квот и учёта.
         </VCardText>
 
         <!-- 👉 Server Status -->
@@ -356,7 +318,7 @@ const isOneTimePasswordDialogVisible = ref(false)
                 </div>
               </div>
               <div class="text-disabled">
-                Created on {{ serverKey.createdOn }}
+                Создан {{ serverKey.createdOn }}
               </div>
             </div>
           </VCard>
@@ -368,7 +330,7 @@ const isOneTimePasswordDialogVisible = ref(false)
     <!-- SECTION Recent Devices -->
     <VCol cols="12">
       <!-- 👉 Table -->
-      <VCard title="Recent Devices">
+      <VCard title="Недавние устройства">
         <VDivider />
 
         <VDataTable
@@ -389,6 +351,15 @@ const isOneTimePasswordDialogVisible = ref(false)
                 {{ item.browser }}
               </div>
             </div>
+          </template>
+          <template #item.device="{ item }">
+            {{ item.device }}
+          </template>
+          <template #item.location="{ item }">
+            {{ item.location }}
+          </template>
+          <template #item.recentActivity="{ item }">
+            {{ item.recentActivity }}
           </template>
           <!-- TODO Refactor this after vuetify provides proper solution for removing default footer -->
           <template #bottom />

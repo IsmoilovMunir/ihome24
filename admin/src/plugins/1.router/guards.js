@@ -3,7 +3,7 @@ import { canNavigate } from '@layouts/plugins/casl'
 export const setupGuards = router => {
   // 👉 router.beforeEach
   // Docs: https://router.vuejs.org/guide/advanced/navigation-guards.html#global-before-guards
-  router.beforeEach(to => {
+  router.beforeEach(async to => {
     /*
          * If it's a public route, continue navigation. This kind of pages are allowed to visited by login & non-login users. Basically, without any restrictions.
          * Examples of public routes are, 404, under maintenance, etc.
@@ -15,7 +15,74 @@ export const setupGuards = router => {
          * Check if user is logged in by checking if token & user data exists in local storage
          * Feel free to update this logic to suit your needs
          */
-    const isLoggedIn = !!(useCookie('userData').value && useCookie('accessToken').value)
+    const userDataCookie = useCookie('userData')
+    const accessTokenCookie = useCookie('accessToken')
+    const isLoggedIn = !!(userDataCookie.value && accessTokenCookie.value)
+
+    // Если есть токен, но пользователь уже не авторизован на backend,
+    // сразу считаем сессию недействительной и отправляем на логин.
+    if (isLoggedIn && !to.meta.public) {
+      try {
+        await $api('/auth/me')
+      } catch (error) {
+        useCookie('userData').value = null
+        useCookie('accessToken').value = null
+        if (typeof window !== 'undefined') {
+          window.localStorage.removeItem('adminLastActivity')
+        }
+
+        return {
+          name: 'login',
+          query: {
+            ...to.query,
+            reason: 'unauthorized',
+            to: to.fullPath !== '/' ? to.path : undefined,
+          },
+        }
+      }
+    }
+
+    // 👉 Таймаут неактивности 1 час для админ-панели
+    if (isLoggedIn && typeof window !== 'undefined') {
+      const MAX_IDLE_MS = 60 * 60 * 1000 // 1 час
+      const lastActivity = window.localStorage.getItem('adminLastActivity')
+      const now = Date.now()
+
+      if (lastActivity && !Number.isNaN(Number(lastActivity)) && now - Number(lastActivity) > MAX_IDLE_MS) {
+        // Сессия просрочена: очищаем данные и отправляем на логин
+        useCookie('userData').value = null
+        useCookie('accessToken').value = null
+        window.localStorage.removeItem('adminLastActivity')
+
+        return {
+          name: 'login',
+          query: {
+            ...to.query,
+            reason: 'session_expired',
+            to: to.fullPath !== '/' ? to.path : undefined,
+          },
+        }
+      }
+
+      // Обновляем время последней активности
+      window.localStorage.setItem('adminLastActivity', String(now))
+    }
+
+    // Если профиль пользователя не заполнен, принудительно отправляем в настройки аккаунта
+    if (isLoggedIn && to.matched.length) {
+      const userData = userDataCookie.value || {}
+      const profileIncomplete = !userData.fullName || !userData.email
+
+      const goingToAccountSettings = to.name === 'pages-account-settings-tab'
+
+      if (profileIncomplete && !goingToAccountSettings && !to.meta.public && !to.meta.unauthenticatedOnly) {
+        return {
+          name: 'pages-account-settings-tab',
+          params: { tab: 'account' },
+          query: { ...to.query, completeProfile: '1' },
+        }
+      }
+    }
 
     /*
           If user is logged in and is trying to access login like page, redirect to home
@@ -30,16 +97,20 @@ export const setupGuards = router => {
     }
     // Проверяем права доступа только если пользователь залогинен
     if (isLoggedIn && to.matched.length) {
-      const canAccess = canNavigate(to)
-      if (!canAccess) {
-        // Если пользователь залогинен, но нет прав - показываем страницу not-authorized
-        // Но только если маршрут действительно требует прав доступа
-        const hasPermissionRequirement = to.matched.some(route => route.meta?.action && route.meta?.subject)
-        if (hasPermissionRequirement) {
-          return { name: 'not-authorized' }
+      try {
+        const canAccess = canNavigate(to)
+        if (!canAccess) {
+          // Если пользователь залогинен, но нет прав - показываем страницу not-authorized
+          // Но только если маршрут действительно требует прав доступа
+          const hasPermissionRequirement = to.matched.some(route => route.meta?.action && route.meta?.subject)
+          if (hasPermissionRequirement) {
+            return { name: 'not-authorized' }
+          }
+          // Если нет требований к правам, но canNavigate вернул false - разрешаем доступ
+          // Это может произойти если ability не настроена
         }
-        // Если нет требований к правам, но canNavigate вернул false - разрешаем доступ
-        // Это может произойти если ability не настроен
+      } catch (error) {
+        // Если Ability еще не инициализирована, не ломаем навигацию.
       }
     } else if (!isLoggedIn && !to.meta?.public && to.matched.length) {
       // Если пользователь не залогинен и маршрут не публичный - редирект на логин
