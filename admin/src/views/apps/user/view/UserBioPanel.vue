@@ -209,9 +209,9 @@ const resolveUserRoleVariant = role => {
             <VListItem>
               <VListItemTitle>
                 <h6 class="text-h6">
-                  Контакт:
+                  Телефон:
                   <div class="d-inline-block text-body-1">
-                    {{ props.userData.contact || 'Не указан' }}
+                    {{ props.userData.phone || props.userData.contact || 'Не указан' }}
                   </div>
                 </h6>
               </VListItemTitle>

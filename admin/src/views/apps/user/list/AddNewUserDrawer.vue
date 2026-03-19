@@ -6,11 +6,15 @@ const props = defineProps({
     type: Boolean,
     required: true,
   },
+  serverError: {
+    type: String,
+    default: '',
+  },
 })
 
 const emit = defineEmits([
   'update:isDrawerOpen',
-  'userData',
+  'submit',
 ])
 
 const isFormValid = ref(false)
@@ -18,12 +22,23 @@ const refForm = ref()
 const fullName = ref('')
 const userName = ref('')
 const email = ref('')
-const company = ref('')
-const country = ref()
-const contact = ref('')
-const role = ref()
-const plan = ref()
-const status = ref()
+const roleName = ref()
+const temporaryPassword = ref('')
+const { data: rolesData } = await useApi('/apps/roles')
+const roleItems = computed(() => {
+  const roles = rolesData.value || []
+  return roles
+    .filter(r => r?.name && r.name !== 'users')
+    .map(r => ({ title: r.displayName || r.name, value: r.name }))
+})
+
+const generateTempPassword = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789'
+  let out = ''
+  for (let i = 0; i < 10; i++)
+    out += chars[Math.floor(Math.random() * chars.length)]
+  temporaryPassword.value = out
+}
 
 // 👉 drawer close
 const closeNavigationDrawer = () => {
@@ -37,23 +52,12 @@ const closeNavigationDrawer = () => {
 const onSubmit = () => {
   refForm.value?.validate().then(({ valid }) => {
     if (valid) {
-      emit('userData', {
-        id: 0,
+      emit('submit', {
         fullName: fullName.value,
-        company: company.value,
-        role: role.value,
-        country: country.value,
-        contact: contact.value,
+        username: userName.value || null,
         email: email.value,
-        currentPlan: plan.value,
-        status: status.value,
-        avatar: '',
-        billing: 'Автоматическое списание',
-      })
-      emit('update:isDrawerOpen', false)
-      nextTick(() => {
-        refForm.value?.reset()
-        refForm.value?.resetValidation()
+        roleName: roleName.value,
+        temporaryPassword: temporaryPassword.value || null,
       })
     }
   })
@@ -85,6 +89,15 @@ const handleDrawerModelValueUpdate = val => {
     <PerfectScrollbar :options="{ wheelPropagation: false }">
       <VCard flat>
         <VCardText>
+          <VAlert
+            v-if="props.serverError"
+            type="error"
+            variant="tonal"
+            class="mb-4"
+          >
+            {{ props.serverError }}
+          </VAlert>
+
           <!-- 👉 Form -->
           <VForm
             ref="refForm"
@@ -106,9 +119,8 @@ const handleDrawerModelValueUpdate = val => {
               <VCol cols="12">
                 <AppTextField
                   v-model="userName"
-                  :rules="[requiredValidator]"
-                  label="Имя пользователя"
-                  placeholder="ivanov"
+                  label="Имя пользователя (опционально)"
+                  placeholder="Если пусто — сгенерируется из email"
                 />
               </VCol>
 
@@ -122,85 +134,30 @@ const handleDrawerModelValueUpdate = val => {
                 />
               </VCol>
 
-              <!-- 👉 company -->
-              <VCol cols="12">
-                <AppTextField
-                  v-model="company"
-                  :rules="[requiredValidator]"
-                  label="Компания"
-                  placeholder="Название компании"
-                />
-              </VCol>
-
-              <!-- 👉 Country -->
-              <VCol cols="12">
-                <AppSelect
-                  v-model="country"
-                  label="Выберите страну"
-                  placeholder="Выберите страну"
-                  :rules="[requiredValidator]"
-                  :items="[
-                    { title: 'Россия', value: 'Россия' },
-                    { title: 'Казахстан', value: 'Казахстан' },
-                    { title: 'Беларусь', value: 'Беларусь' },
-                    { title: 'Украина', value: 'Украина' }
-                  ]"
-                />
-              </VCol>
-
-              <!-- 👉 Contact -->
-              <VCol cols="12">
-                <AppTextField
-                  v-model="contact"
-                  type="number"
-                  :rules="[requiredValidator]"
-                  label="Контакт"
-                  placeholder="+7-999-123-45-67"
-                />
-              </VCol>
-
               <!-- 👉 Role -->
               <VCol cols="12">
                 <AppSelect
-                  v-model="role"
+                  v-model="roleName"
                   label="Выберите роль"
                   placeholder="Выберите роль"
                   :rules="[requiredValidator]"
-                  :items="[
-                    { title: 'Администратор', value: 'admin' },
-                    { title: 'Автор', value: 'author' },
-                    { title: 'Редактор', value: 'editor' },
-                    { title: 'Сопровождающий', value: 'maintainer' },
-                    { title: 'Подписчик', value: 'subscriber' }
-                  ]"
+                  :items="roleItems"
                 />
               </VCol>
 
-              <!-- 👉 Plan -->
+              <!-- 👉 Temporary password -->
               <VCol cols="12">
-                <AppSelect
-                  v-model="plan"
-                  label="Выберите план"
-                  placeholder="Выберите план"
-                  :rules="[requiredValidator]"
-                  :items="[
-                    { title: 'Базовый', value: 'basic' },
-                    { title: 'Компания', value: 'company' },
-                    { title: 'Предприятие', value: 'enterprise' },
-                    { title: 'Команда', value: 'team' }
-                  ]"
-                />
-              </VCol>
-
-              <!-- 👉 Status -->
-              <VCol cols="12">
-                <AppSelect
-                  v-model="status"
-                  label="Выберите статус"
-                  placeholder="Выберите статус"
-                  :rules="[requiredValidator]"
-                  :items="[{ title: 'Активен', value: 'active' }, { title: 'Неактивен', value: 'inactive' }, { title: 'Ожидает', value: 'pending' }]"
-                />
+                <AppTextField
+                  v-model="temporaryPassword"
+                  label="Временный пароль (опционально)"
+                  placeholder="Если пусто — сгенерируется автоматически"
+                >
+                  <template #append-inner>
+                    <IconBtn @click="generateTempPassword">
+                      <VIcon icon="tabler-refresh" />
+                    </IconBtn>
+                  </template>
+                </AppTextField>
               </VCol>
 
               <!-- 👉 Submit and Cancel -->
@@ -209,7 +166,7 @@ const handleDrawerModelValueUpdate = val => {
                   type="submit"
                   class="me-3"
                 >
-                  Отправить
+                  Создать пользователя
                 </VBtn>
                 <VBtn
                   type="reset"

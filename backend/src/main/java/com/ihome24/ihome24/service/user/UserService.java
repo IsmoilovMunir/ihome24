@@ -1,12 +1,16 @@
 package com.ihome24.ihome24.service.user;
 
 import com.ihome24.ihome24.dto.request.user.UserRequest;
+import com.ihome24.ihome24.dto.request.user.AdminCreateAdminUserRequest;
 import com.ihome24.ihome24.dto.response.user.UserListResponse;
+import com.ihome24.ihome24.dto.response.user.AdminCreateAdminUserResponse;
 import com.ihome24.ihome24.dto.response.user.UserResponse;
 import com.ihome24.ihome24.entity.user.Role;
 import com.ihome24.ihome24.entity.user.User;
 import com.ihome24.ihome24.repository.user.RoleRepository;
 import com.ihome24.ihome24.repository.user.UserRepository;
+import com.ihome24.ihome24.repository.user.UserLoginDeviceRepository;
+import com.ihome24.ihome24.service.email.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,14 +21,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.stream.Collectors;
+import java.security.SecureRandom;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
+    private final UserLoginDeviceRepository userLoginDeviceRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     @Transactional(readOnly = true)
     public UserListResponse getUsers(String q, String role, String plan, String status, 
@@ -40,7 +47,10 @@ public class UserService {
             }
         }
 
-        Page<User> userPage = userRepository.findUsersWithFilters(q, role, plan, userStatus, pageable);
+        // In admin panel users list we don't want frontend customers (role: users).
+        final String excludeRole = "users";
+        final String roleFilter = (role != null && !role.isBlank() && !"users".equalsIgnoreCase(role)) ? role : null;
+        Page<User> userPage = userRepository.findUsersWithFiltersExcludingRole(q, roleFilter, excludeRole, plan, userStatus, pageable);
         
         return UserListResponse.builder()
                 .users(userPage.getContent().stream()
@@ -152,10 +162,142 @@ public class UserService {
     }
 
     @Transactional
+    public UserResponse createAdminPanelUser(AdminCreateAdminUserRequest request) {
+        String normalizedEmail = request.getEmail() != null ? request.getEmail().trim().toLowerCase() : null;
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            throw new RuntimeException("Email already exists: " + normalizedEmail);
+        }
+
+        String username = normalizeOrGenerateUsername(request.getUsername(), normalizedEmail);
+        if (userRepository.existsByUsername(username)) {
+            throw new RuntimeException("Username already exists: " + username);
+        }
+
+        String roleName = request.getRoleName() != null ? request.getRoleName().trim().toLowerCase() : null;
+        if ("users".equals(roleName)) {
+            throw new RuntimeException("Role 'users' is not allowed for admin panel accounts");
+        }
+
+        Role role = roleRepository.findByName(roleName)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+
+        String tmp = request.getTemporaryPassword();
+        if (tmp == null || tmp.isBlank())
+            tmp = generateTemporaryPassword(10);
+
+        User user = User.builder()
+                .username(username)
+                .password(passwordEncoder.encode(tmp))
+                .email(normalizedEmail)
+                .fullName(request.getFullName().trim())
+                .role(role)
+                .status(User.UserStatus.ACTIVE)
+                .enabled(true)
+                .accountNonExpired(true)
+                .accountNonLocked(true)
+                .credentialsNonExpired(true)
+                .passwordChangeRequired(true)
+                .build();
+
+        user = userRepository.save(user);
+        return mapToResponse(user);
+    }
+
+    @Transactional
+    public AdminCreateAdminUserResponse createAdminPanelUserWithTempPassword(AdminCreateAdminUserRequest request) {
+        String generatedTempPassword = request.getTemporaryPassword();
+        if (generatedTempPassword == null || generatedTempPassword.isBlank())
+            generatedTempPassword = generateTemporaryPassword(10);
+
+        AdminCreateAdminUserRequest req = new AdminCreateAdminUserRequest();
+        req.setFullName(request.getFullName());
+        req.setUsername(request.getUsername());
+        req.setEmail(request.getEmail());
+        req.setRoleName(request.getRoleName());
+        req.setTemporaryPassword(generatedTempPassword);
+
+        UserResponse created = createAdminPanelUser(req);
+        boolean emailSent = false;
+        String message = "User created. Temporary password must be delivered manually.";
+        try {
+            emailService.sendAdminUserCredentials(
+                    created.getEmail(),
+                    created.getFullName(),
+                    created.getUsername(),
+                    generatedTempPassword
+            );
+            emailSent = true;
+            message = "User created. Credentials email sent successfully.";
+        } catch (Exception e) {
+            // User is already created; frontend should still show temporary password.
+        }
+
+        return AdminCreateAdminUserResponse.builder()
+                .user(created)
+                .temporaryPassword(generatedTempPassword)
+                .emailSent(emailSent)
+                .message(message)
+                .build();
+    }
+
+    @Transactional
+    public UserResponse changeUserRole(Long id, String roleName) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        String rn = roleName != null ? roleName.trim().toLowerCase() : null;
+        if (rn == null || rn.isBlank()) {
+            throw new RuntimeException("Role name is required");
+        }
+        if ("users".equals(rn)) {
+            throw new RuntimeException("Role 'users' is reserved for customers");
+        }
+
+        Role role = roleRepository.findByName(rn)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + rn));
+        user.setRole(role);
+        user = userRepository.save(user);
+        return mapToResponse(user);
+    }
+
+    private String generateTemporaryPassword(int length) {
+        final String chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+        SecureRandom rnd = new SecureRandom();
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(rnd.nextInt(chars.length())));
+        }
+        return sb.toString();
+    }
+
+    private String normalizeOrGenerateUsername(String requestedUsername, String email) {
+        if (requestedUsername != null && !requestedUsername.isBlank()) {
+            return requestedUsername.trim().toLowerCase();
+        }
+
+        String base = (email != null ? email : "user").split("@")[0]
+                .replaceAll("[^a-zA-Z0-9._-]", "")
+                .toLowerCase();
+        if (base.isBlank()) {
+            base = "user";
+        }
+
+        String candidate = base;
+        int suffix = 1;
+        while (userRepository.existsByUsername(candidate)) {
+            candidate = base + suffix;
+            suffix++;
+        }
+        return candidate;
+    }
+
+    @Transactional
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
             throw new RuntimeException("User not found with id: " + id);
         }
+        // Clean up dependent rows to satisfy FK constraints (user_login_devices.user_id -> users.id)
+        userLoginDeviceRepository.deleteByUserId(id);
         userRepository.deleteById(id);
     }
 
@@ -168,6 +310,7 @@ public class UserService {
                 .avatar(user.getAvatar())
                 .company(user.getCompany())
                 .country(user.getCountry())
+                .phone(user.getPhone())
                 .contact(user.getContact())
                 .currentPlan(user.getCurrentPlan())
                 .billing(user.getBilling())

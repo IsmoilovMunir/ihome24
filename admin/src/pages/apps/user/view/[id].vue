@@ -7,7 +7,8 @@ import UserTabNotifications from '@/views/apps/user/view/UserTabNotifications.vu
 import UserTabSecurity from '@/views/apps/user/view/UserTabSecurity.vue'
 
 const route = useRoute('apps-user-view-id')
-const userTab = ref(null)
+// Список пользователей: «Редактировать» открывает сразу вкладку «Аккаунт» (индекс 0)
+const userTab = ref(route.query.tab === 'account' ? 0 : null)
 
 const tabs = [
   {
@@ -73,7 +74,7 @@ const { data: userData } = await useApi(`/apps/users/${ route.params.id }`)
         :touch="false"
       >
         <VWindowItem>
-          <UserTabAccount />
+          <UserTabAccount :user-data="userData" />
         </VWindowItem>
 
         <VWindowItem>
@@ -81,7 +82,7 @@ const { data: userData } = await useApi(`/apps/users/${ route.params.id }`)
         </VWindowItem>
 
         <VWindowItem>
-          <UserTabBillingsPlans />
+          <UserTabBillingsPlans :user-data="userData" />
         </VWindowItem>
 
         <VWindowItem>

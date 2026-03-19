@@ -1,5 +1,11 @@
 import { canNavigate } from '@layouts/plugins/casl'
 
+// If backend/proxy hangs, router navigation must not hang forever.
+let lastMeCheckAt = 0
+let meCheckInFlight = null
+const ME_CHECK_TTL_MS = 30_000
+const ME_CHECK_TIMEOUT_MS = 7_000
+
 export const setupGuards = router => {
   // 👉 router.beforeEach
   // Docs: https://router.vuejs.org/guide/advanced/navigation-guards.html#global-before-guards
@@ -19,17 +25,31 @@ export const setupGuards = router => {
     const accessTokenCookie = useCookie('accessToken')
     const isLoggedIn = !!(userDataCookie.value && accessTokenCookie.value)
 
-    // Если есть токен, но пользователь уже не авторизован на backend,
-    // сразу считаем сессию недействительной и отправляем на логин.
-    if (isLoggedIn && !to.meta.public) {
+    // If there is an access token, but backend is down / token expired,
+    // we should fail fast to login instead of keeping a "half-logged-in" UI.
+    // Validate existing access token even on unauthenticated-only pages (e.g. login),
+    // otherwise we may redirect into the app with a stale/invalid token.
+    if (accessTokenCookie.value && !to.meta?.public && to.matched.length) {
       try {
-        await $api('/auth/me')
+        const now = Date.now()
+
+        if (now - lastMeCheckAt > ME_CHECK_TTL_MS) {
+          if (!meCheckInFlight) {
+            meCheckInFlight = $api('/auth/me', { timeout: ME_CHECK_TIMEOUT_MS })
+              .finally(() => {
+                meCheckInFlight = null
+              })
+          }
+
+          await meCheckInFlight
+          lastMeCheckAt = now
+        }
       } catch (error) {
         useCookie('userData').value = null
         useCookie('accessToken').value = null
-        if (typeof window !== 'undefined') {
+        useCookie('userAbilityRules').value = null
+        if (typeof window !== 'undefined')
           window.localStorage.removeItem('adminLastActivity')
-        }
 
         return {
           name: 'login',
@@ -74,8 +94,33 @@ export const setupGuards = router => {
       const profileIncomplete = !userData.fullName || !userData.email
 
       const goingToAccountSettings = to.name === 'pages-account-settings-tab'
+      const goingToForceChangePassword = to.name === 'force-change-password'
 
-      if (profileIncomplete && !goingToAccountSettings && !to.meta.public && !to.meta.unauthenticatedOnly) {
+      // If password change required, force redirect
+      if (userData.passwordChangeRequired && !goingToForceChangePassword) {
+        return { name: 'force-change-password' }
+      }
+
+        // Role-based restriction for editor: only products section
+        // Normalize role to be case-insensitive.
+        const userRole = typeof userData.role === 'string' ? userData.role.toLowerCase().trim() : ''
+        if (userRole === 'editor' && !to.meta.public && !to.meta.unauthenticatedOnly) {
+        const allowed = new Set([
+          'apps-ecommerce-product-list',
+          'apps-ecommerce-product-add',
+          'apps-ecommerce-product-category-list',
+          // allow common routes
+          'force-change-password',
+          'pages-account-settings-tab',
+          'not-authorized',
+        ])
+
+        if (!allowed.has(String(to.name))) {
+          return { name: 'apps-ecommerce-product-list' }
+        }
+      }
+
+      if (profileIncomplete && !goingToAccountSettings && !goingToForceChangePassword && !to.meta.public && !to.meta.unauthenticatedOnly) {
         return {
           name: 'pages-account-settings-tab',
           params: { tab: 'account' },

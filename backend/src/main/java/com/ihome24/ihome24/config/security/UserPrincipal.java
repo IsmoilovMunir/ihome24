@@ -10,7 +10,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 @AllArgsConstructor
@@ -26,13 +25,6 @@ public class UserPrincipal implements UserDetails {
             authorities = new java.util.ArrayList<>();
             // Add role authority
             authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getRole().getName().toUpperCase()));
-            // Add permission authorities
-            if (user.getRole().getPermissions() != null && !user.getRole().getPermissions().isEmpty()) {
-                final List<GrantedAuthority> finalAuthorities = authorities;
-                user.getRole().getPermissions().forEach(permission -> 
-                    finalAuthorities.add(new SimpleGrantedAuthority("PERMISSION_" + permission.getName().toUpperCase()))
-                );
-            }
         } else {
             authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
         }

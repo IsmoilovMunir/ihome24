@@ -186,7 +186,7 @@ const deleteOrder = async id => {
         @update:options="updateOptions"
       >
         <template #item.order="{ item }">
-          <RouterLink :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.order } }">
+          <RouterLink :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.id } }">
             #{{ item.order }}
           </RouterLink>
         </template>
@@ -263,7 +263,7 @@ const deleteOrder = async id => {
             <VIcon icon="tabler-dots-vertical" />
             <VMenu activator="parent">
               <VList>
-                <VListItem :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.order } }">
+                <VListItem :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.id } }">
                   View
                 </VListItem>
                 <VListItem @click="deleteOrder(item.id)">

@@ -15,6 +15,10 @@ import java.util.Optional;
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByUsername(String username);
     
+    @EntityGraph(attributePaths = {"role"})
+    @Query("SELECT u FROM User u WHERE u.username = :username")
+    Optional<User> findByUsernameWithRole(@Param("username") String username);
+
     @EntityGraph(attributePaths = {"role", "role.permissions"})
     @Query("SELECT u FROM User u WHERE u.username = :username")
     Optional<User> findByUsernameWithRoleAndPermissions(@Param("username") String username);
@@ -22,6 +26,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @EntityGraph(attributePaths = {"role", "role.permissions"})
     @Query("SELECT u FROM User u WHERE u.phone = :phone")
     Optional<User> findByPhoneWithRoleAndPermissions(@Param("phone") String phone);
+
+    @EntityGraph(attributePaths = {"role"})
+    @Query("SELECT u FROM User u WHERE u.phone = :phone")
+    Optional<User> findByPhoneWithRole(@Param("phone") String phone);
     
     Optional<User> findByEmail(String email);
     Optional<User> findByPhone(String phone);
@@ -42,6 +50,21 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Page<User> findUsersWithFilters(
             @Param("q") String searchQuery,
             @Param("role") String role,
+            @Param("plan") String plan,
+            @Param("status") User.UserStatus status,
+            Pageable pageable
+    );
+
+    @Query("SELECT u FROM User u WHERE " +
+           "(:q IS NULL OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :q, '%'))) " +
+           "AND (:role IS NULL OR u.role.name = :role) " +
+           "AND (:excludeRole IS NULL OR u.role.name <> :excludeRole) " +
+           "AND (:plan IS NULL OR u.currentPlan = :plan) " +
+           "AND (:status IS NULL OR u.status = :status)")
+    Page<User> findUsersWithFiltersExcludingRole(
+            @Param("q") String searchQuery,
+            @Param("role") String role,
+            @Param("excludeRole") String excludeRole,
             @Param("plan") String plan,
             @Param("status") User.UserStatus status,
             Pageable pageable

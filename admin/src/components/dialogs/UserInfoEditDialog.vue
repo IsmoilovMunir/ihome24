@@ -1,4 +1,34 @@
 <script setup>
+const normalizeUser = raw => {
+  const u = raw ?? {}
+
+  // Keep existing shape, but ensure fields used in v-model exist.
+  const phone = u.phone ?? u.phoneNumber ?? u.mobile ?? u.contact ?? ''
+  const contact = u.contact ?? ''
+
+  return {
+    id: 0,
+    fullName: '',
+    company: '',
+    role: '',
+    username: '',
+    country: '',
+    phone: '',
+    contact: '',
+    email: '',
+    currentPlan: '',
+    status: '',
+    avatar: '',
+    taskDone: null,
+    projectDone: null,
+    taxId: '',
+    language: '',
+    ...u,
+    phone: phone == null ? '' : String(phone),
+    contact: contact == null ? '' : String(contact),
+  }
+}
+
 const props = defineProps({
   userData: {
     type: Object,
@@ -10,6 +40,7 @@ const props = defineProps({
       role: '',
       username: '',
       country: '',
+      phone: '',
       contact: '',
       email: '',
       currentPlan: '',
@@ -32,12 +63,16 @@ const emit = defineEmits([
   'update:isDialogVisible',
 ])
 
-const userData = ref(structuredClone(toRaw(props.userData)))
+const userData = ref(normalizeUser(structuredClone(toRaw(props.userData))))
 const isUseAsBillingAddress = ref(false)
 
-watch(() => props, () => {
-  userData.value = structuredClone(toRaw(props.userData))
-})
+watch(
+  () => props.userData,
+  newVal => {
+    userData.value = normalizeUser(structuredClone(toRaw(newVal)))
+  },
+  { deep: true },
+)
 
 const onFormSubmit = () => {
   emit('update:isDialogVisible', false)
@@ -45,7 +80,7 @@ const onFormSubmit = () => {
 }
 
 const onFormReset = () => {
-  userData.value = structuredClone(toRaw(props.userData))
+  userData.value = normalizeUser(structuredClone(toRaw(props.userData)))
   emit('update:isDialogVisible', false)
 }
 
@@ -67,10 +102,10 @@ const dialogModelValueUpdate = val => {
       <VCardText>
         <!-- 👉 Title -->
         <h4 class="text-h4 text-center mb-2">
-          Edit User Information
+          Редактировать информацию о пользователе
         </h4>
         <p class="text-body-1 text-center mb-6">
-          Updating user details will receive a privacy audit.
+          Обновление данных пользователя будет проверено на соответствие требованиям конфиденциальности.
         </p>
 
         <!-- 👉 Form -->
@@ -86,8 +121,8 @@ const dialogModelValueUpdate = val => {
             >
               <AppTextField
                 v-model="userData.fullName.split(' ')[0]"
-                label="First Name"
-                placeholder="John"
+                label="Имя"
+                placeholder="Иван"
               />
             </VCol>
 
@@ -98,8 +133,8 @@ const dialogModelValueUpdate = val => {
             >
               <AppTextField
                 v-model="userData.fullName.split(' ')[1]"
-                label="Last Name"
-                placeholder="Doe"
+                label="Фамилия"
+                placeholder="Иванов"
               />
             </VCol>
 
@@ -107,8 +142,8 @@ const dialogModelValueUpdate = val => {
             <VCol cols="12">
               <AppTextField
                 v-model="userData.username"
-                label="Username"
-                placeholder="john.doe.007"
+                label="Имя пользователя"
+                placeholder="ivan.ivanov.007"
               />
             </VCol>
 
@@ -119,8 +154,8 @@ const dialogModelValueUpdate = val => {
             >
               <AppTextField
                 v-model="userData.email"
-                label="Email"
-                placeholder="johndoe@email.com"
+                label="Электронная почта"
+                placeholder="example@email.com"
               />
             </VCol>
 
@@ -131,9 +166,13 @@ const dialogModelValueUpdate = val => {
             >
               <AppSelect
                 v-model="userData.status"
-                label="Status"
-                placeholder="Active"
-                :items="['Active', 'Inactive', 'Pending']"
+                label="Статус"
+                placeholder="Активен"
+                :items="[
+                  { title: 'Активен', value: 'Active' },
+                  { title: 'Неактивен', value: 'Inactive' },
+                  { title: 'Ожидает', value: 'Pending' },
+                ]"
               />
             </VCol>
 
@@ -144,7 +183,7 @@ const dialogModelValueUpdate = val => {
             >
               <AppTextField
                 v-model="userData.taxId"
-                label="Tax ID"
+                label="ИНН (налоговый номер)"
                 placeholder="123456789"
               />
             </VCol>
@@ -155,9 +194,9 @@ const dialogModelValueUpdate = val => {
               md="6"
             >
               <AppTextField
-                v-model="userData.contact"
-                label="Phone Number"
-                placeholder="+1 9876543210"
+                v-model="userData.phone"
+                label="Номер телефона (регистрация)"
+                placeholder="+7 987 654-32-10"
               />
             </VCol>
 
@@ -171,9 +210,13 @@ const dialogModelValueUpdate = val => {
                 closable-chips
                 chips
                 multiple
-                label="Language"
-                placeholder="English"
-                :items="['English', 'Spanish', 'French']"
+                label="Язык"
+                placeholder="Английский"
+                :items="[
+                  { title: 'Английский', value: 'English' },
+                  { title: 'Испанский', value: 'Spanish' },
+                  { title: 'Французский', value: 'French' },
+                ]"
               />
             </VCol>
 
@@ -184,9 +227,13 @@ const dialogModelValueUpdate = val => {
             >
               <AppSelect
                 v-model="userData.country"
-                label="Country"
-                placeholder="United States"
-                :items="['United States', 'United Kingdom', 'France']"
+                label="Страна"
+                placeholder="США"
+                :items="[
+                  { title: 'США', value: 'United States' },
+                  { title: 'Великобритания', value: 'United Kingdom' },
+                  { title: 'Франция', value: 'France' },
+                ]"
               />
             </VCol>
 
@@ -195,7 +242,7 @@ const dialogModelValueUpdate = val => {
               <VSwitch
                 v-model="isUseAsBillingAddress"
                 density="compact"
-                label="Use as a billing address?"
+                label="Использовать как платёжный адрес?"
               />
             </VCol>
 
@@ -205,7 +252,7 @@ const dialogModelValueUpdate = val => {
               class="d-flex flex-wrap justify-center gap-4"
             >
               <VBtn type="submit">
-                Submit
+                Сохранить
               </VBtn>
 
               <VBtn
@@ -213,7 +260,7 @@ const dialogModelValueUpdate = val => {
                 variant="tonal"
                 @click="onFormReset"
               >
-                Cancel
+                Отмена
               </VBtn>
             </VCol>
           </VRow>

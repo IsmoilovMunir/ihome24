@@ -2,12 +2,23 @@
 import laptopGirl from '@images/illustrations/laptop-girl.png'
 import { $api } from '@/utils/api'
 
+const router = useRouter()
+
 const isCurrentPasswordVisible = ref(false)
 const isNewPasswordVisible = ref(false)
 const isConfirmPasswordVisible = ref(false)
 const currentPassword = ref('')
 const newPassword = ref('')
 const confirmPassword = ref('')
+
+const isSubmitting = ref(false)
+const errors = ref({
+  currentPassword: undefined,
+  newPassword: undefined,
+  confirmPassword: undefined,
+  authentication: undefined,
+  error: undefined,
+})
 
 const passwordRequirements = [
   'Минимум 8 символов — чем больше, тем лучше',
@@ -60,6 +71,49 @@ const isLoadingDevices = ref(false)
 
 const isOneTimePasswordDialogVisible = ref(false)
 
+const submitChangePassword = async () => {
+  if (isSubmitting.value)
+    return
+
+  try {
+    isSubmitting.value = true
+    errors.value = {}
+
+    await $api('/auth/change-password', {
+      method: 'POST',
+      body: {
+        currentPassword: currentPassword.value || null,
+        newPassword: newPassword.value,
+        confirmPassword: confirmPassword.value,
+      },
+      onResponseError({ response }) {
+        const data = response?._data
+        const apiErrors = data?.errors && typeof data.errors === 'object' ? data.errors : {}
+        errors.value = apiErrors
+
+        if (!Object.keys(apiErrors).length) {
+          errors.value = {
+            error: data?.message || data?.error || 'Не удалось изменить пароль. Проверьте введённые данные.',
+          }
+        }
+      },
+    })
+
+    // После успешной смены пароля принудительно выходим и отправляем на логин
+    useCookie('userData').value = null
+    useCookie('accessToken').value = null
+    useCookie('userAbilityRules').value = null
+    if (typeof window !== 'undefined')
+      window.localStorage.removeItem('adminLastActivity')
+
+    await nextTick(() => {
+      router.replace({ name: 'login', query: { reason: 'password_changed' } })
+    })
+  } finally {
+    isSubmitting.value = false
+  }
+}
+
 const loadRecentDevices = async () => {
   try {
     isLoadingDevices.value = true
@@ -91,7 +145,26 @@ onMounted(() => {
     <!-- SECTION: Change Password -->
     <VCol cols="12">
       <VCard title="Смена пароля">
-        <VForm>
+        <VCardText class="pt-0">
+          <VAlert
+            v-if="errors.error"
+            type="error"
+            variant="tonal"
+            class="mb-4"
+          >
+            {{ Array.isArray(errors.error) ? errors.error[0] : errors.error }}
+          </VAlert>
+          <VAlert
+            v-else-if="errors.authentication"
+            type="error"
+            variant="tonal"
+            class="mb-4"
+          >
+            {{ Array.isArray(errors.authentication) ? errors.authentication[0] : errors.authentication }}
+          </VAlert>
+        </VCardText>
+
+        <VForm @submit.prevent="submitChangePassword">
           <VCardText class="pt-0">
             <!-- 👉 Current Password -->
             <VRow>
@@ -107,6 +180,7 @@ onMounted(() => {
                   label="Текущий пароль"
                   autocomplete="on"
                   placeholder="············"
+                  :error-messages="errors.currentPassword"
                   @click:append-inner="isCurrentPasswordVisible = !isCurrentPasswordVisible"
                 />
               </VCol>
@@ -126,6 +200,7 @@ onMounted(() => {
                   label="Новый пароль"
                   autocomplete="on"
                   placeholder="············"
+                  :error-messages="errors.newPassword"
                   @click:append-inner="isNewPasswordVisible = !isNewPasswordVisible"
                 />
               </VCol>
@@ -142,6 +217,7 @@ onMounted(() => {
                   label="Подтверждение нового пароля"
                   autocomplete="on"
                   placeholder="············"
+                  :error-messages="errors.confirmPassword"
                   @click:append-inner="isConfirmPasswordVisible = !isConfirmPasswordVisible"
                 />
               </VCol>
@@ -173,7 +249,13 @@ onMounted(() => {
 
           <!-- 👉 Action Buttons -->
           <VCardText class="d-flex flex-wrap gap-4">
-            <VBtn>Сохранить изменения</VBtn>
+            <VBtn
+              type="submit"
+              :loading="isSubmitting"
+              :disabled="isSubmitting"
+            >
+              Сохранить изменения
+            </VBtn>
 
             <VBtn
               type="reset"

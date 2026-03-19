@@ -20,7 +20,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // Поддержка входа как по username, так и по email
         // Сначала пробуем найти по username
-        User user = userRepository.findByUsernameWithRoleAndPermissions(username)
+        User user = userRepository.findByUsernameWithRole(username)
                 .orElse(null);
         
         // Если не нашли по username, пробуем найти по email
@@ -30,14 +30,14 @@ public class CustomUserDetailsService implements UserDetailsService {
             
             // Если нашли по email, загружаем с ролями и правами
             if (user != null) {
-                user = userRepository.findByUsernameWithRoleAndPermissions(user.getUsername())
+                user = userRepository.findByUsernameWithRole(user.getUsername())
                         .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
             }
         }
 
         // Если не нашли по username/email, пробуем по номеру телефона
         if (user == null) {
-            user = userRepository.findByPhoneWithRoleAndPermissions(username)
+            user = userRepository.findByPhoneWithRole(username)
                     .orElse(null);
         }
         
@@ -45,15 +45,7 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found with username/email/phone: " + username);
         }
 
-        // Принудительно инициализируем коллекции, чтобы избежать LazyInitializationException
-        // Это гарантирует, что все данные загружены в рамках текущей транзакции
-        if (user.getRole() != null && user.getRole().getPermissions() != null) {
-            // Вызываем size() чтобы загрузить коллекцию permissions
-            user.getRole().getPermissions().size();
-        }
-
-        // Создаем UserPrincipal с уже загруженными authorities
-        // Это гарантирует, что authorities будут доступны даже после закрытия транзакции
+        // We only need role-based authorities here. Loading permissions is expensive.
         return UserPrincipal.create(user);
     }
 }

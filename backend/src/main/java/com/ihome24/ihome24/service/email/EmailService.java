@@ -261,6 +261,52 @@ public class EmailService {
     }
 
     /**
+     * Отправка реквизитов для первого входа сотрудника админ-панели.
+     * Бросает RuntimeException при проблемах отправки.
+     */
+    public void sendAdminUserCredentials(String toEmail, String fullName, String username, String temporaryPassword) {
+        if (mailUsername == null || mailUsername.isEmpty()) {
+            throw new RuntimeException("Email configuration is missing");
+        }
+
+        try {
+            String fromEmail = mailUsername;
+            String safeName = (fullName != null && !fullName.isBlank()) ? fullName : "пользователь";
+            String plainText = String.format(
+                    "Здравствуйте, %s!\n\n" +
+                            "Для вас создан доступ в админ-панель iHome24.\n\n" +
+                            "Логин: %s\n" +
+                            "Временный пароль: %s\n\n" +
+                            "При первом входе система потребует сменить пароль.\n\n" +
+                            "С уважением,\nКоманда iHome24",
+                    safeName, username, temporaryPassword
+            );
+
+            String html = String.format(
+                    "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head>" +
+                            "<body style=\"font-family:Arial,sans-serif;line-height:1.5;color:#333;\">" +
+                            "<h2>Доступ в админ-панель iHome24</h2>" +
+                            "<p>Здравствуйте, <strong>%s</strong>!</p>" +
+                            "<p>Для вас создан доступ в админ-панель.</p>" +
+                            "<p><strong>Логин:</strong> %s<br><strong>Временный пароль:</strong> %s</p>" +
+                            "<p>При первом входе система потребует сменить пароль.</p>" +
+                            "</body></html>",
+                    escapeHtml(safeName), escapeHtml(username), escapeHtml(temporaryPassword)
+            );
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(fromEmail, "iHome24");
+            helper.setTo(toEmail);
+            helper.setSubject("Доступ в админ-панель iHome24");
+            helper.setText(plainText, html);
+            mailSender.send(mimeMessage);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send user credentials email", e);
+        }
+    }
+
+    /**
      * Отправка письма подтверждения заказа. Не бросает исключение при ненастроенной почте —
      * заказ всё равно создаётся, письмо просто не отправляется.
      */

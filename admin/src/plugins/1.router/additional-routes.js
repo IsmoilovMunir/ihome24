@@ -8,11 +8,15 @@ export const redirects = [
     path: '/',
     name: 'index',
     redirect: to => {
-      // TODO: Get type from backend
+      // Redirect by role after login.
       const userData = useCookie('userData')
-      const userRole = userData.value?.role
+      const userRole = (userData.value?.role || '').toLowerCase()
       if (userRole === 'admin')
         return { name: 'dashboards-ecommerce' }
+      if (userRole === 'manager')
+        return { name: 'apps-ecommerce-order-list' }
+      if (userRole === 'editor')
+        return { name: 'apps-ecommerce-product-list' }
       if (userRole === 'client')
         return { name: 'access-control' }
       

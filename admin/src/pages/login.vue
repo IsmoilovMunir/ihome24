@@ -31,6 +31,7 @@ const errors = ref({
   username: undefined,
   email: undefined, // Оставляем для обратной совместимости с бэкендом
   password: undefined,
+  authentication: undefined,
 })
 
 const refVForm = ref()
@@ -47,21 +48,39 @@ const twoFactorToken = ref('')
 const emailCode = ref('')
 const twoFactorError = ref()
 const isVerifyingTwoFactor = ref(false)
+const isSubmitting = ref(false)
 
 const login = async () => {
+  if (isSubmitting.value)
+    return
+
   try {
+    isSubmitting.value = true
+    errors.value = {
+      username: undefined,
+      email: undefined,
+      password: undefined,
+      authentication: undefined,
+    }
+
     const res = await $api('/auth/login', {
       method: 'POST',
       body: {
         username: credentials.value.username,
-        email: credentials.value.username, // Отправляем и username и email для обратной совместимости
         password: credentials.value.password,
       },
       onResponseError({ response }) {
-        errors.value = response._data.errors
+        const apiErrors = response?._data?.errors
+        errors.value = (apiErrors && typeof apiErrors === 'object') ? apiErrors : {}
         // Если ошибка в email, показываем её в поле username (для обратной совместимости)
-        if (response._data.errors?.email && !response._data.errors?.username) {
-          errors.value.username = response._data.errors.email
+        if (apiErrors?.email && !apiErrors?.username) {
+          errors.value.username = apiErrors.email
+        }
+        if (apiErrors?.phone && !apiErrors?.username) {
+          errors.value.username = apiErrors.phone
+        }
+        if (!Object.keys(errors.value).length) {
+          errors.value.authentication = [response?._data?.message || 'Ошибка входа. Проверьте логин и пароль.']
         }
       },
     })
@@ -75,11 +94,23 @@ const login = async () => {
     }
 
     const { accessToken, userData, userAbilityRules } = res
+    if (!accessToken || !userData || !Array.isArray(userAbilityRules)) {
+      errors.value.authentication = ['Некорректный ответ сервера авторизации']
+      return
+    }
 
     useCookie('userAbilityRules').value = userAbilityRules
     ability.update(userAbilityRules)
     useCookie('userData').value = userData
     useCookie('accessToken').value = accessToken
+
+    // Force password change on first login
+    if (userData?.passwordChangeRequired) {
+      await nextTick(() => {
+        router.replace({ name: 'force-change-password' })
+      })
+      return
+    }
 
     // Redirect to `to` query if exist or redirect to index route
 
@@ -89,6 +120,12 @@ const login = async () => {
     })
   } catch (err) {
     console.error(err)
+    const hasFieldErrors = errors.value.username || errors.value.email || errors.value.password
+    if (!errors.value.authentication && !hasFieldErrors) {
+      errors.value.authentication = [err?.data?.message || err?.message || 'Ошибка входа. Попробуйте ещё раз.']
+    }
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -220,6 +257,15 @@ const onSubmit = () => {
 
                 <!-- password -->
                 <VCol cols="12">
+                  <VAlert
+                    v-if="errors.authentication"
+                    type="error"
+                    variant="tonal"
+                    class="mb-4"
+                  >
+                    {{ Array.isArray(errors.authentication) ? errors.authentication[0] : errors.authentication }}
+                  </VAlert>
+
                   <AppTextField
                     v-model="credentials.password"
                     label="Пароль"
@@ -248,6 +294,8 @@ const onSubmit = () => {
                   <VBtn
                     block
                     type="submit"
+                    :loading="isSubmitting"
+                    :disabled="isSubmitting"
                   >
                     Войти
                   </VBtn>

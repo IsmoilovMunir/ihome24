@@ -1,14 +1,13 @@
 <script setup>
 import ECommerceAddCustomerDrawer from '@/views/apps/ecommerce/ECommerceAddCustomerDrawer.vue'
 import CustomerBioPanel from '@/views/apps/ecommerce/customer/view/CustomerBioPanel.vue'
-import CustomerTabAddressAndBilling from '@/views/apps/ecommerce/customer/view/CustomerTabAddressAndBilling.vue'
 import CustomerTabNotification from '@/views/apps/ecommerce/customer/view/CustomerTabNotification.vue'
 import CustomerTabOverview from '@/views/apps/ecommerce/customer/view/CustomerTabOverview.vue'
-import CustomerTabSecurity from '@/views/apps/ecommerce/customer/view/CustomerTabSecurity.vue'
 
 const route = useRoute('apps-ecommerce-customer-details-id')
 const customerData = ref()
 const userTab = ref(null)
+const isLoading = ref(true)
 
 const tabs = [
   {
@@ -16,22 +15,18 @@ const tabs = [
     icon: 'tabler-user',
   },
   {
-    title: 'Безопасность',
-    icon: 'tabler-lock',
-  },
-  {
-    title: 'Адрес и оплата',
-    icon: 'tabler-map-pin',
-  },
-  {
     title: 'Уведомления',
     icon: 'tabler-bell',
   },
 ]
 
-const { data } = await useApi(`/apps/ecommerce/customers/${ route.params.id }`)
-if (data.value)
-  customerData.value = data.value
+try {
+  const { data } = await useApi(`/apps/ecommerce/customers/${ route.params.id }`)
+  if (data.value)
+    customerData.value = data.value
+} finally {
+  isLoading.value = false
+}
 const isAddCustomerDrawerOpen = ref(false)
 </script>
 
@@ -57,7 +52,12 @@ const isAddCustomerDrawerOpen = ref(false)
       </div>
     </div>
     <!-- 👉 Customer Profile  -->
-    <VRow v-if="customerData">
+    <VRow v-if="isLoading">
+      <VCol cols="12">
+        <VProgressLinear indeterminate />
+      </VCol>
+    </VRow>
+    <VRow v-else-if="customerData">
       <VCol
         v-if="customerData"
         cols="12"
@@ -93,13 +93,7 @@ const isAddCustomerDrawerOpen = ref(false)
           :touch="false"
         >
           <VWindowItem>
-            <CustomerTabOverview />
-          </VWindowItem>
-          <VWindowItem>
-            <CustomerTabSecurity />
-          </VWindowItem>
-          <VWindowItem>
-            <CustomerTabAddressAndBilling />
+            <CustomerTabOverview :customer-data="customerData" />
           </VWindowItem>
           <VWindowItem>
             <CustomerTabNotification />
@@ -114,6 +108,11 @@ const isAddCustomerDrawerOpen = ref(false)
       >
         Клиент с ID {{ route.params.id }} не найден!
       </VAlert>
+      <div class="mt-4">
+        <VBtn :to="{ name: 'apps-ecommerce-customer-list' }">
+          Вернуться к списку клиентов
+        </VBtn>
+      </div>
     </div>
     <ECommerceAddCustomerDrawer v-model:is-drawer-open="isAddCustomerDrawerOpen" />
   </div>

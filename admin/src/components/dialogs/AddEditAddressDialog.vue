@@ -202,7 +202,7 @@ const addressTypes = [
             </VCol>
 
             <VCol cols="12">
-              <VSwitch label="Use as a billing address?" />
+              <VSwitch label="Использовать как платёжный адрес?" />
             </VCol>
 
             <!-- 👉 Submit and Cancel button -->

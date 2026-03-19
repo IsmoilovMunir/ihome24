@@ -11,5 +11,7 @@ import java.util.List;
 public interface UserLoginDeviceRepository extends JpaRepository<UserLoginDevice, Long> {
 
     List<UserLoginDevice> findTop10ByUserOrderByCreatedAtDesc(User user);
+
+    void deleteByUserId(Long userId);
 }
 

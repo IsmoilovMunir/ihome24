@@ -31,6 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.time.format.DateTimeFormatter;
 
+import com.ihome24.ihome24.config.security.JwtTokenService;
+
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
@@ -45,6 +47,7 @@ public class AuthRestController {
     private final PasswordResetService passwordResetService;
     private final FileService fileService;
     private final UserLoginDeviceRepository userLoginDeviceRepository;
+    private final JwtTokenService jwtTokenService;
 
     // Endpoint для JSON
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -149,7 +152,7 @@ public class AuthRestController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
             }
 
-            // Получаем пользователя с ролями и правами
+            // Reload user with role and permissions to avoid lazy-init issues when building JWT and abilities.
             user = userRepository.findByUsernameWithRoleAndPermissions(user.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -342,11 +345,32 @@ public class AuthRestController {
         userData.put("status", user.getStatus() != null ? user.getStatus().name() : "ACTIVE");
         userData.put("passwordChangeRequired", Boolean.TRUE.equals(user.getPasswordChangeRequired()));
 
-        String accessToken = "token_" + user.getId() + "_" + System.currentTimeMillis();
-        Map<String, Object> abilityRules = new HashMap<>();
-        abilityRules.put("action", "admin".equals(userData.get("role")) ? "manage" : "read");
-        abilityRules.put("subject", "admin".equals(userData.get("role")) ? "all" : "AclDemo");
-        List<Map<String, Object>> userAbilityRules = List.of(abilityRules);
+        // Generate JWT access token. Our User entity implements UserDetails and already exposes authorities.
+        String accessToken = jwtTokenService.generateAccessToken(user);
+        // Normalize role to avoid issues with casing/whitespace differences in DB (e.g. "EDITOR " vs "editor")
+        String role = (String) userData.get("role");
+        String normalizedRole = role != null ? role.toLowerCase().trim() : null;
+
+        List<Map<String, Object>> userAbilityRules;
+        if ("admin".equals(normalizedRole)) {
+            userAbilityRules = List.of(Map.of("action", "manage", "subject", "all"));
+        } else if ("editor".equals(normalizedRole)) {
+            // Editor должен видеть хотя бы родительскую группу "Электронная коммерция".
+            // Иначе canViewNavMenuGroup() скрывает группу целиком из-за отсутствия read по Ecommerce.
+            userAbilityRules = List.of(
+                    Map.of("action", "read", "subject", "Ecommerce"),
+                    // Разрешаем доступ к странице добавления товара
+                    // (в навигации пункт "Добавить" требует action=manage для EcommerceProduct).
+                    Map.of("action", "manage", "subject", "EcommerceProduct"),
+                    // Явно оставляем read на случай, если manage не раскрывается как superset в текущей конфигурации CASL.
+                    Map.of("action", "read", "subject", "EcommerceProduct")
+            );
+        } else if ("manager".equals(normalizedRole)) {
+            userAbilityRules = List.of(Map.of("action", "manage", "subject", "Ecommerce"));
+        } else {
+            // fallback: minimal read access
+            userAbilityRules = List.of(Map.of("action", "read", "subject", "Ecommerce"));
+        }
 
         LoginResponse response = LoginResponse.builder()
                 .accessToken(accessToken)
@@ -513,19 +537,22 @@ public class AuthRestController {
      * Endpoint для получения текущего пользователя
      */
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser() {
+    public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "User not authenticated"));
-        }
+        String username = (authentication != null && authentication.isAuthenticated()) ? authentication.getName() : null;
 
-        String username = authentication.getName();
-        User user = userRepository.findByUsernameWithRoleAndPermissions(username).orElse(null);
-        if (user == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "User not authenticated"));
-        }
+        // 1) Primary path: authenticated via Spring Security
+        User user = null;
+        if (username != null)
+            user = userRepository.findByUsernameWithRole(username).orElse(null);
+
+        // 2) Fallback path: parse our "token_<userId>_<timestamp>" bearer token (used by frontend)
+        // This avoids 401 loops when SecurityContext isn't populated for this lightweight token.
+        if (user == null && request != null)
+            user = getUserFromBearerToken(request);
+
+        if (user == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not authenticated"));
 
         Map<String, Object> userData = new HashMap<>();
         userData.put("id", user.getId());
@@ -648,7 +675,7 @@ public class AuthRestController {
     public ResponseEntity<?> uploadAvatar(
             @RequestParam(value = "file", required = false) MultipartFile file,
             HttpServletRequest request) {
-        User user = getCurrentUser(request);
+        User user = getUserFromBearerToken(request);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "User not authenticated"));
@@ -709,8 +736,8 @@ public class AuthRestController {
                 ));
     }
 
-    /** Получить текущего пользователя по токену (token_userId_timestamp). Не зависит от SecurityContext. */
-    private User getCurrentUser(HttpServletRequest request) {
+    /** Получить пользователя по токену (token_userId_timestamp). Не зависит от SecurityContext. */
+    private User getUserFromBearerToken(HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
         if (bearer == null || !bearer.startsWith("Bearer ")) return null;
         String token = bearer.substring(7);

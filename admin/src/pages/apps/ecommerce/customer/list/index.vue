@@ -151,7 +151,7 @@ const totalCustomers = computed(() => customerData.value.total)
 
         <template #item.totalSpent="{ item }">
           <h6 class="text-h6">
-            ${{ item.totalSpent }}
+            {{ Number(item.totalSpent || 0).toLocaleString('ru-RU') }} ₽
           </h6>
         </template>
 

@@ -103,6 +103,8 @@ export const handlerAppsUsers = [
       return HttpResponse.json({ message: 'User not found' }, { status: 404 })
     }
     else {
+      const phone = user.phone ?? user.contact?.toString().replaceAll(/[^0-9]/g, '')
+
       return HttpResponse.json({
         ...user,
         ...{
@@ -110,6 +112,7 @@ export const handlerAppsUsers = [
           projectDone: 568,
           taxId: 'Tax-8894',
           language: 'English',
+          phone,
         },
       }, { status: 200 })
     }

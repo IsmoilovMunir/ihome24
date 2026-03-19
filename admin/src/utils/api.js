@@ -2,6 +2,9 @@ import { ofetch } from 'ofetch'
 
 export const $api = ofetch.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  // Prevent UI "hangs" when backend/proxy doesn't respond.
+  // Per-request timeout can still override this default.
+  timeout: 15_000,
   async onRequest({ options }) {
     const accessToken = useCookie('accessToken').value
     if (accessToken) {

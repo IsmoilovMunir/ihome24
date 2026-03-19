@@ -75,49 +75,22 @@ const roles = [
     value: 'admin',
   },
   {
-    title: 'Автор',
-    value: 'author',
-  },
-  {
-    title: 'Редактор',
-    value: 'editor',
-  },
-  {
-    title: 'Сопровождающий',
-    value: 'maintainer',
-  },
-  {
-    title: 'Подписчик',
-    value: 'subscriber',
+    title: 'Менеджер',
+    value: 'manager',
   },
 ]
 
 const resolveUserRoleVariant = role => {
   const roleLowerCase = role.toLowerCase()
-  if (roleLowerCase === 'subscriber')
-    return {
-      color: 'primary',
-      icon: 'tabler-user',
-    }
-  if (roleLowerCase === 'author')
-    return {
-      color: 'warning',
-      icon: 'tabler-settings',
-    }
-  if (roleLowerCase === 'maintainer')
-    return {
-      color: 'success',
-      icon: 'tabler-chart-donut',
-    }
-  if (roleLowerCase === 'editor')
-    return {
-      color: 'info',
-      icon: 'tabler-pencil',
-    }
   if (roleLowerCase === 'admin')
     return {
       color: 'error',
       icon: 'tabler-device-laptop',
+    }
+  if (roleLowerCase === 'manager')
+    return {
+      color: 'info',
+      icon: 'tabler-briefcase',
     }
   
   return {
