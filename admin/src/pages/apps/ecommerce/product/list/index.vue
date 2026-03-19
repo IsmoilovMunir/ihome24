@@ -225,6 +225,43 @@ const totalProduct = computed(() => {
   return 0
 })
 
+const toggleStock = async (item, nextValue) => {
+  // nextValue: true => "в наличии", false => "нет в наличии"
+  const v = getSelectedVariant(item)
+  const variantSku = v?.sku || item.variants?.[0]?.sku || item.sku
+  if (!variantSku) {
+    console.warn('Missing variant SKU for stock toggle', item)
+    return
+  }
+
+  // По ТЗ: при включении "в наличии" ставим фиксированно 1000 шт.
+  // При выключении — 0 шт.
+  const stockQuantity = nextValue ? 1000 : 0
+
+  // Optimistic UI: сразу обновим отображение в строке.
+  // Это помогает визуально увидеть переключение даже если запрос/перезагрузка чуть задерживаются.
+  item.stock = nextValue
+  item.qtyTotal = stockQuantity
+  if (Array.isArray(item.variants) && item.variants.length && item.variants[0]?.stock) {
+    item.variants[0].stock.quantity = stockQuantity
+  }
+
+  try {
+    await $api(`/admin/products/${item.id}/variant/stock`, {
+      method: 'PATCH',
+      body: {
+        sku: variantSku,
+        stockQuantity,
+      },
+    })
+
+    // Обновляем таблицу после изменения наличия
+    fetchProducts()
+  } catch (error) {
+    console.error('Ошибка при переключении наличия товара:', error)
+  }
+}
+
 const deleteProduct = async id => {
   try {
     await $api(`admin/products/${ id }`, { method: 'DELETE' })
@@ -665,7 +702,10 @@ const updateVariantQty = async (item, newQty) => {
 
         <!-- stock -->
         <template #item.stock="{ item }">
-          <VSwitch :model-value="item.stock" />
+          <VSwitch
+            :model-value="item.stock"
+            @update:modelValue="val => toggleStock(item, val)"
+          />
         </template>
 
         <!-- status -->
