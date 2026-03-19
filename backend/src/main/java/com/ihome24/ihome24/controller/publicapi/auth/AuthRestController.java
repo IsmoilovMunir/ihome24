@@ -498,8 +498,12 @@ public class AuthRestController {
             }
 
             String username = authentication.getName();
-            User user = userRepository.findByUsername(username)
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            User user = userRepository.findByUsername(username).orElse(null);
+            if (user == null) {
+                Map<String, Object> errors = new HashMap<>();
+                errors.put("authentication", new String[]{"User not authenticated"});
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("errors", errors));
+            }
 
             // Проверяем текущий пароль, если требуется
             if (currentPassword != null && !currentPassword.isEmpty()) {
