@@ -200,7 +200,12 @@
     </Teleport>
     
     <!-- Нижний слой: горизонтальное меню (скрыто на странице корзины) -->
-    <div v-if="route.path !== '/cart'" class="header-menu">
+    <div
+      v-if="route.path !== '/cart'"
+      class="header-menu"
+      ref="headerMenuRef"
+      @mouseenter="keepSubmenuVisible"
+    >
       <div class="horizontal-menu">
         <ul class="menu-list">
           <li class="menu-item">
@@ -210,8 +215,8 @@
             v-for="parentCategory in parentCategories"
             :key="parentCategory.id"
             class="menu-item menu-item-with-submenu"
-            @mouseenter="showSubmenu(parentCategory.id)"
-            @mouseleave="hideSubmenu"
+            @mouseenter="scheduleShowSubmenu(parentCategory.id)"
+            @mouseleave="cancelScheduledSubmenuOpen"
           >
             <router-link
               :to="`/products?category=${parentCategory.id}`"
@@ -231,8 +236,9 @@
       <div
         v-if="route.path !== '/cart' && visibleSubmenu && getCurrentCategoryData()"
         class="dropdown-menu"
+        ref="dropdownMenuRef"
         @mouseenter="keepSubmenuVisible"
-        @mouseleave="hideSubmenu"
+        @mouseleave="e => hideSubmenu(e)"
       >
         <div class="dropdown-menu-wrap">
           <ul class="dropdown-menu-list">
@@ -459,8 +465,14 @@ const personalMenuStore = usePersonalMenuStore()
 
 const visibleSubmenu = ref(null)
 const submenuTimeout = ref(null)
+const submenuHoverOpenTimeout = ref(null)
+const lastPointerX = ref(0)
+const lastPointerY = ref(0)
 
 const accountNavRef = ref(null)
+
+const headerMenuRef = ref(null)
+const dropdownMenuRef = ref(null)
 
 const locationCity = ref('')
 const locationLoading = ref(true)
@@ -588,9 +600,31 @@ const showSubmenu = (categoryId) => {
     clearTimeout(submenuTimeout.value)
     submenuTimeout.value = null
   }
-  
-  if (getChildCategories(categoryId).length > 0) {
-    visibleSubmenu.value = categoryId
+
+  // Важно: выставляем visibleSubmenu сразу.
+  // Категории могут подгружаться асинхронно, и если проверять наличие дочерних категорий
+  // в момент первого наведения, подменю может не открыться, пока данные не обновятся.
+  // Dropdown сам отрендерится, когда categoriesStore заполнится.
+  visibleSubmenu.value = categoryId
+}
+
+const scheduleShowSubmenu = (categoryId) => {
+  // По ТЗ: открываем только если мышь удерживается 2 секунды.
+  if (submenuHoverOpenTimeout.value) {
+    clearTimeout(submenuHoverOpenTimeout.value)
+    submenuHoverOpenTimeout.value = null
+  }
+
+  submenuHoverOpenTimeout.value = setTimeout(() => {
+    submenuHoverOpenTimeout.value = null
+    showSubmenu(categoryId)
+  }, 500) // 0.5 секунды
+}
+
+const cancelScheduledSubmenuOpen = () => {
+  if (submenuHoverOpenTimeout.value) {
+    clearTimeout(submenuHoverOpenTimeout.value)
+    submenuHoverOpenTimeout.value = null
   }
 }
 
@@ -602,12 +636,68 @@ const keepSubmenuVisible = () => {
   }
 }
 
-const hideSubmenu = () => {
-  // Добавляем задержку перед закрытием, чтобы пользователь успел перейти к подменю
+const hideSubmenu = (event) => {
+  const dropdownEl = dropdownMenuRef.value
+  const headerEl = headerMenuRef.value
+
+  // На момент mouseleave берём координаты из события, чтобы проверка была точной.
+  if (typeof event?.clientX === 'number')
+    lastPointerX.value = event.clientX
+  if (typeof event?.clientY === 'number')
+    lastPointerY.value = event.clientY
+
+  const isPointInside = (el, x, y) => {
+    if (!el)
+      return false
+    const rect = el.getBoundingClientRect()
+    return x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom
+  }
+
   submenuTimeout.value = setTimeout(() => {
+    const insideHeader = isPointInside(headerEl, lastPointerX.value, lastPointerY.value)
+    const insideDropdown = isPointInside(dropdownEl, lastPointerX.value, lastPointerY.value)
+
+    // Если мышь уже вернулась в меню/подменю — не закрываем.
+    if (insideHeader || insideDropdown) {
+      submenuTimeout.value = null
+      return
+    }
+
     visibleSubmenu.value = null
     submenuTimeout.value = null
-  }, 300) // 300ms задержка для плавного перехода
+  }, 300) // 0.3 сек
+}
+
+const handleSubmenuPointerDown = (event) => {
+  // Если подменю не открыто — ничего не делаем
+  if (!visibleSubmenu.value)
+    return
+
+  const target = event.target
+  const headerEl = headerMenuRef.value
+  const dropdownEl = dropdownMenuRef.value
+
+  if (!(target instanceof Node))
+    return
+
+  const clickedInsideHeader = headerEl ? headerEl.contains(target) : false
+  const clickedInsideDropdown = dropdownEl ? dropdownEl.contains(target) : false
+
+  // Если клик произошёл снаружи области меню/подменю — закрываем
+  if (!clickedInsideHeader && !clickedInsideDropdown) {
+    visibleSubmenu.value = null
+    if (submenuTimeout.value) {
+      clearTimeout(submenuTimeout.value)
+      submenuTimeout.value = null
+    }
+  }
+}
+
+const handlePointerMove = (event) => {
+  if (typeof event?.clientX === 'number')
+    lastPointerX.value = event.clientX
+  if (typeof event?.clientY === 'number')
+    lastPointerY.value = event.clientY
 }
 
 const handleMainMenuClick = () => {
@@ -616,6 +706,10 @@ const handleMainMenuClick = () => {
   if (submenuTimeout.value) {
     clearTimeout(submenuTimeout.value)
     submenuTimeout.value = null
+  }
+  if (submenuHoverOpenTimeout.value) {
+    clearTimeout(submenuHoverOpenTimeout.value)
+    submenuHoverOpenTimeout.value = null
   }
 }
 
@@ -832,11 +926,15 @@ onMounted(async () => {
   fetchLocation()
   window.addEventListener('keydown', onKeydown)
   document.addEventListener('click', handleClickOutside)
+  document.addEventListener('pointerdown', handleSubmenuPointerDown)
+  document.addEventListener('pointermove', handlePointerMove, { passive: true })
 })
 
 onUnmounted(() => {
   window.removeEventListener('keydown', onKeydown)
   document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('pointerdown', handleSubmenuPointerDown)
+  document.removeEventListener('pointermove', handlePointerMove)
 })
 </script>
 
