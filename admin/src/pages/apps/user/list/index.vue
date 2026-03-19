@@ -1,6 +1,15 @@
 <script setup>
 import AddNewUserDrawer from '@/views/apps/user/list/AddNewUserDrawer.vue'
 
+// Enforce ADMIN-only access on this route via CASL guard.
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'AdminUsers',
+    navActiveLink: 'apps-user-list',
+  },
+})
+
 const searchQuery = ref('')
 const selectedRole = ref()
 const selectedPlan = ref()
@@ -65,8 +74,8 @@ const {
   },
 }))
 
-const users = computed(() => usersData.value.users)
-const totalUsers = computed(() => usersData.value.totalUsers)
+const users = computed(() => usersData.value?.users ?? [])
+const totalUsers = computed(() => Number(usersData.value?.totalUsers ?? 0))
 
 // 👉 search filters
 const roles = [
