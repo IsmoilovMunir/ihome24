@@ -90,7 +90,13 @@ public class SecurityConfig {
                 "http://localhost:5173", 
                 "http://localhost:3000",
                 "http://admin:5173",
-                "http://frontend:3000"
+                "http://frontend:3000",
+                // Production defaults (admin -> api)
+                "https://admin.ihome24.ru",
+                "https://api.ihome24.ru",
+                // иногда бывает редирект/пре-деплой на http
+                "http://admin.ihome24.ru",
+                "http://api.ihome24.ru"
             );
         }
         
