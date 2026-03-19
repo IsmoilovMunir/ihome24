@@ -1,18 +1,22 @@
 <script setup>
 import AccountSettingsAccount from '@/views/pages/account-settings/AccountSettingsAccount.vue'
-import AccountSettingsBillingAndPlans from '@/views/pages/account-settings/AccountSettingsBillingAndPlans.vue'
-import AccountSettingsConnections from '@/views/pages/account-settings/AccountSettingsConnections.vue'
 import AccountSettingsNotification from '@/views/pages/account-settings/AccountSettingsNotification.vue'
 import AccountSettingsSecurity from '@/views/pages/account-settings/AccountSettingsSecurity.vue'
 
 const route = useRoute('pages-account-settings-tab')
+const router = useRouter()
+
+const allowedTabs = ['account', 'security', 'notification']
 
 const activeTab = computed({
-  get: () => route.params.tab,
+  get: () => {
+    const current = route.params.tab
+    return allowedTabs.includes(current) ? current : 'account'
+  },
   set: () => route.params.tab,
 })
 
-// tabs
+// tabs (убраны Оплата и планы, Подключения)
 const tabs = [
   {
     title: 'Аккаунт',
@@ -25,21 +29,15 @@ const tabs = [
     tab: 'security',
   },
   {
-    title: 'Оплата и планы',
-    icon: 'tabler-file-text',
-    tab: 'billing-plans',
-  },
-  {
     title: 'Уведомления',
     icon: 'tabler-bell',
     tab: 'notification',
   },
-  {
-    title: 'Подключения',
-    icon: 'tabler-link',
-    tab: 'connection',
-  },
 ]
+
+if (!allowedTabs.includes(route.params.tab)) {
+  router.replace({ name: 'pages-account-settings-tab', params: { tab: 'account' } })
+}
 
 definePage({ meta: { navActiveLink: 'pages-account-settings-tab' } })
 </script>
@@ -80,19 +78,9 @@ definePage({ meta: { navActiveLink: 'pages-account-settings-tab' } })
         <AccountSettingsSecurity />
       </VWindowItem>
 
-      <!-- Billing -->
-      <VWindowItem value="billing-plans">
-        <AccountSettingsBillingAndPlans />
-      </VWindowItem>
-
       <!-- Notification -->
       <VWindowItem value="notification">
         <AccountSettingsNotification />
-      </VWindowItem>
-
-      <!-- Connections -->
-      <VWindowItem value="connection">
-        <AccountSettingsConnections />
       </VWindowItem>
     </VWindow>
   </div>

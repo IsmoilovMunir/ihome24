@@ -1,5 +1,4 @@
 <script setup>
-import rocketImg from '@images/eCommerce/rocket.png'
 
 const props = defineProps({
   customerData: {
@@ -9,7 +8,6 @@ const props = defineProps({
 })
 
 const isUserInfoEditDialogVisible = ref(false)
-const isUpgradePlanDialogVisible = ref(false)
 
 const customerData = {
   id: props.customerData.id,
@@ -91,11 +89,11 @@ const customerData = {
                 rounded
                 class="me-3"
               >
-                <VIcon icon="tabler-currency-dollar" />
+                <VIcon icon="tabler-currency-rubel" />
               </VAvatar>
               <div class="d-flex flex-column align-start">
                 <h5 class="text-h5">
-                  ${{ props.customerData.totalSpent }}
+                  {{ Number(props.customerData.totalSpent || 0).toLocaleString('ru-RU') }} ₽
                 </h5>
                 <div class="text-body-1">
                   Потрачено
@@ -108,7 +106,7 @@ const customerData = {
         <!-- 👉 Customer Details -->
         <VCardText>
           <h5 class="text-h5">
-            Details
+            Детали
           </h5>
 
           <VDivider class="my-4" />
@@ -149,9 +147,9 @@ const customerData = {
 
             <VListItem>
               <h6 class="text-h6">
-                Контакт:
+                Телефон:
                 <span class="text-body-1 d-inline-block">
-                  {{ props.customerData.contact }}
+                  {{ props.customerData.phone || props.customerData.contact || 'Не указан' }}
                 </span>
               </h6>
             </VListItem>
@@ -172,44 +170,7 @@ const customerData = {
             block
             @click="isUserInfoEditDialogVisible = !isUserInfoEditDialogVisible"
           >
-            Edit Details
-          </VBtn>
-        </VCardText>
-      </VCard>
-    </VCol>
-    <!-- !SECTION -->
-
-    <!-- SECTION  Upgrade to Premium -->
-    <VCol cols="12">
-      <VCard
-        flat
-        class="current-plan"
-      >
-        <VCardText>
-          <div class="d-flex align-center">
-            <div>
-              <h5 class="text-h5 text-white mb-4">
-                Обновить до премиум
-              </h5>
-              <p class="mb-6 text-wrap">
-                Обновите клиента до премиум-членства для доступа к профессиональным функциям.
-              </p>
-            </div>
-            <div>
-              <VImg
-                :src="rocketImg"
-                height="108"
-                width="108"
-              />
-            </div>
-          </div>
-          <VBtn
-            color="#fff"
-            class="text-primary"
-            block
-            @click="isUpgradePlanDialogVisible = !isUpgradePlanDialogVisible"
-          >
-            Обновить до премиум
+            Редактировать
           </VBtn>
         </VCardText>
       </VCard>
@@ -220,7 +181,6 @@ const customerData = {
     v-model:is-dialog-visible="isUserInfoEditDialogVisible"
     :user-data="customerData"
   />
-  <UserUpgradePlanDialog v-model:is-dialog-visible="isUpgradePlanDialogVisible" />
 </template>
 
 <style lang="scss" scoped>
@@ -228,8 +188,4 @@ const customerData = {
   --v-card-list-gap: 0.5rem;
 }
 
-.current-plan {
-  background: linear-gradient(45deg, rgb(var(--v-theme-primary)) 0%, #9e95f5 100%);
-  color: #fff;
-}
 </style>

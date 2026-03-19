@@ -98,7 +98,11 @@ const chartOptions = computed(() => {
               label: 'Всего',
               fontFamily: 'Public Sans',
               formatter(_w, opts) {
-                return opts.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                const totals = opts?.globals?.seriesTotals
+                if (!Array.isArray(totals))
+                  return 0
+
+                return totals.reduce((a, b) => a + b, 0)
               },
             },
           },

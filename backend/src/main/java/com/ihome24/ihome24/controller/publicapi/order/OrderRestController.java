@@ -67,6 +67,23 @@ public class OrderRestController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Заказы конкретного клиента (для админки) по email и/или телефону.
+     * Точное совпадение.
+     */
+    @GetMapping("/by-customer")
+    public ResponseEntity<OrderListResponse> getOrdersByCustomer(
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String phone,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer itemsPerPage,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(required = false) String orderBy) {
+
+        OrderListResponse response = orderService.getOrdersByEmailOrPhone(email, phone, page, itemsPerPage, sortBy, orderBy != null ? orderBy : "desc");
+        return ResponseEntity.ok(response);
+    }
+
     /** Список заказов текущего пользователя (по токену). Только свои заказы. */
     @GetMapping("/me")
     public ResponseEntity<?> getMyOrders(

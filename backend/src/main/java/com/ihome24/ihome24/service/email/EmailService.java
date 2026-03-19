@@ -199,6 +199,114 @@ public class EmailService {
     }
 
     /**
+     * Письмо со ссылкой для сброса пароля админ-панели.
+     */
+    public void sendPasswordResetLink(String toEmail, String token) {
+        if (mailUsername == null || mailUsername.isEmpty()) {
+            log.warn("Email не настроен — письмо для сброса пароля не отправлено. Укажите MAIL_USERNAME и MAIL_PASSWORD");
+            return;
+        }
+        try {
+            // Базовый URL админ-панели берем из переменной окружения ADMIN_BASE_URL.
+            // Для разработки можно оставить значение по умолчанию http://localhost:5173,
+            // а в продакшене указать, например, https://admin.ihome24.ru
+            String adminBaseUrl = System.getenv("ADMIN_BASE_URL");
+            if (adminBaseUrl == null || adminBaseUrl.isEmpty()) {
+                adminBaseUrl = "http://localhost:5173";
+            }
+            if (adminBaseUrl.endsWith("/")) {
+                adminBaseUrl = adminBaseUrl.substring(0, adminBaseUrl.length() - 1);
+            }
+            String resetUrl = adminBaseUrl + "/reset-password?token=" + token;
+
+            String fromEmail = mailUsername;
+            String plainText = String.format(
+                    "Здравствуйте!\n\n" +
+                    "Вы запросили сброс пароля для аккаунта iHome24.\n\n" +
+                    "Для установки нового пароля перейдите по ссылке (или скопируйте её в браузер):\n%s\n\n" +
+                    "Ссылка действительна в течение 30 минут.\n\n" +
+                    "Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.\n\n" +
+                    "С уважением,\nКоманда iHome24\nhttps://ihome24.ru",
+                    resetUrl
+            );
+
+            String html = String.format(
+                    "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1.0\"></head>" +
+                    "<body style=\"font-family:Arial,sans-serif;line-height:1.6;color:#333;max-width:600px;margin:0 auto;padding:20px;\">" +
+                    "<h2 style=\"color:#2c3e50;\">Сброс пароля iHome24</h2>" +
+                    "<p>Вы запросили сброс пароля для вашей учётной записи.</p>" +
+                    "<p>Нажмите на кнопку ниже, чтобы установить новый пароль:</p>" +
+                    "<p style=\"margin:20px 0;\"><a href=\"%s\" style=\"display:inline-block;padding:10px 18px;background:#2563eb;color:#fff;text-decoration:none;border-radius:4px;\">Сбросить пароль</a></p>" +
+                    "<p style=\"font-size:14px;color:#6b7280;\">Если кнопка не работает, скопируйте эту ссылку в адресную строку браузера:</p>" +
+                    "<p style=\"font-size:13px;color:#4b5563;word-break:break-all;\">%s</p>" +
+                    "<p style=\"font-size:12px;color:#9ca3af;\">Ссылка действительна в течение 30 минут. Если вы не запрашивали сброс пароля, просто проигнорируйте это письмо.</p>" +
+                    "<p style=\"font-size:12px;color:#9ca3af;\">С уважением,<br>Команда iHome24<br><a href=\"https://ihome24.ru\" style=\"color:#2563eb;\">ihome24.ru</a></p>" +
+                    "</body></html>",
+                    resetUrl, resetUrl
+            );
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(fromEmail, "iHome24");
+            helper.setTo(toEmail);
+            helper.setSubject("Сброс пароля iHome24");
+            helper.setText(plainText, html);
+
+            mailSender.send(mimeMessage);
+            log.info("Password reset email sent to {}", toEmail);
+        } catch (Exception e) {
+            log.error("Не удалось отправить письмо для сброса пароля: {}", e.getMessage(), e);
+            logSmtpPortHint(e);
+        }
+    }
+
+    /**
+     * Отправка реквизитов для первого входа сотрудника админ-панели.
+     * Бросает RuntimeException при проблемах отправки.
+     */
+    public void sendAdminUserCredentials(String toEmail, String fullName, String username, String temporaryPassword) {
+        if (mailUsername == null || mailUsername.isEmpty()) {
+            throw new RuntimeException("Email configuration is missing");
+        }
+
+        try {
+            String fromEmail = mailUsername;
+            String safeName = (fullName != null && !fullName.isBlank()) ? fullName : "пользователь";
+            String plainText = String.format(
+                    "Здравствуйте, %s!\n\n" +
+                            "Для вас создан доступ в админ-панель iHome24.\n\n" +
+                            "Логин: %s\n" +
+                            "Временный пароль: %s\n\n" +
+                            "При первом входе система потребует сменить пароль.\n\n" +
+                            "С уважением,\nКоманда iHome24",
+                    safeName, username, temporaryPassword
+            );
+
+            String html = String.format(
+                    "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head>" +
+                            "<body style=\"font-family:Arial,sans-serif;line-height:1.5;color:#333;\">" +
+                            "<h2>Доступ в админ-панель iHome24</h2>" +
+                            "<p>Здравствуйте, <strong>%s</strong>!</p>" +
+                            "<p>Для вас создан доступ в админ-панель.</p>" +
+                            "<p><strong>Логин:</strong> %s<br><strong>Временный пароль:</strong> %s</p>" +
+                            "<p>При первом входе система потребует сменить пароль.</p>" +
+                            "</body></html>",
+                    escapeHtml(safeName), escapeHtml(username), escapeHtml(temporaryPassword)
+            );
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(fromEmail, "iHome24");
+            helper.setTo(toEmail);
+            helper.setSubject("Доступ в админ-панель iHome24");
+            helper.setText(plainText, html);
+            mailSender.send(mimeMessage);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to send user credentials email", e);
+        }
+    }
+
+    /**
      * Отправка письма подтверждения заказа. Не бросает исключение при ненастроенной почте —
      * заказ всё равно создаётся, письмо просто не отправляется.
      */

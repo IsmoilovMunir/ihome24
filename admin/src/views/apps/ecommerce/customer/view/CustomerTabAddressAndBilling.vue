@@ -46,7 +46,7 @@ const isNewCardAddDialogVisible = ref(false)
 
 const addressData = [
   {
-    title: 'Home',
+    title: 'Дом',
     subtitle: '23 Shatinon Mekalan',
     owner: 'Violet Mendoza',
     defaultAddress: true,
@@ -57,7 +57,7 @@ const addressData = [
     Москва, Россия`,
   },
   {
-    title: 'Office',
+    title: 'Офис',
     subtitle: '45 Rocker Terrace',
     owner: 'Violet Mendoza',
     defaultAddress: false,
@@ -68,7 +68,7 @@ const addressData = [
     Москва, Россия`,
   },
   {
-    title: 'Family',
+    title: 'Семья',
     subtitle: '512 Water Plant',
     owner: 'Violet Mendoza',
     defaultAddress: false,
@@ -83,13 +83,13 @@ const addressData = [
 const paymentData = [
   {
     title: 'Mastercard',
-    subtitle: 'Expires Apr 2028',
+    subtitle: 'Действует до апр. 2028',
     isDefaultMethod: false,
     image: mastercard,
   },
   {
     title: 'American Express',
-    subtitle: 'Expires Apr 2028',
+    subtitle: 'Действует до апр. 2028',
     isDefaultMethod: false,
     image: americanExpress,
   },

@@ -1,4 +1,17 @@
 <script setup>
+const props = defineProps({
+  customerEmail: {
+    type: String,
+    required: false,
+    default: undefined,
+  },
+  customerPhone: {
+    type: String,
+    required: false,
+    default: undefined,
+  },
+})
+
 const searchQuery = ref('')
 
 // Data table options
@@ -50,9 +63,10 @@ const resolveStatus = status => {
 const {
   data: ordersData,
   execute: fetchOrders,
-} = await useApi(createUrl('/apps/ecommerce/orders', {
+} = await useApi(createUrl('/apps/ecommerce/orders/by-customer', {
   query: {
-    q: searchQuery,
+    email: props.customerEmail,
+    phone: props.customerPhone,
     page,
     itemsPerPage,
     sortBy,
@@ -74,12 +88,12 @@ const deleteOrder = async id => {
     <VCardText>
       <div class="d-flex justify-space-between flex-wrap align-center gap-4">
         <h5 class="text-h5">
-          Orders placed
+          Оформленные заказы
         </h5>
         <div>
           <AppTextField
             v-model="searchQuery"
-            placeholder="Search Order"
+            placeholder="Поиск заказа"
             style=" max-inline-size: 200px; min-inline-size: 200px;"
           />
         </div>
@@ -99,14 +113,14 @@ const deleteOrder = async id => {
     >
       <!-- Order ID -->
       <template #item.order="{ item }">
-        <RouterLink :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.order } }">
+        <RouterLink :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.id } }">
           #{{ item.order }}
         </RouterLink>
       </template>
 
       <!-- Date -->
       <template #item.date="{ item }">
-        {{ new Date(item.date).toDateString() }}
+        {{ new Date(item.date).toLocaleDateString('ru-RU') }}
       </template>
 
       <!-- Status -->
@@ -122,7 +136,7 @@ const deleteOrder = async id => {
 
       <!-- Spent -->
       <template #item.spent="{ item }">
-        ${{ item.spent }}
+        {{ Number(item.spent || 0).toLocaleString('ru-RU') }} ₽
       </template>
 
       <!-- Actions -->
@@ -133,7 +147,7 @@ const deleteOrder = async id => {
             <VList>
               <VListItem
                 value="view"
-                :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.order } }"
+                :to="{ name: 'apps-ecommerce-order-details-id', params: { id: item.id } }"
               >
                 Просмотр
               </VListItem>

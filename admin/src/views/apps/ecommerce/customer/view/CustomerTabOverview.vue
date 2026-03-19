@@ -1,5 +1,24 @@
 <script setup>
 import CustomerOrderTable from './CustomerOrderTable.vue'
+
+const props = defineProps({
+  customerData: {
+    type: Object,
+    required: true,
+  },
+})
+
+const totalSpent = computed(() => {
+  const v = props.customerData?.totalSpent
+  if (v == null || v === '') return 0
+  return Number(v)
+})
+
+const ordersCount = computed(() => {
+  const v = props.customerData?.order
+  if (v == null || v === '') return 0
+  return Number(v)
+})
 </script>
 
 <template>
@@ -13,19 +32,18 @@ import CustomerOrderTable from './CustomerOrderTable.vue'
           <VAvatar
             variant="tonal"
             color="primary"
-            icon="tabler-currency-dollar"
+            icon="tabler-currency-rubel"
             rounded
           />
           <h5 class="text-h5">
-            Баланс счета
+            Всего потрачено
           </h5>
           <div>
             <h5 class="text-h5 text-primary mb-1">
-              $7480
-              <span class="text-body-1 d-inline-block">Остаток кредита</span>
+              {{ totalSpent.toLocaleString('ru-RU') }} ₽
             </h5>
             <p class="mb-0">
-              Баланс счета для следующей покупки
+              Сумма по всем заказам клиента
             </p>
           </div>
         </VCardText>
@@ -41,87 +59,27 @@ import CustomerOrderTable from './CustomerOrderTable.vue'
           <VAvatar
             variant="tonal"
             color="success"
-            icon="tabler-gift"
+            icon="tabler-shopping-cart"
             rounded
           />
           <h5 class="text-h5">
-            Loyalty Program
+            Заказы
           </h5>
           <div>
-            <VChip
-              color="success"
-              class="mb-2"
-              label
-              size="small"
-            >
-              Platinum member
-            </VChip>
-            <p class="mb-0">
-              3000 points to next tier
-            </p>
-          </div>
-        </VCardText>
-      </VCard>
-    </VCol>
-
-    <VCol
-      cols="12"
-      md="6"
-    >
-      <VCard>
-        <VCardText class="d-flex gap-y-2 flex-column">
-          <VAvatar
-            variant="tonal"
-            color="warning"
-            icon="tabler-star"
-            rounded
-          />
-          <h5 class="text-h5">
-            Список желаний
-          </h5>
-          <div>
-            <h5 class="text-h5 text-warning mb-1">
-              15
-              <span class="text-body-1 d-inline-block">Товаров в списке желаний</span>
+            <h5 class="text-h5 text-success mb-1">
+              {{ ordersCount.toLocaleString('ru-RU') }}
+              <span class="text-body-1 d-inline-block">всего заказов</span>
             </h5>
-            <p class="mb-0">
-              Получать уведомления, когда товары поступят в продажу
-            </p>
-          </div>
-        </VCardText>
-      </VCard>
-    </VCol>
-
-    <VCol
-      cols="12"
-      md="6"
-    >
-      <VCard>
-        <VCardText class="d-flex gap-y-2 flex-column">
-          <VAvatar
-            variant="tonal"
-            color="info"
-            icon="tabler-discount"
-            rounded
-          />
-          <h5 class="text-h5">
-            Купоны
-          </h5>
-          <div>
-            <h5 class="text-h5 text-info mb-1">
-              21
-              <span class="text-body-1 d-inline-block">Выигранных купонов</span>
-            </h5>
-            <p class="mb-0">
-              Использовать купон при следующей покупке
-            </p>
           </div>
         </VCardText>
       </VCard>
     </VCol>
 
     <VCol>
-      <CustomerOrderTable />
+      <CustomerOrderTable
+        :customer-email="props.customerData?.email"
+        :customer-phone="props.customerData?.phone"
+      />
     </VCol>
   </VRow>
 </template>

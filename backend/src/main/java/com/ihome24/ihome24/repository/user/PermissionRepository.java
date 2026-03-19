@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
+import java.util.List;
 
 @Repository
 public interface PermissionRepository extends JpaRepository<Permission, Long> {
@@ -21,4 +22,6 @@ public interface PermissionRepository extends JpaRepository<Permission, Long> {
             @Param("q") String searchQuery,
             Pageable pageable
     );
+
+    List<Permission> findByNameIn(List<String> names);
 }

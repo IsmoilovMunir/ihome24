@@ -170,7 +170,7 @@ const closeNavigationDrawer = () => {
                 <div class="d-flex justify-space-between">
                   <div class="d-flex flex-column gap-y-1">
                     <h6 class="text-h6">
-                      Use as a billing address?
+                      Использовать как платёжный адрес?
                     </h6>
                     <div class="text-body-2">
                       Please check budget for more info

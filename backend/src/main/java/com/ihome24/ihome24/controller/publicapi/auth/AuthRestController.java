@@ -3,7 +3,11 @@ package com.ihome24.ihome24.controller.publicapi.auth;
 import com.ihome24.ihome24.dto.response.auth.LoginResponse;
 import com.ihome24.ihome24.entity.user.User;
 import com.ihome24.ihome24.repository.user.UserRepository;
+import com.ihome24.ihome24.entity.user.UserLoginDevice;
+import com.ihome24.ihome24.repository.user.UserLoginDeviceRepository;
 import com.ihome24.ihome24.service.auth.PhoneAuthService;
+import com.ihome24.ihome24.service.auth.EmailTwoFactorService;
+import com.ihome24.ihome24.service.auth.PasswordResetService;
 import com.ihome24.ihome24.service.storage.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,10 +26,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.time.format.DateTimeFormatter;
+
+import com.ihome24.ihome24.config.security.JwtTokenService;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -37,28 +43,32 @@ public class AuthRestController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final PhoneAuthService phoneAuthService;
+    private final EmailTwoFactorService emailTwoFactorService;
+    private final PasswordResetService passwordResetService;
     private final FileService fileService;
+    private final UserLoginDeviceRepository userLoginDeviceRepository;
+    private final JwtTokenService jwtTokenService;
 
     // Endpoint для JSON
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> loginJson(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> loginJson(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
         // Маскируем чувствительные данные в логах
         Map<String, String> safeRequest = new HashMap<>(request);
         if (safeRequest.containsKey("password")) {
             safeRequest.put("password", "***");
         }
         log.info("Login request (JSON): phone={}", safeRequest.get("phone"));
-        return processLogin(request);
+        return processLogin(request, httpRequest);
     }
 
     // Endpoint для form-urlencoded
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-    public ResponseEntity<?> loginForm(@RequestParam Map<String, String> request) {
+    public ResponseEntity<?> loginForm(@RequestParam Map<String, String> request, HttpServletRequest httpRequest) {
         log.info("Login request (Form): phone={}", request.get("phone"));
-        return processLogin(request);
+        return processLogin(request, httpRequest);
     }
 
-    private ResponseEntity<?> processLogin(Map<String, String> request) {
+    private ResponseEntity<?> processLogin(Map<String, String> request, HttpServletRequest httpRequest) {
         try {
             // Авторизация по номеру телефона (приоритет), email или username
             String phone = request.get("phone");
@@ -142,53 +152,34 @@ public class AuthRestController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("errors", errors));
             }
 
-            // Получаем пользователя с ролями и правами
+            // Reload user with role and permissions to avoid lazy-init issues when building JWT and abilities.
             user = userRepository.findByUsernameWithRoleAndPermissions(user.getUsername())
                     .orElseThrow(() -> new RuntimeException("User not found"));
 
-            // Формируем ответ в формате, ожидаемом фронтендом
-            Map<String, Object> userData = new HashMap<>();
-            userData.put("id", user.getId());
-            userData.put("username", user.getUsername());
-            userData.put("email", user.getEmail());
-            userData.put("phone", user.getPhone());
-            userData.put("fullName", user.getFullName());
-            userData.put("avatar", user.getAvatar());
-            userData.put("role", user.getRole() != null ? user.getRole().getName() : null);
-            userData.put("status", user.getStatus() != null ? user.getStatus().name() : "ACTIVE");
-            userData.put("passwordChangeRequired", Boolean.TRUE.equals(user.getPasswordChangeRequired()));
-
-            // Проверяем, требуется ли смена пароля
-            if (Boolean.TRUE.equals(user.getPasswordChangeRequired())) {
-                log.info("User {} requires password change", user.getUsername());
+            // Сохраняем информацию о входе (устройство, IP)
+            try {
+                String ip = extractClientIp(httpRequest);
+                String ua = httpRequest != null ? httpRequest.getHeader("User-Agent") : null;
+                UserLoginDevice device = UserLoginDevice.builder()
+                        .user(user)
+                        .ipAddress(ip)
+                        .userAgent(ua)
+                        .createdAt(java.time.LocalDateTime.now())
+                        .build();
+                userLoginDeviceRepository.save(device);
+            } catch (Exception e) {
+                log.warn("Failed to save login device info: {}", e.getMessage());
             }
 
-            // Создаем простой токен (в продакшене лучше использовать JWT)
-            String accessToken = "token_" + user.getId() + "_" + System.currentTimeMillis();
-
-            // Формируем правила доступа (ability rules) для CASL
-            Map<String, Object> abilityRules = new HashMap<>();
-            
-            // Если пользователь администратор, даем полный доступ
-            if ("admin".equals(userData.get("role"))) {
-                abilityRules.put("action", "manage");
-                abilityRules.put("subject", "all");
-            } else {
-                // Для других ролей можно добавить специфичные правила
-                abilityRules.put("action", "read");
-                abilityRules.put("subject", "AclDemo");
+            // Если пользователь администратор, включаем двухфакторную авторизацию по email
+            if (user.getRole() != null && "admin".equals(user.getRole().getName())) {
+                log.info("Starting email 2FA for admin user: {}", user.getUsername());
+                Map<String, Object> twoFactor = emailTwoFactorService.startEmailTwoFactor(user);
+                // Если отправка кода не удалась, twoFactorRequired будет false и вернем ошибку на фронт
+                return ResponseEntity.ok(twoFactor);
             }
-            
-            List<Map<String, Object>> userAbilityRules = new ArrayList<>();
-            userAbilityRules.add(abilityRules);
 
-            LoginResponse response = LoginResponse.builder()
-                    .accessToken(accessToken)
-                    .userData(userData)
-                    .userAbilityRules(userAbilityRules)
-                    .build();
-
-            return ResponseEntity.ok(response);
+            return buildLoginResponse(user);
         } catch (Exception e) {
             log.error("Unexpected error during login: ", e);
             Map<String, Object> errors = new HashMap<>();
@@ -220,7 +211,7 @@ public class AuthRestController {
 
     /** Вход по SMS: проверить код. Возвращает accessToken или needsRegistration + registrationToken */
     @PostMapping("/verify-sms-code")
-    public ResponseEntity<?> verifySmsCode(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> verifySmsCode(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
         String phone = request.get("phone");
         String code = request.get("code");
         Map<String, Object> result = phoneAuthService.verifyCode(phone, code);
@@ -236,6 +227,32 @@ public class AuthRestController {
         Long userId = (Long) result.get("userId");
         User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
         user = userRepository.findByUsernameWithRoleAndPermissions(user.getUsername()).orElse(user);
+
+        saveLoginDevice(user, httpRequest);
+
+        return buildLoginResponse(user);
+    }
+
+    /**
+     * Подтверждение входа по коду из email для администраторов.
+     * Шаг 2: после ввода логина и пароля.
+     */
+    @PostMapping("/verify-email-code")
+    public ResponseEntity<?> verifyEmailCode(@RequestBody Map<String, String> request, HttpServletRequest httpRequest) {
+        String twoFactorToken = request != null ? request.get("twoFactorToken") : null;
+        String code = request != null ? request.get("code") : null;
+
+        Map<String, Object> result = emailTwoFactorService.verifyCode(twoFactorToken, code);
+        if (!Boolean.TRUE.equals(result.get("success"))) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+        }
+
+        Long userId = (Long) result.get("userId");
+        User user = userRepository.findById(userId).orElseThrow(() -> new RuntimeException("User not found"));
+        user = userRepository.findByUsernameWithRoleAndPermissions(user.getUsername()).orElse(user);
+
+        saveLoginDevice(user, httpRequest);
+
         return buildLoginResponse(user);
     }
 
@@ -255,6 +272,67 @@ public class AuthRestController {
         return buildLoginResponse(user);
     }
 
+    /**
+     * Шаг 1: запрос сброса пароля (без авторизации).
+     * Принимает email или username, отправляет письмо со ссылкой.
+     */
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = request != null ? request.get("email") : null;
+        Map<String, Object> result = passwordResetService.requestReset(email);
+        if (!Boolean.TRUE.equals(result.get("success"))) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Шаг 2: установка нового пароля по токену из письма.
+     */
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
+        String token = request != null ? request.get("token") : null;
+        String newPassword = request != null ? request.get("newPassword") : null;
+        String confirmPassword = request != null ? request.get("confirmPassword") : null;
+
+        Map<String, Object> result = passwordResetService.resetPassword(token, newPassword, confirmPassword);
+        if (!Boolean.TRUE.equals(result.get("success"))) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);
+        }
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * Список последних устройств, с которых выполнялся вход в аккаунт.
+     */
+    @GetMapping("/login-devices")
+    public ResponseEntity<?> getLoginDevices() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "User not authenticated"));
+        }
+
+        String username = authentication.getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        var devices = userLoginDeviceRepository.findTop10ByUserOrderByCreatedAtDesc(user)
+                .stream()
+                .map(d -> {
+                    Map<String, Object> item = new HashMap<>();
+                    item.put("browser", parseBrowserName(d.getUserAgent()));
+                    item.put("device", parseDeviceName(d.getUserAgent()));
+                    item.put("location", formatLoginLocation(d.getIpAddress()));
+                    item.put("recentActivity", formatLoginTime(d.getCreatedAt()));
+                    item.put("deviceIcon", resolveDeviceIcon(d.getUserAgent()));
+                    return item;
+                })
+                .toList();
+
+        return ResponseEntity.ok(devices);
+    }
+
     private ResponseEntity<?> buildLoginResponse(User user) {
         Map<String, Object> userData = new HashMap<>();
         userData.put("id", user.getId());
@@ -267,11 +345,32 @@ public class AuthRestController {
         userData.put("status", user.getStatus() != null ? user.getStatus().name() : "ACTIVE");
         userData.put("passwordChangeRequired", Boolean.TRUE.equals(user.getPasswordChangeRequired()));
 
-        String accessToken = "token_" + user.getId() + "_" + System.currentTimeMillis();
-        Map<String, Object> abilityRules = new HashMap<>();
-        abilityRules.put("action", "admin".equals(userData.get("role")) ? "manage" : "read");
-        abilityRules.put("subject", "admin".equals(userData.get("role")) ? "all" : "AclDemo");
-        List<Map<String, Object>> userAbilityRules = List.of(abilityRules);
+        // Generate JWT access token. Our User entity implements UserDetails and already exposes authorities.
+        String accessToken = jwtTokenService.generateAccessToken(user);
+        // Normalize role to avoid issues with casing/whitespace differences in DB (e.g. "EDITOR " vs "editor")
+        String role = (String) userData.get("role");
+        String normalizedRole = role != null ? role.toLowerCase().trim() : null;
+
+        List<Map<String, Object>> userAbilityRules;
+        if ("admin".equals(normalizedRole)) {
+            userAbilityRules = List.of(Map.of("action", "manage", "subject", "all"));
+        } else if ("editor".equals(normalizedRole)) {
+            // Editor должен видеть хотя бы родительскую группу "Электронная коммерция".
+            // Иначе canViewNavMenuGroup() скрывает группу целиком из-за отсутствия read по Ecommerce.
+            userAbilityRules = List.of(
+                    Map.of("action", "read", "subject", "Ecommerce"),
+                    // Разрешаем доступ к странице добавления товара
+                    // (в навигации пункт "Добавить" требует action=manage для EcommerceProduct).
+                    Map.of("action", "manage", "subject", "EcommerceProduct"),
+                    // Явно оставляем read на случай, если manage не раскрывается как superset в текущей конфигурации CASL.
+                    Map.of("action", "read", "subject", "EcommerceProduct")
+            );
+        } else if ("manager".equals(normalizedRole)) {
+            userAbilityRules = List.of(Map.of("action", "manage", "subject", "Ecommerce"));
+        } else {
+            // fallback: minimal read access
+            userAbilityRules = List.of(Map.of("action", "read", "subject", "Ecommerce"));
+        }
 
         LoginResponse response = LoginResponse.builder()
                 .accessToken(accessToken)
@@ -279,6 +378,80 @@ public class AuthRestController {
                 .userAbilityRules(userAbilityRules)
                 .build();
         return ResponseEntity.ok(response);
+    }
+
+    private void saveLoginDevice(User user, HttpServletRequest request) {
+        if (user == null || request == null) return;
+        try {
+            String ip = extractClientIp(request);
+            String ua = request.getHeader("User-Agent");
+            UserLoginDevice device = UserLoginDevice.builder()
+                    .user(user)
+                    .ipAddress(ip)
+                    .userAgent(ua)
+                    .createdAt(java.time.LocalDateTime.now())
+                    .build();
+            userLoginDeviceRepository.save(device);
+        } catch (Exception e) {
+            log.warn("Failed to save login device info: {}", e.getMessage());
+        }
+    }
+
+    private String extractClientIp(HttpServletRequest request) {
+        if (request == null) return null;
+        String header = request.getHeader("X-Forwarded-For");
+        if (header != null && !header.isBlank()) {
+            return header.split(",")[0].trim();
+        }
+        String realIp = request.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        return request.getRemoteAddr();
+    }
+
+    private String parseBrowserName(String userAgent) {
+        if (userAgent == null || userAgent.isBlank()) return "Неизвестный браузер";
+        String ua = userAgent.toLowerCase();
+        if (ua.contains("edg/")) return "Edge";
+        if (ua.contains("chrome/") && !ua.contains("edg/")) return "Chrome";
+        if (ua.contains("firefox/")) return "Firefox";
+        if (ua.contains("safari/") && !ua.contains("chrome/")) return "Safari";
+        return "Браузер";
+    }
+
+    private String parseDeviceName(String userAgent) {
+        if (userAgent == null || userAgent.isBlank()) return "Устройство";
+        String ua = userAgent.toLowerCase();
+        if (ua.contains("iphone")) return "iPhone";
+        if (ua.contains("ipad")) return "iPad";
+        if (ua.contains("android")) return "Android";
+        if (ua.contains("windows")) return "Windows";
+        if (ua.contains("mac os") || ua.contains("macintosh")) return "macOS";
+        return "Устройство";
+    }
+
+    private Map<String, Object> resolveDeviceIcon(String userAgent) {
+        String ua = userAgent == null ? "" : userAgent.toLowerCase();
+        if (ua.contains("windows")) return Map.of("icon", "tabler-brand-windows", "color", "primary");
+        if (ua.contains("iphone") || ua.contains("ipad")) return Map.of("icon", "tabler-device-mobile", "color", "error");
+        if (ua.contains("android")) return Map.of("icon", "tabler-brand-android", "color", "success");
+        if (ua.contains("mac os") || ua.contains("macintosh")) return Map.of("icon", "tabler-brand-apple", "color", "secondary");
+        return Map.of("icon", "tabler-device-laptop", "color", "info");
+    }
+
+    private String formatLoginLocation(String ipAddress) {
+        if (ipAddress == null || ipAddress.isBlank()) return "Неизвестно";
+        String ip = ipAddress.trim();
+        if ("127.0.0.1".equals(ip) || "::1".equals(ip) || "0:0:0:0:0:0:0:1".equals(ip)) {
+            return "Локально";
+        }
+        return "IP: " + ip;
+    }
+
+    private String formatLoginTime(java.time.LocalDateTime createdAt) {
+        if (createdAt == null) return "—";
+        return createdAt.format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
     }
 
     @PostMapping("/logout")
@@ -364,16 +537,22 @@ public class AuthRestController {
      * Endpoint для получения текущего пользователя
      */
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser() {
+    public ResponseEntity<?> getCurrentUser(HttpServletRequest request) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(Map.of("error", "User not authenticated"));
-        }
+        String username = (authentication != null && authentication.isAuthenticated()) ? authentication.getName() : null;
 
-        String username = authentication.getName();
-        User user = userRepository.findByUsernameWithRoleAndPermissions(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // 1) Primary path: authenticated via Spring Security
+        User user = null;
+        if (username != null)
+            user = userRepository.findByUsernameWithRole(username).orElse(null);
+
+        // 2) Fallback path: parse our "token_<userId>_<timestamp>" bearer token (used by frontend)
+        // This avoids 401 loops when SecurityContext isn't populated for this lightweight token.
+        if (user == null && request != null)
+            user = getUserFromBearerToken(request);
+
+        if (user == null)
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not authenticated"));
 
         Map<String, Object> userData = new HashMap<>();
         userData.put("id", user.getId());
@@ -385,6 +564,9 @@ public class AuthRestController {
         userData.put("company", user.getCompany());
         userData.put("country", user.getCountry());
         userData.put("contact", user.getContact());
+        userData.put("address", user.getAddress());
+        userData.put("state", user.getState());
+        userData.put("zip", user.getZip());
         userData.put("currentPlan", user.getCurrentPlan());
         userData.put("billing", user.getBilling());
         userData.put("role", user.getRole() != null ? user.getRole().getName() : null);
@@ -407,8 +589,11 @@ public class AuthRestController {
         }
 
         String username = authentication.getName();
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = userRepository.findByUsername(username).orElse(null);
+        if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "User not authenticated"));
+        }
 
         // Обновляем поля пользователя
         if (request.containsKey("fullName")) {
@@ -443,8 +628,22 @@ public class AuthRestController {
         if (request.containsKey("contact")) {
             user.setContact((String) request.get("contact"));
         }
+        if (request.containsKey("address")) {
+            user.setAddress((String) request.get("address"));
+        }
+        if (request.containsKey("state")) {
+            user.setState((String) request.get("state"));
+        }
+        if (request.containsKey("zip")) {
+            user.setZip((String) request.get("zip"));
+        }
         if (request.containsKey("avatar")) {
-            user.setAvatar((String) request.get("avatar"));
+            String avatar = (String) request.get("avatar");
+            if (avatar != null && avatar.length() > 512) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("errors", Map.of("avatar", new String[]{"Слишком большой аватар. Используйте загрузку файла."})));
+            }
+            user.setAvatar(avatar);
         }
 
         user = userRepository.save(user);
@@ -458,6 +657,9 @@ public class AuthRestController {
         userData.put("company", user.getCompany());
         userData.put("country", user.getCountry());
         userData.put("contact", user.getContact());
+        userData.put("address", user.getAddress());
+        userData.put("state", user.getState());
+        userData.put("zip", user.getZip());
         userData.put("currentPlan", user.getCurrentPlan());
         userData.put("billing", user.getBilling());
         userData.put("role", user.getRole() != null ? user.getRole().getName() : null);
@@ -473,7 +675,7 @@ public class AuthRestController {
     public ResponseEntity<?> uploadAvatar(
             @RequestParam(value = "file", required = false) MultipartFile file,
             HttpServletRequest request) {
-        User user = getCurrentUser(request);
+        User user = getUserFromBearerToken(request);
         if (user == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("error", "User not authenticated"));
@@ -516,8 +718,26 @@ public class AuthRestController {
         }
     }
 
-    /** Получить текущего пользователя по токену (token_userId_timestamp). Не зависит от SecurityContext. */
-    private User getCurrentUser(HttpServletRequest request) {
+    /**
+     * Защита от неверного типа контента при загрузке аватара.
+     * Если фронтенд по ошибке отправит JSON вместо multipart/form-data,
+     * вернём понятную ошибку, а не HttpMediaTypeNotSupportedException.
+     */
+    @PostMapping(value = "/me/avatar", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<?> uploadAvatarJson(@RequestBody Map<String, Object> body) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "errors",
+                        Map.of("avatar", new String[]{
+                                "Загрузка аватара через JSON не поддерживается. " +
+                                "Используйте обычную загрузку файла (multipart/form-data)."
+                        })
+                ));
+    }
+
+    /** Получить пользователя по токену (token_userId_timestamp). Не зависит от SecurityContext. */
+    private User getUserFromBearerToken(HttpServletRequest request) {
         String bearer = request.getHeader("Authorization");
         if (bearer == null || !bearer.startsWith("Bearer ")) return null;
         String token = bearer.substring(7);

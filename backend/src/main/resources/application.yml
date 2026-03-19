@@ -11,7 +11,9 @@ spring:
   # SPRING_DATASOURCE_PASSWORD=iHome242025db
   # И измените driver-class-name на org.postgresql.Driver
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:ihome24;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE}
+    # Чтобы H2 "исчезала" при перезапуске приложения (а не жила внутри того же JVM),
+    # отключаем удержание in-memory базы.
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:ihome24;DB_CLOSE_DELAY=0;DB_CLOSE_ON_EXIT=TRUE}
     username: ${SPRING_DATASOURCE_USERNAME:sa}
     password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: ${SPRING_DATASOURCE_DRIVER:org.h2.Driver}
@@ -84,6 +86,14 @@ app:
   # Email Configuration
   email:
     from: ${APP_EMAIL_FROM:info@ihome24.ru}
+
+  security:
+    jwt:
+      # ДОЛЖЕН быть длинной случайной строкой в base64.
+      # Для продакшена обязательно переопределить через переменную окружения APP_SECURITY_JWT_SECRET.
+      secret: ${APP_SECURITY_JWT_SECRET:VGhpc0lzQVRlc3RKd3RTZWNyZXQxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTA=}
+      access-ttl-seconds: ${APP_SECURITY_JWT_ACCESS_TTL_SECONDS:900}       # 15 минут
+      refresh-ttl-seconds: ${APP_SECURITY_JWT_REFRESH_TTL_SECONDS:1209600} # 14 дней
 
 # MinIO S3 Configuration
 minio:

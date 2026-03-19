@@ -19,6 +19,10 @@ public class UserResponse {
     private String avatar;
     private String company;
     private String country;
+    /**
+     * Phone number used for registration/login (normalized digits).
+     */
+    private String phone;
     private String contact;
     private String currentPlan;
     private String billing;

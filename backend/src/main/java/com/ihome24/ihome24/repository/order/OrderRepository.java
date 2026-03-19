@@ -65,4 +65,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @EntityGraph(attributePaths = {"items", "items.product"})
     @Query("SELECT o FROM Order o WHERE (:email IS NOT NULL AND o.email = :email) OR (:phone IS NOT NULL AND o.phone = :phone)")
     Page<Order> findOrdersByEmailOrPhone(@Param("email") String email, @Param("phone") String phone, Pageable pageable);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE (:email IS NOT NULL AND o.email = :email) OR (:phone IS NOT NULL AND o.phone = :phone)")
+    long countByEmailOrPhone(@Param("email") String email, @Param("phone") String phone);
+
+    @Query("SELECT COALESCE(SUM(o.spent), 0) FROM Order o WHERE ((:email IS NOT NULL AND o.email = :email) OR (:phone IS NOT NULL AND o.phone = :phone))")
+    BigDecimal sumSpentByEmailOrPhone(@Param("email") String email, @Param("phone") String phone);
 }

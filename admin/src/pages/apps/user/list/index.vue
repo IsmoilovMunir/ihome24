@@ -12,6 +12,8 @@ const page = ref(1)
 const sortBy = ref()
 const orderBy = ref()
 const selectedRows = ref([])
+const currentUser = useCookie('userData')
+const isAdminUser = computed(() => (currentUser.value?.role || '').toLowerCase() === 'admin')
 
 const updateOptions = options => {
   sortBy.value = options.sortBy[0]?.key
@@ -73,20 +75,8 @@ const roles = [
     value: 'admin',
   },
   {
-    title: 'Автор',
-    value: 'author',
-  },
-  {
-    title: 'Редактор',
-    value: 'editor',
-  },
-  {
-    title: 'Сопровождающий',
-    value: 'maintainer',
-  },
-  {
-    title: 'Подписчик',
-    value: 'subscriber',
+    title: 'Менеджер',
+    value: 'manager',
   },
 ]
 
@@ -126,30 +116,15 @@ const status = [
 
 const resolveUserRoleVariant = role => {
   const roleLowerCase = role.toLowerCase()
-  if (roleLowerCase === 'subscriber')
-    return {
-      color: 'success',
-      icon: 'tabler-user',
-    }
-  if (roleLowerCase === 'author')
-    return {
-      color: 'error',
-      icon: 'tabler-device-desktop',
-    }
-  if (roleLowerCase === 'maintainer')
-    return {
-      color: 'info',
-      icon: 'tabler-chart-pie',
-    }
-  if (roleLowerCase === 'editor')
-    return {
-      color: 'warning',
-      icon: 'tabler-edit',
-    }
   if (roleLowerCase === 'admin')
     return {
       color: 'primary',
       icon: 'tabler-crown',
+    }
+  if (roleLowerCase === 'manager')
+    return {
+      color: 'info',
+      icon: 'tabler-briefcase',
     }
   
   return {
@@ -210,14 +185,39 @@ const getAvatarUrl = avatar => {
   return `${url}${sep}t=${Date.now()}`
 }
 
-const addNewUser = async userData => {
-  await $api('/apps/users', {
-    method: 'POST',
-    body: userData,
-  })
+const isTempPasswordDialogVisible = ref(false)
+const createdTempPassword = ref('')
+const createdUsername = ref('')
+const createUserMessage = ref('')
+const createUserEmailSent = ref(false)
+const createUserError = ref('')
 
-  // Refetch User
-  fetchUsers()
+const addNewUser = async payload => {
+  try {
+    createUserError.value = ''
+    const res = await $api('/apps/users/admin-create', {
+      method: 'POST',
+      body: payload,
+    })
+
+    createdTempPassword.value = res?.temporaryPassword || ''
+    createdUsername.value = res?.user?.username || payload?.username || ''
+    createUserMessage.value = res?.message || 'Пользователь создан.'
+    createUserEmailSent.value = Boolean(res?.emailSent)
+    isTempPasswordDialogVisible.value = true
+    isAddNewUserDrawerVisible.value = false
+
+    // Refetch User
+    fetchUsers()
+  } catch (error) {
+    const data = error?.data || {}
+    const errors = data?.errors || {}
+    if (typeof errors === 'object' && Object.keys(errors).length) {
+      createUserError.value = Object.values(errors)[0] || 'Ошибка создания пользователя'
+    } else {
+      createUserError.value = data?.message || error?.message || 'Ошибка создания пользователя'
+    }
+  }
 }
 
 const deleteUser = async id => {
@@ -411,6 +411,7 @@ const widgetData = ref([
 
           <!-- 👉 Add user button -->
           <VBtn
+            v-if="isAdminUser"
             prepend-icon="tabler-plus"
             @click="isAddNewUserDrawerVisible = true"
           >
@@ -504,7 +505,7 @@ const widgetData = ref([
             <VIcon icon="tabler-trash" />
           </IconBtn>
 
-          <IconBtn>
+          <IconBtn :to="{ name: 'apps-user-view-id', params: { id: item.id } }">
             <VIcon icon="tabler-eye" />
           </IconBtn>
 
@@ -524,7 +525,9 @@ const widgetData = ref([
                   <VListItemTitle>Просмотр</VListItemTitle>
                 </VListItem>
 
-                <VListItem link>
+                <VListItem
+                  :to="{ name: 'apps-user-view-id', params: { id: item.id }, query: { tab: 'account' } }"
+                >
                   <template #prepend>
                     <VIcon icon="tabler-pencil" />
                   </template>
@@ -556,7 +559,47 @@ const widgetData = ref([
     <!-- 👉 Add New User -->
     <AddNewUserDrawer
       v-model:is-drawer-open="isAddNewUserDrawerVisible"
-      @user-data="addNewUser"
+      :server-error="createUserError"
+      @submit="addNewUser"
     />
+
+    <VDialog
+      :model-value="isTempPasswordDialogVisible"
+      :width="$vuetify.display.smAndDown ? 'auto' : 520"
+      @update:model-value="isTempPasswordDialogVisible = false"
+    >
+      <DialogCloseBtn @click="isTempPasswordDialogVisible = false" />
+      <VCard class="pa-sm-8 pa-4">
+        <VCardText>
+          <h4 class="text-h4 text-center mb-2">
+            Пользователь создан
+          </h4>
+          <p class="text-body-1 text-center mb-6">
+            {{ createUserMessage }}
+          </p>
+
+          <VAlert
+            :type="createUserEmailSent ? 'success' : 'warning'"
+            variant="tonal"
+            class="mb-4"
+          >
+            {{ createUserEmailSent ? 'Письмо с доступом отправлено на email пользователя.' : 'Письмо не отправлено. Передайте временный пароль вручную.' }}
+          </VAlert>
+
+          <AppTextField
+            v-model="createdUsername"
+            readonly
+            class="mb-4"
+            label="Логин"
+          />
+
+          <AppTextField
+            v-model="createdTempPassword"
+            readonly
+            label="Временный пароль"
+          />
+        </VCardText>
+      </VCard>
+    </VDialog>
   </section>
 </template>
