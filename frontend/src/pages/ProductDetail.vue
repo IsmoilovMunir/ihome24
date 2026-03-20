@@ -1,5 +1,5 @@
 <template>
-  <div class="container mx-auto px-4 py-8 pb-40 lg:pb-8 bg-[#3A3331] product-detail-page">
+  <div class="container mx-auto px-4 py-8 pb-40 lg:pb-8 lg:px-0 bg-[#3A3331] product-detail-page">
     <div v-if="productsStore.loading" class="text-center py-12">
       <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
     </div>
@@ -8,12 +8,12 @@
       Ошибка загрузки товара: {{ productsStore.error }}
     </div>
 
-    <div v-else-if="product" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <div v-else-if="product" class="grid grid-cols-1 lg:grid-cols-4 gap-8">
       <!-- Images -->
-      <div>
+      <div class="lg:col-span-3">
         <div
           ref="mainImageContainerRef"
-          class="bg-[#26211E] rounded-lg overflow-hidden mb-4 flex items-center justify-center h-96 relative cursor-pointer"
+          class="bg-[#26211E] rounded-lg overflow-hidden mb-4 flex items-center justify-center h-[768px] relative cursor-pointer"
           style="touch-action: pan-y;"
           @click="onMainImageClick"
           @touchstart="onMainImageTouchStart"
@@ -25,16 +25,19 @@
             class="main-image-zoom-wrapper flex items-center justify-center w-full h-full"
             :style="mainImageTransformStyle"
           >
-            <img
-              :src="mainImageUrl"
-              :alt="product.name"
-              class="max-w-[97%] max-h-[97%] w-auto h-auto object-contain select-none"
-              draggable="false"
-            />
+            <Transition name="photo-fade" mode="out-in">
+              <img
+                :key="selectedImageIndex"
+                :src="mainImageUrl"
+                :alt="product.name"
+                class="max-w-[97%] max-h-[97%] w-auto h-auto object-contain select-none"
+                draggable="false"
+              />
+            </Transition>
           </div>
           <div
             v-else
-            class="w-full h-96 bg-[#26211E] flex items-center justify-center pointer-events-none"
+            class="w-full h-[768px] bg-[#26211E] flex items-center justify-center pointer-events-none"
           >
             <svg
               class="w-24 h-24 text-gray-300"
@@ -73,26 +76,27 @@
               </svg>
             </button>
           </template>
-        </div>
-        <div
-          ref="galleryRef"
-          v-if="product.images && product.images.length > 1"
-          class="product-images-gallery flex gap-2 overflow-x-auto pb-1 w-full"
-        >
-          <button
-            v-for="(image, index) in product.images"
-            :key="index"
-            :data-index="index"
-            @click="selectedImageIndex = index"
-            class="flex-shrink-0 w-[80px] h-[80px] sm:w-[178px] sm:h-[178px] rounded overflow-hidden hover:opacity-75 transition-opacity flex items-center justify-center bg-[#26211E]"
-            :class="{ 'ring-2 ring-[#F37021]': selectedImageIndex === index }"
+
+          <!-- Пагинация изображений поверх фото (центр снизу) -->
+          <div
+            v-if="product.images && product.images.length > 1"
+            id="swiper-pagination"
+            class="swiper-pagination swiper-pagination-clickable swiper-pagination-bullets swiper-pagination-horizontal absolute left-1/2 bottom-4 -translate-x-1/2 z-10 flex items-center justify-center gap-2"
+            style="pointer-events: auto;"
           >
-            <img
-              :src="getImageUrl(image.imageUrl || image.url)"
-              :alt="`${product.name} - изображение ${index + 1}`"
-              class="w-[90%] h-[90%] object-cover"
+            <span
+              v-for="(image, index) in product.images"
+              :key="index"
+              class="swiper-pagination-bullet w-5 h-1.5 rounded-sm bg-white/30 cursor-pointer transition-colors hover:bg-[#C56129]"
+              :class="{ 'swiper-pagination-bullet-active': selectedImageIndex === index }"
+              :style="selectedImageIndex === index ? { backgroundColor: '#C56129' } : undefined"
+              role="button"
+              tabindex="0"
+              :aria-label="`Изображение ${index + 1}`"
+              @click.stop="selectedImageIndex = index"
+              @keydown.enter.stop="selectedImageIndex = index"
             />
-          </button>
+          </div>
         </div>
 
         <!-- Мобильный блок цены под фото -->
@@ -100,6 +104,7 @@
           class="lg:hidden mt-4 p-4 rounded-lg flex flex-col gap-4"
           style="background-color: #26211E;"
         >
+          <h1 class="text-lg text-white font-bold product-detail-title">{{ displayName }}</h1>
           <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
             <span
               class="text-2xl font-normal"
@@ -151,12 +156,11 @@
               </li>
             </ul>
           </div>
-          <h1 class="text-lg text-white font-bold product-detail-title mt-2">{{ displayName }}</h1>
         </div>
       </div>
 
       <!-- Product Info -->
-      <div>
+      <div class="lg:col-span-1 lg:flex lg:flex-col lg:justify-center lg:min-h-[768px]">
         <h1 class="hidden lg:block text-3xl text-white mb-4 product-detail-title">{{ displayName }}</h1>
         
         <div class="hidden lg:block mb-4">
@@ -213,6 +217,68 @@
           </div>
         </div>
 
+        <!-- Кнопка: одна целая «Добавить» или разделённая «В корзину» + количество -->
+        <div
+          v-if="isAvailable"
+          class="hidden lg:flex rounded-md overflow-hidden border-2"
+          style="border-color: #C56129;"
+        >
+          <button
+            v-if="!isInCart"
+            type="button"
+            @click="addToCart"
+            class="flex-1 py-3 text-white font-semibold text-lg transition-colors duration-1000 bg-[#3A3331] hover:bg-[#C56129]"
+          >
+            Добавить в корзину
+          </button>
+          <template v-else>
+            <button
+              type="button"
+              @click="router.push('/cart')"
+              class="flex-1 py-3 text-white font-semibold text-lg transition-colors bg-[#C56129] hover:bg-[#d97235]"
+            >
+              В корзину
+            </button>
+            <div
+              class="flex items-center gap-0 border-l px-2"
+              style="border-color: #C56129; background-color: #3A3331;"
+            >
+              <button
+                type="button"
+                @click="decreaseCartQuantity"
+                class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
+              >
+                −
+              </button>
+              <input
+                :value="cartQuantity"
+                type="number"
+                min="1"
+                :max="maxQuantity"
+                class="w-10 text-center text-white font-semibold bg-transparent focus:outline-none"
+                @input="onCartQuantityInput"
+              >
+              <button
+                type="button"
+                @click="increaseCartQuantity"
+                class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
+              >
+                +
+              </button>
+            </div>
+          </template>
+        </div>
+        <button
+          v-else
+          disabled
+          class="hidden lg:block w-full py-3 rounded-md text-white font-semibold text-lg border-2 bg-gray-300 border-gray-400 cursor-not-allowed"
+        >
+          Нет в наличии
+        </button>
+      </div>
+
+      <!-- Detailed info (desktop full width) -->
+      <div class="lg:col-span-4">
         <div class="mb-6">
           <p v-if="product.description" class="text-gray-200 mb-4 font-medium" style="text-transform: lowercase;">
             {{ product.description }}
@@ -302,65 +368,6 @@
             </div>
           </div>
         </div>
-
-        <!-- Кнопка: одна целая «Добавить» или разделённая «В корзину» + количество -->
-        <div
-          v-if="isAvailable"
-          class="hidden lg:flex rounded-md overflow-hidden border-2"
-          style="border-color: #C56129;"
-        >
-          <button
-            v-if="!isInCart"
-            type="button"
-            @click="addToCart"
-            class="flex-1 py-3 text-white font-semibold text-lg transition-colors duration-1000 bg-[#3A3331] hover:bg-[#C56129]"
-          >
-            Добавить в корзину
-          </button>
-          <template v-else>
-            <button
-              type="button"
-              @click="router.push('/cart')"
-              class="flex-1 py-3 text-white font-semibold text-lg transition-colors bg-[#C56129] hover:bg-[#d97235]"
-            >
-              В корзину
-            </button>
-            <div
-              class="flex items-center gap-0 border-l px-2"
-              style="border-color: #C56129; background-color: #3A3331;"
-            >
-              <button
-                type="button"
-                @click="decreaseCartQuantity"
-                class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
-              >
-                −
-              </button>
-              <input
-                :value="cartQuantity"
-                type="number"
-                min="1"
-                :max="maxQuantity"
-                class="w-10 text-center text-white font-semibold bg-transparent focus:outline-none"
-                @input="onCartQuantityInput"
-              >
-              <button
-                type="button"
-                @click="increaseCartQuantity"
-                class="w-10 h-10 flex items-center justify-center text-white hover:bg-[#C56129]/20 transition-colors"
-              >
-                +
-              </button>
-            </div>
-          </template>
-        </div>
-        <button
-          v-else
-          disabled
-          class="hidden lg:block w-full py-3 rounded-md text-white font-semibold text-lg border-2 bg-gray-300 border-gray-400 cursor-not-allowed"
-        >
-          Нет в наличии
-        </button>
       </div>
     </div>
 
@@ -553,7 +560,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '../stores/products'
 import { useCartStore } from '../stores/cart'
@@ -569,7 +576,6 @@ const settingsStore = useSettingsStore()
 
 const quantity = ref(1)
 const selectedImageIndex = ref(0)
-const galleryRef = ref(null)
 const mainImageContainerRef = ref(null)
 const showFullscreenGallery = ref(false)
 
@@ -893,13 +899,6 @@ watch(
 
 const mainImageUrl = computed(() => displayedMainImageUrl.value || mainImageUrlFast.value)
 
-const scrollThumbnailIntoView = () => {
-  nextTick(() => {
-    const el = galleryRef.value?.querySelector(`[data-index="${selectedImageIndex.value}"]`)
-    el?.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: 'smooth' })
-  })
-}
-
 const goToPrevImage = () => {
   if (!product.value?.images?.length) return
   const n = product.value.images.length
@@ -1117,7 +1116,6 @@ watch(showFullscreenGallery, (isOpen) => {
 
 watch(selectedImageIndex, () => {
   resetMainImageZoom()
-  scrollThumbnailIntoView()
 })
 
 
@@ -1226,5 +1224,15 @@ input[type='number']::-webkit-inner-spin-button {
 input[type='number'] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+/* Плавная смена основного изображения */
+.photo-fade-enter-active,
+.photo-fade-leave-active {
+  transition: opacity 0.6s ease;
+}
+.photo-fade-enter-from,
+.photo-fade-leave-to {
+  opacity: 0;
 }
 </style>

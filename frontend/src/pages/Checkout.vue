@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-full bg-[#2E2826]">
-  <div class="container mx-auto px-4 py-8">
+  <div class="container mx-auto px-4 pt-12 pb-8">
     <h1 class="text-3xl font-bold text-white mb-8">Оформление заказа</h1>
 
     <div v-if="cartStore.isEmpty" class="text-center py-12">
