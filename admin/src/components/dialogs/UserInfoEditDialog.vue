@@ -13,8 +13,6 @@ const normalizeUser = raw => {
     role: '',
     username: '',
     country: '',
-    phone: '',
-    contact: '',
     email: '',
     currentPlan: '',
     status: '',
