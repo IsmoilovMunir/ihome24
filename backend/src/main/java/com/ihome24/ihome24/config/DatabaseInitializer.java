@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +44,7 @@ public class DatabaseInitializer implements CommandLineRunner {
     private Boolean adminPasswordChangeRequired;
 
     @Override
+    @Transactional
     public void run(String... args) {
         // Keep idempotent seeding: create missing permissions/roles even if tables are non-empty.
         if (permissionRepository.count() == 0) {
