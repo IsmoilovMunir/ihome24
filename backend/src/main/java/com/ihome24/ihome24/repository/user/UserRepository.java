@@ -43,7 +43,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByPhoneAndIdNot(String phone, Long id);
 
     @Query("SELECT u FROM User u WHERE " +
-           "(:q IS NULL OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :q, '%'))) " +
+           "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', COALESCE(:q, ''), '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', COALESCE(:q, ''), '%'))) " +
            "AND (:role IS NULL OR u.role.name = :role) " +
            "AND (:plan IS NULL OR u.currentPlan = :plan) " +
            "AND (:status IS NULL OR u.status = :status)")
@@ -56,7 +56,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     );
 
     @Query("SELECT u FROM User u WHERE " +
-           "(:q IS NULL OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', :q, '%'))) " +
+           "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', COALESCE(:q, ''), '%')) OR LOWER(u.email) LIKE LOWER(CONCAT('%', COALESCE(:q, ''), '%'))) " +
            "AND (:role IS NULL OR u.role.name = :role) " +
            "AND (:excludeRole IS NULL OR u.role.name <> :excludeRole) " +
            "AND (:plan IS NULL OR u.currentPlan = :plan) " +

@@ -166,7 +166,7 @@ public class DatabaseInitializer implements CommandLineRunner {
     }
 
     private Role createRoleIfNotExists(String name, String displayName, List<String> permissionNames) {
-        Role role = roleRepository.findByName(name).orElse(null);
+        Role role = roleRepository.findByNameWithPermissions(name).orElse(null);
         if (role == null) {
             role = Role.builder()
                     .name(name)
