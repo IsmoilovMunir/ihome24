@@ -6,6 +6,13 @@ import UserTabConnections from '@/views/apps/user/view/UserTabConnections.vue'
 import UserTabNotifications from '@/views/apps/user/view/UserTabNotifications.vue'
 import UserTabSecurity from '@/views/apps/user/view/UserTabSecurity.vue'
 
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'AdminUsers',
+  },
+})
+
 const route = useRoute('apps-user-view-id')
 // Список пользователей: «Редактировать» открывает сразу вкладку «Аккаунт» (индекс 0)
 const userTab = ref(route.query.tab === 'account' ? 0 : null)

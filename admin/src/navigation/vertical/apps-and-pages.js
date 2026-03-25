@@ -15,10 +15,10 @@ export default [
       {
         title: 'Товары',
         action: 'read',
-        subject: 'EcommerceProduct',
+        subject: 'EcommerceProductSEO',
         children: [
-          { title: 'Список', to: 'apps-ecommerce-product-list', action: 'read', subject: 'EcommerceProduct' },
-          { title: 'Добавить', to: 'apps-ecommerce-product-add', action: 'manage', subject: 'EcommerceProduct' },
+          { title: 'Список', to: 'apps-ecommerce-product-list', action: 'read', subject: 'EcommerceProductSEO' },
+          { title: 'Добавить', to: 'apps-ecommerce-product-add', action: 'manage', subject: 'EcommerceProductSEO' },
           { title: 'Категории', to: 'apps-ecommerce-product-category-list', action: 'read', subject: 'EcommerceProduct' },
         ],
       },

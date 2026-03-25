@@ -2,7 +2,6 @@ package com.ihome24.ihome24.dto.request.user;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
@@ -26,7 +25,7 @@ public class UserRequest {
     private String currentPlan;
     private String billing;
 
-    @NotNull(message = "Role is required")
+    // Optional during update: role can remain unchanged if roleId is not provided.
     private Long roleId;
 
     private String status; // ACTIVE, INACTIVE, PENDING

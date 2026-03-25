@@ -1,26 +1,34 @@
 import { createMongoAbility } from '@casl/ability'
 import { abilitiesPlugin } from '@casl/vue'
+import { watch } from 'vue'
 
 export default function (app) {
   const userAbilityRules = useCookie('userAbilityRules')
-  
-  // Обеспечиваем правильный формат правил
-  let rules = userAbilityRules.value ?? []
-  
-  // Если rules это объект, преобразуем в массив
-  if (rules && !Array.isArray(rules)) {
-    rules = [rules]
+
+  const normalizeRules = raw => {
+    let rules = raw ?? []
+    if (rules && !Array.isArray(rules))
+      rules = [rules]
+    // deny-by-default: empty => no abilities
+    return Array.isArray(rules) ? rules : []
   }
-  
-  // Если rules пустой массив или undefined, создаем правила по умолчанию для совместимости
-  if (!rules || rules.length === 0) {
-    // Правила по умолчанию - полный доступ (для случаев, когда ability rules еще не загружены)
-    rules = [{ action: 'manage', subject: 'all' }]
-  }
-  
-  const initialAbility = createMongoAbility(rules)
+
+  const initialAbility = createMongoAbility(normalizeRules(userAbilityRules.value))
 
   app.use(abilitiesPlugin, initialAbility, {
     useGlobalProperties: true,
   })
+
+  // Keep ability in sync with cookie changes (e.g. after role update + /auth/me poll)
+  watch(
+    () => userAbilityRules.value,
+    newVal => {
+      try {
+        initialAbility.update(normalizeRules(newVal))
+      } catch (e) {
+        // Avoid breaking navigation if CASL update fails for some reason
+      }
+    },
+    { deep: true },
+  )
 }

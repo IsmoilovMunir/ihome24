@@ -63,22 +63,44 @@ const emit = defineEmits([
 
 const userData = ref(normalizeUser(structuredClone(toRaw(props.userData))))
 const isUseAsBillingAddress = ref(false)
+const firstName = ref('')
+const lastName = ref('')
+
+const syncNamesFromFullName = u => {
+  const fullName = (u?.fullName || '').trim()
+  if (!fullName) {
+    firstName.value = ''
+    lastName.value = ''
+    return
+  }
+
+  const parts = fullName.split(/\s+/)
+  firstName.value = parts[0] || ''
+  // Join the rest as last name, so "Ivan Ivan Ivanovich" works.
+  lastName.value = parts.slice(1).join(' ')
+}
 
 watch(
   () => props.userData,
   newVal => {
     userData.value = normalizeUser(structuredClone(toRaw(newVal)))
+    syncNamesFromFullName(userData.value)
   },
   { deep: true },
 )
 
+syncNamesFromFullName(userData.value)
+
 const onFormSubmit = () => {
+  // Rebuild fullName from name parts (the old split() v-model doesn't mutate fullName).
+  userData.value.fullName = [firstName.value, lastName.value].filter(Boolean).join(' ')
   emit('update:isDialogVisible', false)
   emit('submit', userData.value)
 }
 
 const onFormReset = () => {
   userData.value = normalizeUser(structuredClone(toRaw(props.userData)))
+  syncNamesFromFullName(userData.value)
   emit('update:isDialogVisible', false)
 }
 
@@ -118,7 +140,7 @@ const dialogModelValueUpdate = val => {
               md="6"
             >
               <AppTextField
-                v-model="userData.fullName.split(' ')[0]"
+                v-model="firstName"
                 label="Имя"
                 placeholder="Иван"
               />
@@ -130,7 +152,7 @@ const dialogModelValueUpdate = val => {
               md="6"
             >
               <AppTextField
-                v-model="userData.fullName.split(' ')[1]"
+                v-model="lastName"
                 label="Фамилия"
                 placeholder="Иванов"
               />

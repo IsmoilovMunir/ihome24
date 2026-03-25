@@ -1,6 +1,14 @@
 <script setup>
 import ECommerceAddCustomerDrawer from '@/views/apps/ecommerce/ECommerceAddCustomerDrawer.vue'
 
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'Ecommerce',
+    navActiveLink: 'apps-ecommerce-customer-list',
+  },
+})
+
 const searchQuery = ref('')
 const isAddCustomerDrawerOpen = ref(false)
 

@@ -68,6 +68,9 @@ const login = async () => {
       body: {
         username: credentials.value.username,
         password: credentials.value.password,
+        // Marks the request as coming from the admin panel.
+        // Backend uses this flag to decide whether email 2FA should be required.
+        adminPanel: 'true',
       },
       onResponseError({ response }) {
         const apiErrors = response?._data?.errors
@@ -153,9 +156,15 @@ const verifyEmailCode = async () => {
     })
 
     const { accessToken, userData, userAbilityRules } = res
+    const rules = Array.isArray(userAbilityRules) ? userAbilityRules : []
 
-    useCookie('userAbilityRules').value = userAbilityRules
-    ability.update(userAbilityRules)
+    if (!accessToken || !userData) {
+      twoFactorError.value = 'Некорректный ответ сервера при подтверждении кода'
+      return
+    }
+
+    useCookie('userAbilityRules').value = rules
+    ability.update(rules)
     useCookie('userData').value = userData
     useCookie('accessToken').value = accessToken
 
@@ -164,6 +173,7 @@ const verifyEmailCode = async () => {
     })
   } catch (err) {
     console.error(err)
+    twoFactorError.value = err?.data?.message || err?.message || 'Ошибка подтверждения кода'
   } finally {
     isVerifyingTwoFactor.value = false
   }

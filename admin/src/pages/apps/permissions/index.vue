@@ -1,4 +1,12 @@
 <script setup>
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'AdminRoles',
+    navActiveLink: 'apps-permissions',
+  },
+})
+
 const headers = [
   {
     title: 'Название',

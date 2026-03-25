@@ -5,6 +5,14 @@ import masterCardLight from '@images/icons/payments/img/mastercard.png'
 import paypalDark from '@images/icons/payments/img/paypal-dark.png'
 import paypalLight from '@images/icons/payments/img/paypal-light.png'
 
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'Ecommerce',
+    navActiveLink: 'apps-ecommerce-order-completed',
+  },
+})
+
 const widgetData = ref([
   { title: 'Завершено', value: 0, icon: 'tabler-checks', key: 'completed' },
 ])

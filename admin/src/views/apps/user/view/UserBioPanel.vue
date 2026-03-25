@@ -1,4 +1,6 @@
 <script setup>
+import { $api } from '@/utils/api'
+
 const props = defineProps({
   userData: {
     type: Object,
@@ -49,6 +51,41 @@ const resolveUserRoleVariant = role => {
   return {
     color: 'primary',
     icon: 'tabler-user',
+  }
+}
+
+const onUserInfoEditSubmit = async updatedUserData => {
+  try {
+    const original = props.userData ?? {}
+
+    const payload = {
+      username: updatedUserData?.username ?? original.username,
+      email: updatedUserData?.email ?? original.email,
+      fullName: updatedUserData?.fullName ?? original.fullName,
+      avatar: updatedUserData?.avatar ?? original.avatar,
+      company: updatedUserData?.company ?? original.company,
+      country: updatedUserData?.country ?? original.country,
+      // Backend expects "contact", dialog edits "phone"
+      contact: updatedUserData?.phone ?? updatedUserData?.contact ?? original.contact ?? original.phone,
+      currentPlan: updatedUserData?.currentPlan ?? original.currentPlan,
+      billing: updatedUserData?.billing ?? original.billing,
+      status: updatedUserData?.status ?? original.status,
+      // roleId is optional now (backend keeps current role if missing)
+    }
+
+    await $api(`/apps/users/${original.id}`, {
+      method: 'PUT',
+      body: payload,
+    })
+
+    // Refresh the view to show updated values.
+    window.location.reload()
+  } catch (err) {
+    const apiErrors = err?.response?.data?.errors || err?.data?.errors
+    const message = apiErrors
+      ? Object.values(apiErrors).flat().join('\n')
+      : (err?.response?.data?.message || err?.data?.message || err?.message || 'Ошибка сохранения')
+    alert(message)
   }
 }
 </script>
@@ -350,6 +387,7 @@ const resolveUserRoleVariant = role => {
   <UserInfoEditDialog
     v-model:is-dialog-visible="isUserInfoEditDialogVisible"
     :user-data="props.userData"
+    @submit="onUserInfoEditSubmit"
   />
 
   <!-- 👉 Upgrade plan dialog -->

@@ -44,12 +44,15 @@ public class DatabaseInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
+        // Keep idempotent seeding: create missing permissions/roles even if tables are non-empty.
         if (permissionRepository.count() == 0) {
             initializePermissions();
         }
-        if (roleRepository.count() == 0) {
-            initializeRoles();
-        }
+
+        // Always run roles seeding to ensure newly added roles (e.g. SEO specialist)
+        // appear in already-initialized environments.
+        initializeRoles();
+
         if (userRepository.count() == 0) {
             initializeUsers();
         }
@@ -65,6 +68,7 @@ public class DatabaseInitializer implements CommandLineRunner {
             "Отчетность",
             "Заработная плата",
             "Управление контентом",
+            "Управление SEO",
             "Управление базой данных",
             "Управление репозиторием"
         );
@@ -100,6 +104,20 @@ public class DatabaseInitializer implements CommandLineRunner {
             "Управление контентом",
             "Управление пользователями"
         ));
+
+        // SEO specialist role (for admin content SEO fields)
+        // SEO fields are handled under product editor UI, but permissions should be SEO-only.
+        Role seoRole = createRoleIfNotExists("seo-specialist", "SEO специалист", Arrays.asList(
+                "Управление SEO"
+        ));
+
+        // If the role already existed (e.g. created before adding "Управление SEO"),
+        // make sure it doesn't keep the broader "Управление контентом" permission.
+        Permission legacyContentPermission = permissionRepository.findByName("Управление контентом").orElse(null);
+        if (legacyContentPermission != null && seoRole.getPermissions() != null) {
+            seoRole.getPermissions().removeIf(p -> "Управление контентом".equals(p.getName()));
+            roleRepository.save(seoRole);
+        }
 
         // Maintainer role (for frontend compatibility)
         createRoleIfNotExists("maintainer", "Сопровождающий", Arrays.asList(
@@ -153,17 +171,18 @@ public class DatabaseInitializer implements CommandLineRunner {
                     .displayName(displayName)
                     .permissions(new ArrayList<>())
                     .build();
-
-            for (String permissionName : permissionNames) {
-                Permission permission = permissionRepository.findByName(permissionName)
-                        .orElse(null);
-                if (permission != null) {
-                    role.getPermissions().add(permission);
-                }
-            }
-
-            role = roleRepository.save(role);
         }
+
+        // Ensure role has all required permissions (idempotent update).
+        for (String permissionName : permissionNames) {
+            Permission permission = permissionRepository.findByName(permissionName)
+                    .orElse(null);
+            if (permission != null && role.getPermissions().stream().noneMatch(p -> permissionName.equals(p.getName()))) {
+                role.getPermissions().add(permission);
+            }
+        }
+
+        role = roleRepository.save(role);
         return role;
     }
 

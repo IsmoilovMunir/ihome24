@@ -78,6 +78,10 @@ public class UserService {
             throw new RuntimeException("Email already exists: " + request.getEmail());
         }
 
+        // For createUser roleId is required.
+        if (request.getRoleId() == null) {
+            throw new RuntimeException("Role id is required");
+        }
         Role role = roleRepository.findById(request.getRoleId())
                 .orElseThrow(() -> new RuntimeException("Role not found with id: " + request.getRoleId()));
 
@@ -121,8 +125,11 @@ public class UserService {
             throw new RuntimeException("Email already exists: " + request.getEmail());
         }
 
-        Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new RuntimeException("Role not found with id: " + request.getRoleId()));
+        if (request.getRoleId() != null) {
+            Role role = roleRepository.findById(request.getRoleId())
+                    .orElseThrow(() -> new RuntimeException("Role not found with id: " + request.getRoleId()));
+            user.setRole(role);
+        }
 
         user.setUsername(request.getUsername());
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
@@ -140,7 +147,6 @@ public class UserService {
         if (request.getBilling() != null) {
             user.setBilling(request.getBilling());
         }
-        user.setRole(role);
         if (request.getStatus() != null) {
             user.setStatus(User.UserStatus.valueOf(request.getStatus().toUpperCase()));
         }
