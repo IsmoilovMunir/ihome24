@@ -17,6 +17,22 @@ export const redirects = [
         return { name: 'apps-ecommerce-order-list' }
       if (userRole === 'editor')
         return { name: 'apps-ecommerce-product-list' }
+      if (userRole === 'seo-specialist')
+        return { name: 'apps-ecommerce-product-list' }
+      if (userRole === 'author')
+        return { name: 'apps-ecommerce-product-list' }
+      if (userRole === 'support')
+        return { name: 'apps-ecommerce-product-list' }
+      if (userRole === 'restricted-user')
+        return { name: 'apps-ecommerce-product-list' }
+      if (userRole === 'editor')
+        return { name: 'apps-ecommerce-product-list' }
+      if (userRole === 'users')
+        return { name: 'apps-ecommerce-product-list' }
+      if (userRole === 'subscriber')
+        return { name: 'apps-user-list' }
+      if (userRole === 'maintainer')
+        return { name: 'apps-user-list' }
       if (userRole === 'client')
         return { name: 'access-control' }
       

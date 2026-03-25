@@ -54,17 +54,10 @@ export const canNavigate = to => {
     }
   }
 
-  // Проверяем, инициализирован ли ability
-  // Если ability не настроен или пуст, разрешаем доступ (fallback для совместимости)
   try {
     // Если у маршрута есть требования к правам, проверяем их
     if (targetRoute?.meta?.action && targetRoute?.meta?.subject) {
       const canAccess = ability.can(targetRoute.meta.action, targetRoute.meta.subject)
-      // Если ability не настроен (возвращает false для всех), но у нас есть пользователь - разрешаем
-      // Это временная мера до полной настройки CASL
-      if (!canAccess && ability.rules && ability.rules.length === 0) {
-        return true // Ability не настроен - разрешаем доступ
-      }
       return canAccess
     }
 
@@ -75,16 +68,11 @@ export const canNavigate = to => {
       }
       return false
     })
-    
-    // Если ability не настроен, разрешаем доступ
-    if (!parentCanAccess && ability.rules && ability.rules.length === 0) {
-      return true
-    }
-    
+
     return parentCanAccess
   } catch (error) {
-    // В случае ошибки разрешаем доступ (fallback)
+    // В случае ошибки — безопаснее запретить, чтобы не показать доступ "случайно"
     console.warn('Error checking permissions:', error)
-    return true
+    return false
   }
 }

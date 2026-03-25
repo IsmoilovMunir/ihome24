@@ -9,6 +9,14 @@ import SettingsCompanyInfo from '@/views/apps/ecommerce/settings/SettingsCompany
 import SettingsCurrencyRate from '@/views/apps/ecommerce/settings/SettingsCurrencyRate.vue'
 import SettingsPriceTiers from '@/views/apps/ecommerce/settings/SettingsPriceTiers.vue'
 
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'Ecommerce',
+    navActiveLink: 'apps-ecommerce-settings',
+  },
+})
+
 const tabsData = [
   {
     icon: 'tabler-building-store',

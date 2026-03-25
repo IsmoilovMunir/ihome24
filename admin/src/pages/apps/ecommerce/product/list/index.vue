@@ -1,6 +1,14 @@
 <script setup>
 import * as XLSX from 'xlsx'
 
+definePage({
+  meta: {
+    action: 'read',
+    subject: 'EcommerceProductSEO',
+    navActiveLink: 'apps-ecommerce-product-list',
+  },
+})
+
 const widgetData = ref([
   {
     title: 'Продажи в магазине',
@@ -555,6 +563,7 @@ const updateVariantQty = async (item, newQty) => {
           <VBtn
             color="primary"
             prepend-icon="tabler-plus"
+            v-if="$can('manage', 'EcommerceProductSEO')"
             @click="$router.push({ name: 'apps-ecommerce-product-add' })"
           >
             Добавить товар
@@ -601,7 +610,7 @@ const updateVariantQty = async (item, newQty) => {
         <!-- inline editable price -->
         <template #item.price="{ item }">
           <div class="editable-cell d-flex align-center justify-space-between">
-            <template v-if="editingPriceId === item.id">
+            <template v-if="editingPriceId === item.id && $can('manage', 'EcommerceProduct')">
               <VTextField
                 :model-value="getVariantPrice(item)"
                 type="number"
@@ -622,6 +631,7 @@ const updateVariantQty = async (item, newQty) => {
                 icon="tabler-pencil"
                 size="16"
                 class="ms-1 editable-cell__icon"
+                v-if="$can('manage', 'EcommerceProduct')"
                 @click.stop="editingPriceId = item.id"
               />
             </template>
@@ -631,7 +641,7 @@ const updateVariantQty = async (item, newQty) => {
         <!-- inline editable qty -->
         <template #item.qty="{ item }">
           <div class="editable-cell d-flex align-center justify-space-between">
-            <template v-if="editingQtyId === item.id">
+            <template v-if="editingQtyId === item.id && $can('manage', 'EcommerceProduct')">
               <VTextField
                 :model-value="getVariantQty(item)"
                 type="number"
@@ -652,6 +662,7 @@ const updateVariantQty = async (item, newQty) => {
                 icon="tabler-pencil"
                 size="16"
                 class="ms-1 editable-cell__icon"
+                v-if="$can('manage', 'EcommerceProduct')"
                 @click.stop="editingQtyId = item.id"
               />
             </template>
@@ -703,9 +714,16 @@ const updateVariantQty = async (item, newQty) => {
         <!-- stock -->
         <template #item.stock="{ item }">
           <VSwitch
+            v-if="$can('manage', 'EcommerceProduct')"
             :model-value="item.stock"
             @update:modelValue="val => toggleStock(item, val)"
           />
+          <span
+            v-else
+            class="text-body-2"
+          >
+            {{ item.stock ? 'Да' : 'Нет' }}
+          </span>
         </template>
 
         <!-- status -->
@@ -720,7 +738,10 @@ const updateVariantQty = async (item, newQty) => {
 
         <!-- Actions -->
         <template #item.actions="{ item }">
-          <IconBtn @click="$router.push(`/apps/ecommerce/product/edit/${item.id}`)">
+          <IconBtn
+            v-if="$can('manage', 'EcommerceProductSEO')"
+            @click="$router.push(`/apps/ecommerce/product/edit/${item.id}`)"
+          >
             <VIcon icon="tabler-edit" />
           </IconBtn>
 
@@ -738,6 +759,7 @@ const updateVariantQty = async (item, newQty) => {
                 <VListItem
                   value="delete"
                   prepend-icon="tabler-trash"
+                  v-if="$can('manage', 'EcommerceProduct')"
                   @click="deleteProduct(item.id)"
                 >
                   Удалить
@@ -746,6 +768,7 @@ const updateVariantQty = async (item, newQty) => {
                 <VListItem
                   value="duplicate"
                   prepend-icon="tabler-copy"
+                  v-if="$can('manage', 'EcommerceProduct')"
                 >
                   Дублировать
                 </VListItem>

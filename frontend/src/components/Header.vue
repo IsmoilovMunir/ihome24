@@ -540,6 +540,11 @@ const getCurrentCategoryData = () => {
 const getCategoryImage = () => {
   const category = getCurrentCategoryData()
   if (!category || !category.imageUrl) return null
+  // By design: hide category photo when submenu expands beyond 2 "rows"/columns.
+  // This prevents the header dropdown from looking broken for long category lists.
+  const groups = getCategoryGroups()
+  if (groups && groups.length > 2)
+    return null
   return fileApi.getFileUrl(category.imageUrl)
 }
 

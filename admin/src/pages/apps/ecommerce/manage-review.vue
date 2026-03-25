@@ -1,4 +1,12 @@
 <script setup>
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'Ecommerce',
+    navActiveLink: 'apps-ecommerce-manage-review',
+  },
+})
+
 const selectedStatus = ref('All')
 const searchQuery = ref('')
 

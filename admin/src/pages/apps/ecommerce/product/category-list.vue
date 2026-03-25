@@ -1,6 +1,14 @@
 <script setup>
 import ECommerceAddCategoryDrawer from '@/views/apps/ecommerce/ECommerceAddCategoryDrawer.vue'
 
+definePage({
+  meta: {
+    action: 'read',
+    subject: 'EcommerceProduct',
+    navActiveLink: 'apps-ecommerce-product-category-list',
+  },
+})
+
 // Получаем данные категорий с бэкенда
 const {
   data: categoriesData,

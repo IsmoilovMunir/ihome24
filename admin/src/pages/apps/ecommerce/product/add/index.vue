@@ -1,11 +1,16 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { $api } from '@/utils/api'
 import FileUploader from '@/components/file-upload/FileUploader.vue'
+import { useAbility } from '@casl/vue'
 
 const router = useRouter()
 const route = useRoute()
+
+const ability = useAbility()
+const canManageEcommerceProduct = computed(() => ability.can('manage', 'EcommerceProduct'))
+const canManageEcommerceProductSEO = computed(() => ability.can('manage', 'EcommerceProductSEO'))
 
 // Состояние загрузки
 const isFetching = ref(false)
@@ -975,6 +980,10 @@ watch(() => variants.value.length, (newLength, oldLength) => {
 })
 
 onMounted(async () => {
+  // SEO specialist should start on SEO tab.
+  if (!canManageEcommerceProduct.value && canManageEcommerceProductSEO.value)
+    activeTab.value = 'seo'
+
   console.log('Product Add page mounted')
   // Загружаем категории без await, чтобы не блокировать рендеринг
   loadCategories().catch(err => {
@@ -1008,7 +1017,13 @@ onMounted(async () => {
   }
 })
 
-definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'EcommerceProductSEO',
+    navActiveLink: 'apps-ecommerce-product',
+  },
+})
 </script>
 
 <template>
@@ -1041,6 +1056,7 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
           Отменить
         </VBtn>
         <VBtn
+          v-if="canManageEcommerceProduct || canManageEcommerceProductSEO"
           variant="tonal"
           color="primary"
           :loading="isFetching"
@@ -1049,6 +1065,7 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
           Сохранить черновик
         </VBtn>
         <VBtn
+          v-if="canManageEcommerceProduct"
           :loading="isFetching"
           @click="publishProduct"
         >
@@ -1063,19 +1080,34 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
         v-model="activeTab"
         class="px-4"
       >
-        <VTab value="basic">
+        <VTab
+          v-if="canManageEcommerceProduct"
+          value="basic"
+        >
           Основная информация
         </VTab>
-        <VTab value="description">
+        <VTab
+          v-if="canManageEcommerceProduct"
+          value="description"
+        >
           Описание
         </VTab>
-        <VTab value="variants">
+        <VTab
+          v-if="canManageEcommerceProduct"
+          value="variants"
+        >
           Варианты
         </VTab>
-        <VTab value="media">
+        <VTab
+          v-if="canManageEcommerceProduct"
+          value="media"
+        >
           Медиа
         </VTab>
-        <VTab value="seo">
+        <VTab
+          v-if="canManageEcommerceProductSEO || canManageEcommerceProduct"
+          value="seo"
+        >
           SEO
         </VTab>
       </VTabs>
@@ -1086,7 +1118,7 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
       <VCol cols="12">
         <!-- Basic Information Tab -->
         <VCard
-          v-show="activeTab === 'basic'"
+          v-show="activeTab === 'basic' && canManageEcommerceProduct"
           title="Основная информация"
           class="mb-6"
         >
@@ -1114,7 +1146,7 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
                   v-model="productSku"
                   label="SKU"
                   placeholder="00001"
-                  readonly
+                readonly
                 />
               </VCol>
               <VCol
@@ -1167,7 +1199,7 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
 
         <!-- Description Tab -->
         <VCard
-          v-show="activeTab === 'description'"
+          v-show="activeTab === 'description' && canManageEcommerceProduct"
           title="Описание товара"
           class="mb-6"
         >
@@ -1306,7 +1338,7 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
 
         <!-- Variants Tab -->
         <VCard
-          v-show="activeTab === 'variants'"
+          v-show="activeTab === 'variants' && canManageEcommerceProduct"
           title="Варианты товара"
           class="mb-6"
         >
@@ -1340,7 +1372,6 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
                     v-model="variant.sku"
                     label="SKU варианта"
                   placeholder="00002"
-                  readonly
                   />
                 </VCol>
                 <VCol
@@ -1568,7 +1599,7 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
 
         <!-- Media Tab -->
         <VCard
-          v-show="activeTab === 'media'"
+          v-show="activeTab === 'media' && canManageEcommerceProduct"
           title="Медиа файлы"
           class="mb-6"
         >
@@ -1698,7 +1729,7 @@ definePage({ meta: { navActiveLink: 'apps-ecommerce-product' } })
 
         <!-- SEO Tab -->
         <VCard
-          v-show="activeTab === 'seo'"
+          v-show="activeTab === 'seo' && (canManageEcommerceProductSEO || canManageEcommerceProduct)"
           title="SEO настройки"
           class="mb-6"
         >

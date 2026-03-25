@@ -4,6 +4,14 @@ import paperImg from '@images/svg/paper-send.svg?raw'
 import rocketImg from '@images/svg/rocket.svg?raw'
 import userInfoImg from '@images/svg/user-info.svg?raw'
 
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'Ecommerce',
+    navActiveLink: 'apps-ecommerce-referrals',
+  },
+})
+
 const rocketIcon = h('div', {
   innerHTML: rocketImg,
   style: 'font-size: 2.625rem;color: rgb(var(--v-theme-primary))',

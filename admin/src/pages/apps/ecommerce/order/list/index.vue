@@ -4,6 +4,14 @@ import masterCardLight from '@images/icons/payments/img/mastercard.png'
 import paypalDark from '@images/icons/payments/img/paypal-dark.png'
 import paypalLight from '@images/icons/payments/img/paypal-light.png'
 
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'Ecommerce',
+    navActiveLink: 'apps-ecommerce-order-list',
+  },
+})
+
 const widgetData = ref([
   { title: 'Ожидает оплаты', value: 0, icon: 'tabler-calendar-stats', key: 'awaitingPayment' },
   { title: 'Завершено', value: 0, icon: 'tabler-checks', key: 'completed' },

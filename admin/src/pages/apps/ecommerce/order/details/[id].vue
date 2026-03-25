@@ -1,6 +1,13 @@
 <script setup>
 import { avatarText } from '@core/utils/formatters'
 
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'Ecommerce',
+  },
+})
+
 const orderData = ref(null)
 const isLoading = ref(true)
 const loadError = ref(null)

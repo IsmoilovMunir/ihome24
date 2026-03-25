@@ -4,6 +4,13 @@ import CustomerBioPanel from '@/views/apps/ecommerce/customer/view/CustomerBioPa
 import CustomerTabNotification from '@/views/apps/ecommerce/customer/view/CustomerTabNotification.vue'
 import CustomerTabOverview from '@/views/apps/ecommerce/customer/view/CustomerTabOverview.vue'
 
+definePage({
+  meta: {
+    action: 'manage',
+    subject: 'Ecommerce',
+  },
+})
+
 const route = useRoute('apps-ecommerce-customer-details-id')
 const customerData = ref()
 const userTab = ref(null)

@@ -41,7 +41,22 @@ export const setupGuards = router => {
               })
           }
 
-          await meCheckInFlight
+          const meRes = await meCheckInFlight
+          // Sync cookies + CASL abilities when role/permissions were changed.
+          if (meRes?.userAbilityRules && Array.isArray(meRes.userAbilityRules)) {
+            useCookie('userAbilityRules').value = meRes.userAbilityRules
+            // Merge to avoid losing fields that exist only in login response.
+            useCookie('userData').value = {
+              ...(useCookie('userData').value || {}),
+              ...meRes,
+            }
+          } else if (meRes && typeof meRes === 'object') {
+            // Keep userData fresh even if abilities are missing for some reason.
+            useCookie('userData').value = {
+              ...(useCookie('userData').value || {}),
+              ...meRes,
+            }
+          }
           lastMeCheckAt = now
         }
       } catch (error) {
@@ -64,7 +79,7 @@ export const setupGuards = router => {
 
     // 👉 Таймаут неактивности 1 час для админ-панели
     if (isLoggedIn && typeof window !== 'undefined') {
-      const MAX_IDLE_MS = 60 * 60 * 1000 // 1 час
+      const MAX_IDLE_MS = 12 * 60 * 60 * 1000 // 12 часов (если не используется сайт)
       const lastActivity = window.localStorage.getItem('adminLastActivity')
       const now = Date.now()
 
@@ -101,25 +116,6 @@ export const setupGuards = router => {
         return { name: 'force-change-password' }
       }
 
-        // Role-based restriction for editor: only products section
-        // Normalize role to be case-insensitive.
-        const userRole = typeof userData.role === 'string' ? userData.role.toLowerCase().trim() : ''
-        if (userRole === 'editor' && !to.meta.public && !to.meta.unauthenticatedOnly) {
-        const allowed = new Set([
-          'apps-ecommerce-product-list',
-          'apps-ecommerce-product-add',
-          'apps-ecommerce-product-category-list',
-          // allow common routes
-          'force-change-password',
-          'pages-account-settings-tab',
-          'not-authorized',
-        ])
-
-        if (!allowed.has(String(to.name))) {
-          return { name: 'apps-ecommerce-product-list' }
-        }
-      }
-
       if (profileIncomplete && !goingToAccountSettings && !goingToForceChangePassword && !to.meta.public && !to.meta.unauthenticatedOnly) {
         return {
           name: 'pages-account-settings-tab',
@@ -149,7 +145,9 @@ export const setupGuards = router => {
           // Но только если маршрут действительно требует прав доступа
           const hasPermissionRequirement = to.matched.some(route => route.meta?.action && route.meta?.subject)
           if (hasPermissionRequirement) {
-            return { name: 'not-authorized' }
+            // For direct URL access to restricted pages show 404 (not found).
+            // This prevents users from discovering existence of restricted routes.
+            return { path: '/pages/misc/not-found/404' }
           }
           // Если нет требований к правам, но canNavigate вернул false - разрешаем доступ
           // Это может произойти если ability не настроена

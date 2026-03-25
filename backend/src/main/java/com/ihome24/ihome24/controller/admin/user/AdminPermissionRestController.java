@@ -4,6 +4,7 @@ import com.ihome24.ihome24.dto.response.user.PermissionListResponse;
 import com.ihome24.ihome24.service.user.PermissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -14,6 +15,7 @@ public class AdminPermissionRestController {
     private final PermissionService permissionService;
 
     @GetMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<PermissionListResponse> getPermissions(
             @RequestParam(required = false) String q,
             @RequestParam(required = false, defaultValue = "1") Integer page,

@@ -171,9 +171,16 @@ public class AuthRestController {
                 log.warn("Failed to save login device info: {}", e.getMessage());
             }
 
-            // Если пользователь администратор, включаем двухфакторную авторизацию по email
-            if (user.getRole() != null && "admin".equals(user.getRole().getName())) {
-                log.info("Starting email 2FA for admin user: {}", user.getUsername());
+            // Email 2FA:
+            // - если запрос пришёл с админ-панели (adminPanel=true) => требуем код для всех ролей
+            // - иначе сохраняем старое поведение: только для ROLE_ADMIN
+            String adminPanelFlag = request != null ? request.get("adminPanel") : null;
+            boolean adminPanelLogin = adminPanelFlag != null && Boolean.parseBoolean(adminPanelFlag);
+            boolean requireEmail2FA = adminPanelLogin
+                    || (user.getRole() != null && "admin".equals(user.getRole().getName()));
+
+            if (requireEmail2FA) {
+                log.info("Starting email 2FA for user {} (adminPanelLogin={})", user.getUsername(), adminPanelLogin);
                 Map<String, Object> twoFactor = emailTwoFactorService.startEmailTwoFactor(user);
                 // Если отправка кода не удалась, twoFactorRequired будет false и вернем ошибку на фронт
                 return ResponseEntity.ok(twoFactor);
@@ -351,25 +358,52 @@ public class AuthRestController {
         String role = (String) userData.get("role");
         String normalizedRole = role != null ? role.toLowerCase().trim() : null;
 
-        List<Map<String, Object>> userAbilityRules;
+        // CASL rules control visibility of menu/pages/buttons in admin UI.
+        List<Map<String, Object>> userAbilityRules = new java.util.ArrayList<>();
+
         if ("admin".equals(normalizedRole)) {
-            userAbilityRules = List.of(Map.of("action", "manage", "subject", "all"));
-        } else if ("editor".equals(normalizedRole)) {
-            // Editor должен видеть хотя бы родительскую группу "Электронная коммерция".
-            // Иначе canViewNavMenuGroup() скрывает группу целиком из-за отсутствия read по Ecommerce.
-            userAbilityRules = List.of(
-                    Map.of("action", "read", "subject", "Ecommerce"),
-                    // Разрешаем доступ к странице добавления товара
-                    // (в навигации пункт "Добавить" требует action=manage для EcommerceProduct).
-                    Map.of("action", "manage", "subject", "EcommerceProduct"),
-                    // Явно оставляем read на случай, если manage не раскрывается как superset в текущей конфигурации CASL.
-                    Map.of("action", "read", "subject", "EcommerceProduct")
-            );
-        } else if ("manager".equals(normalizedRole)) {
-            userAbilityRules = List.of(Map.of("action", "manage", "subject", "Ecommerce"));
+            // Full access for admin.
+            userAbilityRules.add(Map.of("action", "manage", "subject", "all"));
         } else {
-            // fallback: minimal read access
-            userAbilityRules = List.of(Map.of("action", "read", "subject", "Ecommerce"));
+            // Permission-driven abilities for menu visibility (CASL).
+            var rolePermissions = user.getRole() != null ? user.getRole().getPermissions() : null;
+            var permissionNames = rolePermissions == null
+                    ? java.util.Set.<String>of()
+                    : rolePermissions.stream()
+                    .map(p -> p.getName())
+                    .filter(java.util.Objects::nonNull)
+                    .map(String::trim)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            boolean hasContentManagement = permissionNames.contains("Управление контентом");
+            boolean hasSeoManagement = permissionNames.contains("Управление SEO");
+            boolean hasEcommerceManagement = permissionNames.contains("Отчетность")
+                    || permissionNames.contains("Заработная плата");
+
+            // Content management: full product editing + SEO editing capabilities.
+            if (hasContentManagement) {
+                userAbilityRules.add(Map.of("action", "read", "subject", "Ecommerce"));
+                userAbilityRules.add(Map.of("action", "manage", "subject", "EcommerceProduct"));
+                userAbilityRules.add(Map.of("action", "read", "subject", "EcommerceProduct"));
+
+                userAbilityRules.add(Map.of("action", "manage", "subject", "EcommerceProductSEO"));
+                userAbilityRules.add(Map.of("action", "read", "subject", "EcommerceProductSEO"));
+            }
+
+            // SEO-only: allow only SEO editing on product pages (no general product/category management).
+            if (hasSeoManagement) {
+                userAbilityRules.add(Map.of("action", "read", "subject", "Ecommerce"));
+                userAbilityRules.add(Map.of("action", "manage", "subject", "EcommerceProductSEO"));
+                userAbilityRules.add(Map.of("action", "read", "subject", "EcommerceProductSEO"));
+            }
+
+            // Orders/customers management.
+            if (hasEcommerceManagement) {
+                userAbilityRules.add(Map.of("action", "read", "subject", "Ecommerce"));
+                userAbilityRules.add(Map.of("action", "manage", "subject", "Ecommerce"));
+            }
+
+            // User/Role management is admin-only in admin panel.
         }
 
         LoginResponse response = LoginResponse.builder()
@@ -548,7 +582,7 @@ public class AuthRestController {
         // 1) Primary path: authenticated via Spring Security
         User user = null;
         if (username != null)
-            user = userRepository.findByUsernameWithRole(username).orElse(null);
+            user = userRepository.findByUsernameWithRoleAndPermissions(username).orElse(null);
 
         // 2) Fallback path: parse our "token_<userId>_<timestamp>" bearer token (used by frontend)
         // This avoids 401 loops when SecurityContext isn't populated for this lightweight token.
@@ -557,6 +591,11 @@ public class AuthRestController {
 
         if (user == null)
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "User not authenticated"));
+
+        // Make sure role permissions are loaded (needed for CASL ability rules).
+        if (user.getUsername() != null) {
+            user = userRepository.findByUsernameWithRoleAndPermissions(user.getUsername()).orElse(user);
+        }
 
         Map<String, Object> userData = new HashMap<>();
         userData.put("id", user.getId());
@@ -578,6 +617,52 @@ public class AuthRestController {
         userData.put("createdAt", user.getCreatedAt() != null ? user.getCreatedAt().toString() : null);
         userData.put("updatedAt", user.getUpdatedAt() != null ? user.getUpdatedAt().toString() : null);
 
+        // Also return CASL rules so admin UI can immediately reflect role changes
+        // without requiring re-login.
+        String role = user.getRole() != null ? user.getRole().getName() : null;
+        String normalizedRole = role != null ? role.toLowerCase().trim() : null;
+
+        List<Map<String, Object>> userAbilityRules = new java.util.ArrayList<>();
+        if ("admin".equals(normalizedRole)) {
+            userAbilityRules.add(Map.of("action", "manage", "subject", "all"));
+        } else {
+            var rolePermissions = user.getRole() != null ? user.getRole().getPermissions() : null;
+            var permissionNames = rolePermissions == null
+                    ? java.util.Set.<String>of()
+                    : rolePermissions.stream()
+                    .map(p -> p.getName())
+                    .filter(java.util.Objects::nonNull)
+                    .map(String::trim)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            boolean hasContentManagement = permissionNames.contains("Управление контентом");
+            boolean hasSeoManagement = permissionNames.contains("Управление SEO");
+            boolean hasEcommerceManagement = permissionNames.contains("Отчетность")
+                    || permissionNames.contains("Заработная плата");
+
+            if (hasContentManagement) {
+                userAbilityRules.add(Map.of("action", "read", "subject", "Ecommerce"));
+                userAbilityRules.add(Map.of("action", "manage", "subject", "EcommerceProduct"));
+                userAbilityRules.add(Map.of("action", "read", "subject", "EcommerceProduct"));
+                userAbilityRules.add(Map.of("action", "manage", "subject", "EcommerceProductSEO"));
+                userAbilityRules.add(Map.of("action", "read", "subject", "EcommerceProductSEO"));
+            }
+
+            if (hasSeoManagement) {
+                userAbilityRules.add(Map.of("action", "read", "subject", "Ecommerce"));
+                userAbilityRules.add(Map.of("action", "manage", "subject", "EcommerceProductSEO"));
+                userAbilityRules.add(Map.of("action", "read", "subject", "EcommerceProductSEO"));
+            }
+
+            if (hasEcommerceManagement) {
+                userAbilityRules.add(Map.of("action", "read", "subject", "Ecommerce"));
+                userAbilityRules.add(Map.of("action", "manage", "subject", "Ecommerce"));
+            }
+
+            // User/Role management is admin-only in admin panel.
+        }
+
+        userData.put("userAbilityRules", userAbilityRules);
         return ResponseEntity.ok(userData);
     }
 

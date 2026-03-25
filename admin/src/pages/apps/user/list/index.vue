@@ -24,6 +24,15 @@ const selectedRows = ref([])
 const currentUser = useCookie('userData')
 const isAdminUser = computed(() => (currentUser.value?.role || '').toLowerCase() === 'admin')
 
+// Roles list (for inline role editing)
+const { data: rolesData } = await useApi('/apps/roles')
+const roleItems = computed(() => {
+  const list = rolesData.value || []
+  return list
+    .filter(r => r?.name && r.name !== 'users')
+    .map(r => ({ title: r.displayName || r.name, value: r.name }))
+})
+
 const updateOptions = options => {
   sortBy.value = options.sortBy[0]?.key
   orderBy.value = options.sortBy[0]?.order
@@ -239,6 +248,27 @@ const deleteUser = async id => {
 
   // Refetch User
   fetchUsers()
+}
+
+const changeUserRole = async (userId, newRoleName) => {
+  try {
+    if (!userId || !newRoleName)
+      return
+
+    await $api(`/apps/users/${userId}/role`, {
+      method: 'PATCH',
+      body: { roleName: newRoleName },
+    })
+
+    // Refetch list to reflect updated roles.
+    fetchUsers()
+  } catch (error) {
+    console.error('Error changing user role:', error)
+    const message = error?.data?.message || error?.data?.errors
+      ? Object.values(error.data.errors).flat().join('\n')
+      : (error?.data?.message || error?.message || 'Не удалось изменить роль')
+    alert(message)
+  }
 }
 
 const widgetData = ref([
@@ -483,9 +513,17 @@ const widgetData = ref([
               :color="resolveUserRoleVariant(item.role).color"
             />
 
-            <div class="text-capitalize text-high-emphasis text-body-1">
-              {{ item.role }}
-            </div>
+            <AppSelect
+              :model-value="item.role"
+              :items="roleItems"
+              item-title="title"
+              item-value="value"
+              density="compact"
+              style="inline-size: 12rem;"
+              hide-details
+              variant="underlined"
+              @update:model-value="val => changeUserRole(item.id, typeof val === 'string' ? val : val?.value)"
+            />
           </div>
         </template>
 
