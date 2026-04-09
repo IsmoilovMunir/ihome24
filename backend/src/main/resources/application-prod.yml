@@ -5,7 +5,7 @@ spring:
   servlet:
     multipart:
       max-file-size: ${SPRING_MAX_FILE_SIZE:20MB}
-      max-request-size: ${SPRING_MAX_REQUEST_SIZE:25MB}
+      max-request-size: ${SPRING_MAX_REQUEST_SIZE:30MB}
   # PostgreSQL Database Configuration
   datasource:
     url: ${SPRING_DATASOURCE_URL}
@@ -99,6 +99,9 @@ app:
   # Email Configuration
   email:
     from: ${APP_EMAIL_FROM}
+  security:
+    # В продакшене оставляем email 2FA включенной для админ-входа.
+    email-2fa-enabled: ${APP_SECURITY_EMAIL_2FA_ENABLED:true}
 
 # Resend API (опционально): при заданном ключе письма о заказах идут через HTTPS, обход блокировки SMTP
 resend:
@@ -116,7 +119,7 @@ minio:
   initialize-on-startup: ${MINIO_INITIALIZE_ON_STARTUP:false}
   presigned-url-enabled: ${MINIO_PRESIGNED_URL_ENABLED:false}
   presigned-url-expiry-seconds: ${MINIO_PRESIGNED_URL_EXPIRY_SECONDS:3600}
-  max-image-size: ${MINIO_MAX_IMAGE_SIZE:10485760}  # 10 МБ
+  max-image-size: ${MINIO_MAX_IMAGE_SIZE:20971520}  # 20 МБ (баннеры категорий, multipart до 20 МБ)
   max-video-size: ${MINIO_MAX_VIDEO_SIZE:104857600}  # 100 МБ
   image-size-small: ${MINIO_IMAGE_SIZE_SMALL:300}
   image-size-medium: ${MINIO_IMAGE_SIZE_MEDIUM:600}

@@ -4,6 +4,11 @@ import App from './App.vue'
 import router from './router'
 import './style.css'
 
+// Предотвращаем восстановление позиции скролла браузером при reload.
+if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+  window.history.scrollRestoration = 'manual'
+}
+
 const app = createApp(App)
 const pinia = createPinia()
 

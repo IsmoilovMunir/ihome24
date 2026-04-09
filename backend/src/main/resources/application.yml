@@ -2,7 +2,7 @@ spring:
   servlet:
     multipart:
       max-file-size: ${SPRING_MAX_FILE_SIZE:20MB}
-      max-request-size: ${SPRING_MAX_REQUEST_SIZE:25MB}
+      max-request-size: ${SPRING_MAX_REQUEST_SIZE:30MB}
   # Database Configuration
   # По умолчанию используется H2 для разработки без Docker
   # Для использования PostgreSQL установите переменные окружения:
@@ -88,6 +88,8 @@ app:
     from: ${APP_EMAIL_FROM:info@ihome24.ru}
 
   security:
+    # Локально отключаем email 2FA для админ-панели (логин только по username/password)
+    email-2fa-enabled: ${APP_SECURITY_EMAIL_2FA_ENABLED:false}
     jwt:
       # ДОЛЖЕН быть длинной случайной строкой в base64.
       # Для продакшена обязательно переопределить через переменную окружения APP_SECURITY_JWT_SECRET.
@@ -108,7 +110,8 @@ minio:
   presigned-url-enabled: ${MINIO_PRESIGNED_URL_ENABLED:false}
   presigned-url-expiry-seconds: ${MINIO_PRESIGNED_URL_EXPIRY_SECONDS:3600}
   # Максимальные размеры файлов (в байтах)
-  max-image-size: ${MINIO_MAX_IMAGE_SIZE:10485760}  # 10 МБ
+  # Согласовано с spring.servlet.multipart.max-file-size (20 МБ) — широкие баннеры категорий
+  max-image-size: ${MINIO_MAX_IMAGE_SIZE:20971520}  # 20 МБ
   max-video-size: ${MINIO_MAX_VIDEO_SIZE:104857600}  # 100 МБ
   # Размеры изображений (в пикселях)
   image-size-small: ${MINIO_IMAGE_SIZE_SMALL:300}

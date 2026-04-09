@@ -45,9 +45,7 @@ const loadCategoryData = async (categoryId) => {
     // Устанавливаем parentId - убеждаемся, что это число или null
     parentCategory.value = category.parentId ? Number(category.parentId) : null
     parentStatus.value = category.isActive ? 'Published' : 'Inactive'
-    console.log('Загружена категория:', category)
-    console.log('Parent ID загружен:', parentCategory.value)
-    
+
     // Устанавливаем описание в редактор (с задержкой, чтобы editor был готов)
     await nextTick()
     if (editor.value) {
@@ -338,39 +336,41 @@ const handleSubmit = async () => {
       parentId: parentIdValue,
     }
     
-    console.log('Parent Category value:', parentCategory.value)
-    console.log('Parent ID to send:', parentIdValue)
-
     // Отправка на бэкенд
     let savedCategoryId = props.categoryId
     if (props.categoryId) {
       // Режим редактирования
-      console.log('Обновление категории ID:', props.categoryId)
-      console.log('Данные для отправки:', JSON.stringify(categoryData, null, 2))
       const response = await $api(`admin/categories/${props.categoryId}`, {
         method: 'PUT',
         body: categoryData,
       })
-      console.log('Категория обновлена, ответ:', response)
       savedCategoryId = response?.id || props.categoryId
     } else {
       // Режим создания
-      console.log('Создание категории:', JSON.stringify(categoryData, null, 2))
       const response = await $api('admin/categories', {
         method: 'POST',
         body: categoryData,
       })
-      console.log('Категория создана:', response)
       savedCategoryId = response?.id
     }
 
     if (savedCategoryId && selectedCategoryFile.value) {
-      const uploadedImageUrl = await uploadCategoryImage(savedCategoryId)
-      if (uploadedImageUrl) {
-        currentImageUrl.value = withCacheBuster(uploadedImageUrl)
-        removeCurrentImage.value = false
+      try {
+        const uploadedImageUrl = await uploadCategoryImage(savedCategoryId)
+        if (uploadedImageUrl) {
+          currentImageUrl.value = withCacheBuster(uploadedImageUrl)
+          removeCurrentImage.value = false
+        }
+        categoryImg.value = null
+      } catch (uploadErr) {
+        console.error('Ошибка загрузки изображения категории:', uploadErr)
+        const msg = uploadErr?.message || uploadErr?.toString?.() || 'Не удалось загрузить файл'
+        // eslint-disable-next-line no-alert
+        alert(`Категория сохранена, но изображение не загрузилось.\n\n${msg}\n\nПроверьте размер (до 20 МБ) и формат (JPG, PNG, WEBP).`)
+        await fetchCategories()
+        emit('categoryCreated')
+        return
       }
-      categoryImg.value = null
     }
 
     if (removeCurrentImage.value) {
@@ -384,7 +384,9 @@ const handleSubmit = async () => {
     closeForm()
   } catch (error) {
     console.error('Ошибка при создании категории:', error)
-    // Можно добавить уведомление об ошибке
+    const msg = error?.data?.message || error?.message || error?.toString?.() || 'Ошибка сохранения'
+    // eslint-disable-next-line no-alert
+    alert(msg)
   }
 }
 </script>

@@ -11,6 +11,7 @@ import com.ihome24.ihome24.service.auth.PasswordResetService;
 import com.ihome24.ihome24.service.storage.FileService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -48,6 +49,8 @@ public class AuthRestController {
     private final FileService fileService;
     private final UserLoginDeviceRepository userLoginDeviceRepository;
     private final JwtTokenService jwtTokenService;
+    @Value("${app.security.email-2fa-enabled:true}")
+    private boolean emailTwoFactorEnabled;
 
     // Endpoint для JSON
     @PostMapping(value = "/login", consumes = MediaType.APPLICATION_JSON_VALUE)
@@ -176,8 +179,8 @@ public class AuthRestController {
             // - иначе сохраняем старое поведение: только для ROLE_ADMIN
             String adminPanelFlag = request != null ? request.get("adminPanel") : null;
             boolean adminPanelLogin = adminPanelFlag != null && Boolean.parseBoolean(adminPanelFlag);
-            boolean requireEmail2FA = adminPanelLogin
-                    || (user.getRole() != null && "admin".equals(user.getRole().getName()));
+            boolean requireEmail2FA = emailTwoFactorEnabled
+                    && (adminPanelLogin || (user.getRole() != null && "admin".equals(user.getRole().getName())));
 
             if (requireEmail2FA) {
                 log.info("Starting email 2FA for user {} (adminPanelLogin={})", user.getUsername(), adminPanelLogin);

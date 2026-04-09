@@ -1,6 +1,6 @@
 <template>
   <div class="products-page bg-[#3A3331]">
-    <!-- Баннер категории (показывается для категорий уровня 2) -->
+    <!-- Баннер родительской категории уровня 1 (при выборе неё или любой подкатегории) -->
     <div v-if="bannerCategory" class="category-banner">
       <div
         v-if="bannerCategoryImageUrl"
@@ -8,8 +8,7 @@
         :style="{ backgroundImage: `url(${bannerCategoryImageUrl})` }"
       ></div>
       <div class="category-banner-overlay"></div>
-      
-      <!-- Кнопка "Назад" с названием категории в верхнем углу баннера (только на мобильных) -->
+
       <div v-if="isMobile" class="category-banner-back-button">
         <button
           @click="goToParentCategory"
@@ -26,6 +25,9 @@
       
       <div class="category-banner-content">
         <h1 class="category-banner-title">{{ bannerCategory.name }}</h1>
+        <p v-if="bannerCategory.description" class="category-banner-description">
+          {{ bannerCategory.description }}
+        </p>
       </div>
     </div>
 
@@ -125,8 +127,7 @@
 
           <!-- Если выбрана категория, показываем дочерние категории или товары -->
           <div v-else>
-            <!-- Кнопка "Назад" с названием категории для мобильных (когда нет баннера) -->
-            <div v-if="isMobile && !bannerCategory" class="mb-4 flex items-center gap-3 w-full">
+            <div v-if="isMobile && !bannerCategory" class="mb-4 flex items-center gap-1 w-full">
               <button
                 @click="goToParentCategory"
                 class="mobile-back-button text-white hover:text-orange-500 transition-colors flex items-center justify-center"
@@ -384,28 +385,18 @@ const topLevelCategory = computed(() => {
   return null
 })
 
-// Получить категорию для баннера
-// Десктоп: баннер с категорией уровня 1 при любом выбранном уровне (1, 2 или 3)
-// Мобильные: баннер только когда выбрана категория уровня 1
+// Баннер родительской категории уровня 1 при любом выбранном уровне (в т.ч. подкатегории на мобильных)
 const bannerCategory = computed(() => {
   if (!selectedCategory.value) return null
-  
-  if (isMobile.value) {
-    // На мобильных — баннер только для категории уровня 1
-    if (!selectedCategory.value.parentId) {
-      return selectedCategory.value
-    }
-    return null
-  }
-  
-  // На десктопе — всегда показываем баннер категории уровня 1 при любой выбранной категории
   return topLevelCategory.value
 })
 
-// Получить изображение категории для баннера
+// Для баннера используем original (максимальное качество) с fallback на large/обычный URL
 const bannerCategoryImageUrl = computed(() => {
   if (!bannerCategory.value || !bannerCategory.value.imageUrl) return null
-  return fileApi.getFileUrl(bannerCategory.value.imageUrl)
+  return fileApi.getImageUrlOriginal(bannerCategory.value.imageUrl)
+    || fileApi.getImageUrlLarge(bannerCategory.value.imageUrl)
+    || fileApi.getFileUrl(bannerCategory.value.imageUrl)
 })
 
 // Получить название родительской категории для отображения рядом со стрелкой "Назад"
@@ -635,6 +626,8 @@ const goToParentCategory = () => {
 onMounted(async () => {
   checkMobile()
   window.addEventListener('resize', checkMobile)
+  // На прямом открытии/обновлении страницы всегда стартуем сверху.
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
   await productsStore.fetchProducts()
   await productsStore.fetchCategories()
 })
@@ -647,28 +640,28 @@ onMounted(async () => {
 
 /* Кнопка "Назад" для мобильных */
 .mobile-back-button {
-  padding: 10px;
-  border-radius: 8px;
-  background: rgba(46, 40, 38, 0.9);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 2px;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   flex-shrink: 0;
 }
 
 .mobile-back-button:active {
-  background: rgba(46, 40, 38, 1);
+  background: transparent;
   transform: scale(0.96);
 }
 
 .mobile-category-title {
-  font-family: "helvetica", sans-serif !important;
-  text-transform: uppercase;
+  font-family: "bork", sans-serif !important;
+  text-transform: none;
   letter-spacing: 0.04em;
-  font-weight: 500;
-  font-size: 14px !important;
+  font-weight: 400;
+  font-size: 12px !important;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -710,16 +703,34 @@ onMounted(async () => {
   }
 }
 
-/* Баннер категории */
+/* Баннер категории (~4096×672): высота от ширины вьюпорта, в пределах min/max */
 .category-banner {
   position: relative;
   width: 100%;
-  height: 400px;
+  height: clamp(140px, 16.45vw, 420px);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   background: #2E2826;
+}
+
+.category-banner::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: clamp(84px, 9vw, 152px);
+  background: linear-gradient(to bottom, rgba(58, 51, 49, 0) 0%, rgba(58, 51, 49, 0.72) 58%, #3A3331 100%);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.products-page .container {
+  position: relative;
+  margin-top: -4px;
+  z-index: 4;
 }
 
 .category-banner-image {
@@ -729,7 +740,7 @@ onMounted(async () => {
   width: 100%;
   height: 100%;
   background-size: cover;
-  background-position: center;
+  background-position: 36% center;
   background-repeat: no-repeat;
 }
 
@@ -739,18 +750,18 @@ onMounted(async () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.18);
   z-index: 1;
 }
 
 .category-banner-back-button {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 2px;
+  left: 2px;
   z-index: 3;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 0;
   width: calc(100% - 32px);
   max-width: calc(100% - 32px);
 }
@@ -761,17 +772,29 @@ onMounted(async () => {
 
 .category-banner-content {
   position: relative;
-  z-index: 2;
+  z-index: 3;
   text-align: center;
+  transform: translateY(-12px);
 }
 
 .category-banner-title {
-  font-size: 48px;
+  font-size: 36px;
   font-weight: 500;
-  font-family: "helvetica", sans-serif;
+  font-family: "bork", sans-serif !important;
   color: #fff;
-  text-transform: uppercase;
+  text-transform: none;
   letter-spacing: 0.04em;
+}
+
+.category-banner-description {
+  margin-top: 10px;
+  max-width: min(760px, 92vw);
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 16px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: "helvetica", sans-serif;
 }
 
 .category-banner-button {
@@ -799,12 +822,24 @@ onMounted(async () => {
 }
 
 @media screen and (max-width: 768px) {
-  .category-banner {
-    height: 300px;
+  .category-banner-image {
+    background-position: 36% center;
   }
-  
+
+  .category-banner-content {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 14px;
+    transform: none;
+  }
+
   .category-banner-title {
-    font-size: 32px;
+    font-size: 26px;
+  }
+
+  .category-banner-description {
+    display: none;
   }
 }
 
