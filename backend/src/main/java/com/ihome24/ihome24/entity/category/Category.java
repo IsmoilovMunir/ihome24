@@ -42,6 +42,24 @@ public class Category {
     @Column(name = "image_url")
     private String imageUrl;
 
+    @Column(name = "banner_image_url")
+    private String bannerImageUrl;
+
+    @Column(name = "menu_image_url")
+    private String menuImageUrl;
+
+    @Column(name = "collection_image_url")
+    private String collectionImageUrl;
+
+    @Column(name = "mobile_image_url")
+    private String mobileImageUrl;
+
+    @Column(name = "mobile_image_url_2")
+    private String mobileImageUrl2;
+
+    @Column(name = "mobile_image_url_3")
+    private String mobileImageUrl3;
+
     @Column(name = "is_active", nullable = false)
     @Builder.Default
     private Boolean isActive = true;

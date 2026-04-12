@@ -3,6 +3,7 @@ package com.ihome24.ihome24.controller.admin.category;
 import com.ihome24.ihome24.dto.request.category.CategoryRequest;
 import com.ihome24.ihome24.dto.response.category.CategoryResponse;
 import com.ihome24.ihome24.service.category.CategoryService;
+import com.ihome24.ihome24.service.category.CategoryService.CategoryImageSlot;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -48,14 +49,16 @@ public class AdminCategoryRestController {
 
     @PostMapping(value = "/{id}/image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CategoryResponse> uploadCategoryImage(@PathVariable Long id,
-                                                                @RequestParam("file") MultipartFile file) {
-        CategoryResponse response = categoryService.updateCategoryImage(id, file);
+                                                                @RequestParam("file") MultipartFile file,
+                                                                @RequestParam(value = "slot", required = false) String slot) {
+        CategoryResponse response = categoryService.updateCategoryImage(id, file, CategoryImageSlot.fromValue(slot));
         return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}/image")
-    public ResponseEntity<CategoryResponse> deleteCategoryImage(@PathVariable Long id) {
-        CategoryResponse response = categoryService.deleteCategoryImage(id);
+    public ResponseEntity<CategoryResponse> deleteCategoryImage(@PathVariable Long id,
+                                                                @RequestParam(value = "slot", required = false) String slot) {
+        CategoryResponse response = categoryService.deleteCategoryImage(id, CategoryImageSlot.fromValue(slot));
         return ResponseEntity.ok(response);
     }
 

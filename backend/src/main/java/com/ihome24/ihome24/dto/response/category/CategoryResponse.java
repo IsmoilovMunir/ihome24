@@ -18,6 +18,12 @@ public class CategoryResponse {
     private String slug;
     private String description;
     private String imageUrl;
+    private String bannerImageUrl;
+    private String menuImageUrl;
+    private String collectionImageUrl;
+    private String mobileImageUrl;
+    private String mobileImageUrl2;
+    private String mobileImageUrl3;
     private Boolean isActive;
     private Integer sortOrder;
     private Long parentId;

@@ -104,11 +104,16 @@ public class FileService {
 
     @Transactional
     public String uploadCategoryImage(MultipartFile file, Long categoryId) throws IOException {
+        return uploadCategoryImage(file, categoryId, "category_image");
+    }
+
+    @Transactional
+    public String uploadCategoryImage(MultipartFile file, Long categoryId, String imageSlot) throws IOException {
         validateImageFile(file);
 
         String originalName = file.getOriginalFilename();
         String extension = normalizeExtension(getFileExtension(originalName), file.getContentType());
-        String baseName = "category_image";
+        String baseName = imageSlot == null || imageSlot.isBlank() ? "category_image" : imageSlot;
         String categoryFolder = "categories/" + categoryId;
         String bucketName = minIOService.getProductImagesBucket();
 
@@ -223,7 +228,12 @@ public class FileService {
 
     @Transactional
     public void deleteCategoryImage(Long categoryId) {
-        String baseName = "category_image";
+        deleteCategoryImage(categoryId, "category_image");
+    }
+
+    @Transactional
+    public void deleteCategoryImage(Long categoryId, String imageSlot) {
+        String baseName = imageSlot == null || imageSlot.isBlank() ? "category_image" : imageSlot;
         String categoryFolder = "categories/" + categoryId;
         String bucketName = minIOService.getProductImagesBucket();
 
