@@ -1,6 +1,6 @@
 <template>
   <router-link
-    :to="`/products?category=${collection.id}`"
+    :to="collectionTo"
     class="collection-card relative block w-full h-[460px] overflow-hidden text-white rounded-xl cursor-pointer transition-all duration-300 ease-in-out group"
     style="background-color: #26211E;"
   >
@@ -45,6 +45,8 @@
 <script setup>
 import { computed } from 'vue'
 import { fileApi } from '../services/api'
+import { useProductsStore } from '../stores/products'
+import { buildCategoryPath } from '../utils/categoryUrl'
 
 const props = defineProps({
   collection: {
@@ -53,9 +55,18 @@ const props = defineProps({
   },
 })
 
+const productsStore = useProductsStore()
+
+const collectionTo = computed(() =>
+  buildCategoryPath(props.collection, productsStore.categories),
+)
+
 const imageUrl = computed(() => {
-  if (props.collection.imageUrl) {
-    return fileApi.getFileUrl(props.collection.imageUrl)
+  const imagePath = props.collection.collectionImageUrl
+    || props.collection.menuImageUrl
+    || props.collection.imageUrl
+  if (imagePath) {
+    return fileApi.getFileUrl(imagePath)
   }
   return null
 })

@@ -23,6 +23,24 @@ public class CategoryRequest {
     @Size(max = 500, message = "URL изображения не должен превышать 500 символов")
     private String imageUrl;
 
+    @Size(max = 500, message = "URL баннера не должен превышать 500 символов")
+    private String bannerImageUrl;
+
+    @Size(max = 500, message = "URL изображения для меню не должен превышать 500 символов")
+    private String menuImageUrl;
+
+    @Size(max = 500, message = "URL изображения для коллекций не должен превышать 500 символов")
+    private String collectionImageUrl;
+
+    @Size(max = 500, message = "URL изображения для мобильной плитки не должен превышать 500 символов")
+    private String mobileImageUrl;
+
+    @Size(max = 500, message = "URL второго фото мобильной плитки не должен превышать 500 символов")
+    private String mobileImageUrl2;
+
+    @Size(max = 500, message = "URL третьего фото мобильной плитки не должен превышать 500 символов")
+    private String mobileImageUrl3;
+
     private Boolean isActive = true;
 
     @Min(value = 0, message = "Порядок сортировки не может быть отрицательным")

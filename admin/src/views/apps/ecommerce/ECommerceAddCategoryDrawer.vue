@@ -41,10 +41,25 @@ const loadCategoryData = async (categoryId) => {
     const category = await $api(`admin/categories/${categoryId}`)
     categoryTitle.value = category.name || ''
     categorySlug.value = category.slug || ''
-    currentImageUrl.value = withCacheBuster(category.imageUrl || null)
+    IMAGE_SLOTS.forEach(slot => {
+      const slotState = imageSlotsState[slot.key]
+      if (!slotState) return
+      clearSlotPreview(slot.key)
+      slotState.file = null
+      slotState.removeCurrent = false
+      slotState.currentUrl = withCacheBuster(category?.[slot.field] || null)
+    })
     // Устанавливаем parentId - убеждаемся, что это число или null
     parentCategory.value = category.parentId ? Number(category.parentId) : null
+    isParentCategory.value = !category.parentId
     parentStatus.value = category.isActive ? 'Published' : 'Inactive'
+
+    // Тройная плитка каталога — только у категорий верхнего уровня (без parentId)
+    mobileTripleTileMode.value = !category.parentId && !!(
+      category.mobileImageUrl
+      && category.mobileImageUrl2
+      && category.mobileImageUrl3
+    )
 
     // Устанавливаем описание в редактор (с задержкой, чтобы editor был готов)
     await nextTick()
@@ -154,65 +169,196 @@ const parentCategoryOptions = computed(() => {
 const refVForm = ref()
 const categoryTitle = ref()
 const categorySlug = ref()
-const categoryImg = ref()
-const currentImageUrl = ref(null) // URL текущего изображения при редактировании
 const parentCategory = ref()
+const isParentCategory = ref(false)
 const parentStatus = ref()
-const categoryFileInput = ref(null)
-const previewImageUrl = ref(null)
-const removeCurrentImage = ref(false)
+const IMAGE_SLOTS = [
+  { key: 'main', label: 'Фото категории', field: 'imageUrl', slotApi: 'MAIN', rootOnly: false },
+  { key: 'banner', label: 'Баннер категории (родительская)', field: 'bannerImageUrl', slotApi: 'BANNER', rootOnly: true },
+  { key: 'menu', label: 'Фото для меню', field: 'menuImageUrl', slotApi: 'MENU', rootOnly: false },
+  { key: 'collection', label: 'Фото для коллекции', field: 'collectionImageUrl', slotApi: 'COLLECTION', rootOnly: false },
+  { key: 'mobile', label: 'Фото для мобильной плитки', field: 'mobileImageUrl', slotApi: 'MOBILE', rootOnly: false },
+  { key: 'mobile2', label: 'Мобильная плитка — фото 2 из 3', field: 'mobileImageUrl2', slotApi: 'MOBILE2', rootOnly: false },
+  { key: 'mobile3', label: 'Мобильная плитка — фото 3 из 3', field: 'mobileImageUrl3', slotApi: 'MOBILE3', rootOnly: false },
+]
 
-const removeCategoryImage = async () => {
-  categoryImg.value = null
-  removeCurrentImage.value = true
-  currentImageUrl.value = null
-  if (previewImageUrl.value) {
-    URL.revokeObjectURL(previewImageUrl.value)
-    previewImageUrl.value = null
-  }
+/** Один файл для каталога, меню и блока коллекций на сайте */
+const UNIFIED_CATALOG_SLOT_KEYS = ['main', 'menu', 'collection']
+const UNIFIED_CATALOG_SLOT_KEY_SET = new Set(UNIFIED_CATALOG_SLOT_KEYS)
 
-  if (props.categoryId) {
-    try {
-      const response = await $api(`admin/categories/${props.categoryId}/image`, {
-        method: 'DELETE',
-      })
-      currentImageUrl.value = withCacheBuster(response?.imageUrl || null)
-      removeCurrentImage.value = false
-    } catch (error) {
-      console.error('Ошибка при удалении изображения:', error)
-    }
+const imageSlotsState = reactive(
+  Object.fromEntries(
+    IMAGE_SLOTS.map(slot => [slot.key, {
+      file: null,
+      currentUrl: null,
+      previewUrl: null,
+      removeCurrent: false,
+      inputRef: null,
+    }]),
+  ),
+)
+
+const visibleImageSlots = computed(() => {
+  return IMAGE_SLOTS.filter(slot => !slot.rootOnly || isParentCategory.value)
+})
+
+const separateImageSlots = computed(() => {
+  return visibleImageSlots.value.filter(slot => !UNIFIED_CATALOG_SLOT_KEY_SET.has(slot.key))
+})
+
+/** Режим плитки: ровно 3 фото (все обязательны при сохранении) */
+const mobileTripleTileMode = ref(false)
+
+const separateBannerSlots = computed(() => separateImageSlots.value.filter(s => s.key === 'banner'))
+
+const separateNonBannerSlots = computed(() => separateImageSlots.value.filter(s => s.key !== 'banner'))
+
+const separateNonBannerFiltered = computed(() => {
+  return separateNonBannerSlots.value.filter(slot => {
+    if (slot.key === 'mobile2' || slot.key === 'mobile3')
+      return mobileTripleTileMode.value
+    return true
+  })
+})
+
+const getMobileSlotLabel = slot => {
+  if (!mobileTripleTileMode.value && slot.key === 'mobile')
+    return 'Фото для мобильной плитки'
+  if (slot.key === 'mobile')
+    return 'Мобильная плитка — фото 1 из 3'
+  return slot.label
+}
+
+const onMobileTripleModeToggle = isTriple => {
+  if (!isTriple) {
+    ['mobile2', 'mobile3'].forEach(key => {
+      const st = imageSlotsState[key]
+      if (!st) return
+      clearSlotPreview(key)
+      st.file = null
+      st.removeCurrent = true
+      st.currentUrl = null
+    })
   }
 }
 
-const selectedCategoryFile = computed(() => {
-  if (!categoryImg.value) {
-    return null
+const unifiedCatalogPreviewSrc = computed(() => {
+  for (const key of UNIFIED_CATALOG_SLOT_KEYS) {
+    const s = imageSlotsState[key]
+    if (s?.previewUrl)
+      return s.previewUrl
   }
-  if (Array.isArray(categoryImg.value)) {
-    return categoryImg.value[0] || null
+  for (const key of UNIFIED_CATALOG_SLOT_KEYS) {
+    const s = imageSlotsState[key]
+    if (s?.currentUrl && !s.removeCurrent)
+      return s.currentUrl
   }
-  return categoryImg.value
+  return null
 })
 
-watch(selectedCategoryFile, file => {
-  if (previewImageUrl.value) {
-    URL.revokeObjectURL(previewImageUrl.value)
-    previewImageUrl.value = null
-  }
-  if (file) {
-    previewImageUrl.value = URL.createObjectURL(file)
-  }
-})
+const unifiedCatalogInputRef = ref(null)
 
-const triggerCategoryFileSelect = () => {
-  categoryFileInput.value?.click()
+const triggerUnifiedCatalogFileSelect = () => {
+  unifiedCatalogInputRef.value?.click()
 }
 
-const handleCategoryFileChange = event => {
+const handleParentCategoryToggle = value => {
+  if (value) {
+    parentCategory.value = null
+  }
+  else if (mobileTripleTileMode.value) {
+    mobileTripleTileMode.value = false
+    onMobileTripleModeToggle(false)
+  }
+}
+
+const setImageSlotInputRef = (slotKey, el) => {
+  if (imageSlotsState[slotKey]) {
+    imageSlotsState[slotKey].inputRef = el
+  }
+}
+
+const getSelectedSlotFile = slotKey => {
+  const value = imageSlotsState[slotKey]?.file
+  if (!value) return null
+  if (Array.isArray(value)) return value[0] || null
+  return value
+}
+
+const clearSlotPreview = slotKey => {
+  const slotState = imageSlotsState[slotKey]
+  if (!slotState) return
+  if (slotState.previewUrl) {
+    URL.revokeObjectURL(slotState.previewUrl)
+    slotState.previewUrl = null
+  }
+}
+
+const triggerCategoryFileSelect = slotKey => {
+  imageSlotsState[slotKey]?.inputRef?.click()
+}
+
+const handleCategoryFileChange = (slotKey, event) => {
+  const slotState = imageSlotsState[slotKey]
+  if (!slotState) return
   const file = event.target?.files?.[0] || null
-  categoryImg.value = file
+  slotState.file = file
+  slotState.removeCurrent = false
+  clearSlotPreview(slotKey)
+  if (file) {
+    slotState.previewUrl = URL.createObjectURL(file)
+  }
   if (event.target) {
     event.target.value = ''
+  }
+}
+
+const handleUnifiedCatalogFileChange = event => {
+  const file = event.target?.files?.[0] || null
+  UNIFIED_CATALOG_SLOT_KEYS.forEach(key => {
+    const slotState = imageSlotsState[key]
+    if (!slotState) return
+    clearSlotPreview(key)
+    slotState.removeCurrent = false
+    slotState.file = null
+  })
+  imageSlotsState.main.file = file
+  if (file)
+    imageSlotsState.main.previewUrl = URL.createObjectURL(file)
+  if (event.target)
+    event.target.value = ''
+}
+
+const removeUnifiedCatalogImages = async () => {
+  const unifiedSlotConfigs = IMAGE_SLOTS.filter(s => UNIFIED_CATALOG_SLOT_KEY_SET.has(s.key))
+  UNIFIED_CATALOG_SLOT_KEYS.forEach(key => {
+    const slotState = imageSlotsState[key]
+    if (!slotState) return
+    clearSlotPreview(key)
+    slotState.file = null
+    slotState.removeCurrent = true
+    slotState.currentUrl = null
+  })
+  if (props.categoryId) {
+    let lastResponse = null
+    for (const slot of unifiedSlotConfigs) {
+      try {
+        lastResponse = await $api(`admin/categories/${props.categoryId}/image?slot=${slot.slotApi}`, {
+          method: 'DELETE',
+        })
+      }
+      catch (error) {
+        console.error('Ошибка при удалении изображения:', error)
+      }
+    }
+    if (lastResponse) {
+      unifiedSlotConfigs.forEach(slot => {
+        const slotState = imageSlotsState[slot.key]
+        if (!slotState) return
+        slotState.currentUrl = withCacheBuster(lastResponse?.[slot.field] || null)
+        slotState.removeCurrent = false
+      })
+    }
   }
 }
 
@@ -221,15 +367,19 @@ const resetForm = () => {
   editor.value?.commands.clearContent()
   categoryTitle.value = null
   categorySlug.value = null
-  categoryImg.value = null
-  currentImageUrl.value = null
   parentCategory.value = null
+  isParentCategory.value = false
   parentStatus.value = null
-  removeCurrentImage.value = false
-  if (previewImageUrl.value) {
-    URL.revokeObjectURL(previewImageUrl.value)
-    previewImageUrl.value = null
-  }
+  mobileTripleTileMode.value = false
+  IMAGE_SLOTS.forEach(slot => {
+    const slotState = imageSlotsState[slot.key]
+    if (!slotState) return
+    clearSlotPreview(slot.key)
+    slotState.file = null
+    slotState.currentUrl = null
+    slotState.removeCurrent = false
+    slotState.inputRef = null
+  })
 }
 
 const closeForm = () => {
@@ -261,16 +411,17 @@ const stripCacheBuster = url => {
   return url.replace(/([?&])t=\d+/, '').replace(/[?&]$/, '')
 }
 
-const uploadCategoryImage = async (categoryId) => {
-  if (!selectedCategoryFile.value) {
+const uploadCategoryImage = async (categoryId, slotConfig, fileOverride = null) => {
+  const selectedFile = fileOverride ?? getSelectedSlotFile(slotConfig.key)
+  if (!selectedFile) {
     return null
   }
 
   const formData = new FormData()
-  formData.append('file', selectedCategoryFile.value)
+  formData.append('file', selectedFile)
 
   const accessToken = getAccessToken()
-  const response = await fetch(`/api/admin/categories/${categoryId}/image`, {
+  const response = await fetch(`/api/admin/categories/${categoryId}/image?slot=${slotConfig.slotApi}`, {
     method: 'POST',
     headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
     body: formData,
@@ -283,15 +434,58 @@ const uploadCategoryImage = async (categoryId) => {
 
   const responseJson = await response.json()
 
-  return responseJson?.imageUrl || null
+  return responseJson?.[slotConfig.field] || null
+}
+
+const removeCategoryImage = async slotConfig => {
+  const slotState = imageSlotsState[slotConfig.key]
+  if (!slotState) return
+  slotState.file = null
+  slotState.removeCurrent = true
+  slotState.currentUrl = null
+  clearSlotPreview(slotConfig.key)
+
+  if (props.categoryId) {
+    try {
+      const response = await $api(`admin/categories/${props.categoryId}/image?slot=${slotConfig.slotApi}`, {
+        method: 'DELETE',
+      })
+      slotState.currentUrl = withCacheBuster(response?.[slotConfig.field] || null)
+      slotState.removeCurrent = false
+    } catch (error) {
+      console.error('Ошибка при удалении изображения:', error)
+    }
+  }
 }
 
 const handleSubmit = async () => {
   const { valid } = await refVForm.value?.validate()
   if (!valid) return
-  if (!props.categoryId && !selectedCategoryFile.value) {
+  if (!props.categoryId && !getSelectedSlotFile('main')) {
     alert('Загрузите изображение категории')
     return
+  }
+
+  if (mobileTripleTileMode.value && isParentCategory.value) {
+    for (const key of ['mobile', 'mobile2', 'mobile3']) {
+      const st = imageSlotsState[key]
+      if (!st) continue
+      const hasImage = (st.currentUrl && !st.removeCurrent) || getSelectedSlotFile(key)
+      if (!hasImage) {
+        // eslint-disable-next-line no-alert
+        alert('В режиме «три фото в плитке» нужно загрузить ровно три изображения: фото 1, 2 и 3. Сейчас не хватает одного или нескольких.')
+        return
+      }
+    }
+  }
+  else {
+    const st = imageSlotsState.mobile
+    const hasMobile = st && ((st.currentUrl && !st.removeCurrent) || getSelectedSlotFile('mobile'))
+    if (!hasMobile) {
+      // eslint-disable-next-line no-alert
+      alert('Загрузите обязательное фото для мобильной плитки.')
+      return
+    }
   }
 
   try {
@@ -308,34 +502,44 @@ const handleSubmit = async () => {
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '') || ''
     
-    // Определяем imageUrl: если новое изображение не выбрано, используем текущий URL
-    let imageUrl = null
-    if (!removeCurrentImage.value && currentImageUrl.value) {
-      // При редактировании, если новое изображение не выбрано, используем текущий URL
-      imageUrl = stripCacheBuster(currentImageUrl.value)
-    }
-    
     // Определяем parentId - преобразуем в число, если значение есть
     let parentIdValue = null
-    if (parentCategory.value !== null && parentCategory.value !== undefined && parentCategory.value !== '') {
+    if (!isParentCategory.value && parentCategory.value !== null && parentCategory.value !== undefined && parentCategory.value !== '') {
       const numValue = Number(parentCategory.value)
       // Проверяем, что это валидное число и больше 0
       if (!isNaN(numValue) && numValue > 0) {
         parentIdValue = numValue
       }
     }
+
+    const isRootCategory = isParentCategory.value
     
     // Подготовка данных для отправки
     const categoryData = {
       name: categoryTitle.value,
       slug: formattedSlug,
       description: description,
-      imageUrl: imageUrl,
       isActive: isActive,
       sortOrder: 0,
       parentId: parentIdValue,
     }
-    
+
+    IMAGE_SLOTS.forEach(slot => {
+      if (slot.rootOnly && !isRootCategory) {
+        categoryData[slot.field] = null
+        return
+      }
+      const slotState = imageSlotsState[slot.key]
+      categoryData[slot.field] = (!slotState.removeCurrent && slotState.currentUrl)
+        ? stripCacheBuster(slotState.currentUrl)
+        : null
+    })
+
+    if (!mobileTripleTileMode.value || !isRootCategory) {
+      categoryData.mobileImageUrl2 = null
+      categoryData.mobileImageUrl3 = null
+    }
+
     // Отправка на бэкенд
     let savedCategoryId = props.categoryId
     if (props.categoryId) {
@@ -354,28 +558,34 @@ const handleSubmit = async () => {
       savedCategoryId = response?.id
     }
 
-    if (savedCategoryId && selectedCategoryFile.value) {
-      try {
-        const uploadedImageUrl = await uploadCategoryImage(savedCategoryId)
-        if (uploadedImageUrl) {
-          currentImageUrl.value = withCacheBuster(uploadedImageUrl)
-          removeCurrentImage.value = false
+    if (savedCategoryId) {
+      const unifiedCatalogUploadFile = getSelectedSlotFile('main')
+      for (const slot of IMAGE_SLOTS) {
+        if (slot.rootOnly && !isRootCategory) continue
+        if (!isRootCategory && (slot.key === 'mobile2' || slot.key === 'mobile3')) continue
+        const slotState = imageSlotsState[slot.key]
+        const fileToUpload = UNIFIED_CATALOG_SLOT_KEY_SET.has(slot.key)
+          ? unifiedCatalogUploadFile
+          : getSelectedSlotFile(slot.key)
+        if (!fileToUpload) continue
+        try {
+          const uploadedImageUrl = await uploadCategoryImage(savedCategoryId, slot, fileToUpload)
+          if (uploadedImageUrl) {
+            slotState.currentUrl = withCacheBuster(uploadedImageUrl)
+            slotState.removeCurrent = false
+          }
+          slotState.file = null
+          clearSlotPreview(slot.key)
+        } catch (uploadErr) {
+          console.error('Ошибка загрузки изображения категории:', uploadErr)
+          const msg = uploadErr?.message || uploadErr?.toString?.() || 'Не удалось загрузить файл'
+          // eslint-disable-next-line no-alert
+          alert(`Категория сохранена, но изображение (${slot.label}) не загрузилось.\n\n${msg}\n\nПроверьте размер (до 20 МБ) и формат (JPG, PNG, WEBP).`)
+          await fetchCategories()
+          emit('categoryCreated')
+          return
         }
-        categoryImg.value = null
-      } catch (uploadErr) {
-        console.error('Ошибка загрузки изображения категории:', uploadErr)
-        const msg = uploadErr?.message || uploadErr?.toString?.() || 'Не удалось загрузить файл'
-        // eslint-disable-next-line no-alert
-        alert(`Категория сохранена, но изображение не загрузилось.\n\n${msg}\n\nПроверьте размер (до 20 МБ) и формат (JPG, PNG, WEBP).`)
-        await fetchCategories()
-        emit('categoryCreated')
-        return
       }
-    }
-
-    if (removeCurrentImage.value) {
-      currentImageUrl.value = null
-      removeCurrentImage.value = false
     }
 
     // Успешно создано/обновлено - обновляем список категорий и закрываем drawer
@@ -436,8 +646,31 @@ const handleSubmit = async () => {
               </VCol>
 
               <VCol cols="12">
+                <VSwitch
+                  v-model="isParentCategory"
+                  color="primary"
+                  label="Это родительская категория"
+                  inset
+                  @update:model-value="handleParentCategoryToggle"
+                />
+              </VCol>
+
+              <VCol
+                v-if="!isParentCategory"
+                cols="12"
+              >
+                <AppSelect
+                  v-model="parentCategory"
+                  label="Родительская категория"
+                  placeholder="Выберите родительскую категорию"
+                  :items="parentCategoryOptions"
+                  clearable
+                />
+              </VCol>
+
+              <VCol cols="12">
                 <VLabel>
-                  <span class="text-sm text-high-emphasis mb-1">Вложение</span>
+                  <span class="text-sm text-high-emphasis mb-1">Фото категории (каталог, меню, коллекции)</span>
                 </VLabel>
 
                 <div class="d-flex align-center gap-4">
@@ -447,14 +680,8 @@ const handleSubmit = async () => {
                     variant="tonal"
                   >
                     <img
-                      v-if="previewImageUrl"
-                      :src="previewImageUrl"
-                      :alt="categoryTitle || 'Изображение категории'"
-                      style="width: 100%; height: 100%; object-fit: cover;"
-                    >
-                    <img
-                      v-else-if="currentImageUrl && !removeCurrentImage"
-                      :src="currentImageUrl"
+                      v-if="unifiedCatalogPreviewSrc"
+                      :src="unifiedCatalogPreviewSrc"
                       :alt="categoryTitle || 'Изображение категории'"
                       style="width: 100%; height: 100%; object-fit: cover;"
                     >
@@ -468,41 +695,182 @@ const handleSubmit = async () => {
 
                   <div class="d-flex flex-column gap-2">
                     <input
-                      ref="categoryFileInput"
+                      ref="unifiedCatalogInputRef"
                       type="file"
                       class="d-none"
                       accept="image/png,image/jpeg,image/jpg,image/webp"
-                      @change="handleCategoryFileChange"
+                      @change="handleUnifiedCatalogFileChange"
                     >
                     <VBtn
                       variant="tonal"
-                      @click="triggerCategoryFileSelect"
+                      @click="triggerUnifiedCatalogFileSelect"
                     >
-                      {{ currentImageUrl || selectedCategoryFile ? 'Изменить' : 'Загрузить' }}
+                      {{ unifiedCatalogPreviewSrc || getSelectedSlotFile('main') ? 'Изменить' : 'Загрузить' }}
                     </VBtn>
                     <VBtn
-                      v-if="currentImageUrl || selectedCategoryFile"
+                      v-if="unifiedCatalogPreviewSrc || getSelectedSlotFile('main')"
                       variant="tonal"
                       color="error"
-                      @click="removeCategoryImage"
+                      @click="removeUnifiedCatalogImages"
                     >
                       Удалить фото
                     </VBtn>
                     <div class="text-body-2 text-medium-emphasis">
-                      Одно фото на категорию
+                      Одно изображение для карточки категории, пункта меню и блока коллекций на главной
                     </div>
                   </div>
                 </div>
               </VCol>
 
-              <VCol cols="12">
-                <AppSelect
-                  v-model="parentCategory"
-                  label="Родительская категория"
-                  placeholder="Выберите родительскую категорию (необязательно)"
-                  :items="parentCategoryOptions"
-                  clearable
+              <VCol
+                v-for="slot in separateBannerSlots"
+                :key="slot.key"
+                cols="12"
+              >
+                <VLabel>
+                  <span class="text-sm text-high-emphasis mb-1">{{ slot.label }}</span>
+                </VLabel>
+
+                <div class="d-flex align-center gap-4">
+                  <VAvatar
+                    size="120"
+                    rounded
+                    variant="tonal"
+                  >
+                    <img
+                      v-if="imageSlotsState[slot.key].previewUrl"
+                      :src="imageSlotsState[slot.key].previewUrl"
+                      :alt="categoryTitle || 'Изображение категории'"
+                      style="width: 100%; height: 100%; object-fit: cover;"
+                    >
+                    <img
+                      v-else-if="imageSlotsState[slot.key].currentUrl && !imageSlotsState[slot.key].removeCurrent"
+                      :src="imageSlotsState[slot.key].currentUrl"
+                      :alt="categoryTitle || 'Изображение категории'"
+                      style="width: 100%; height: 100%; object-fit: cover;"
+                    >
+                    <span
+                      v-else
+                      class="text-body-2 text-medium-emphasis"
+                    >
+                      Нет фото
+                    </span>
+                  </VAvatar>
+
+                  <div class="d-flex flex-column gap-2">
+                    <input
+                      :ref="el => setImageSlotInputRef(slot.key, el)"
+                      type="file"
+                      class="d-none"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      @change="event => handleCategoryFileChange(slot.key, event)"
+                    >
+                    <VBtn
+                      variant="tonal"
+                      @click="triggerCategoryFileSelect(slot.key)"
+                    >
+                      {{ imageSlotsState[slot.key].currentUrl || getSelectedSlotFile(slot.key) ? 'Изменить' : 'Загрузить' }}
+                    </VBtn>
+                    <VBtn
+                      v-if="imageSlotsState[slot.key].currentUrl || getSelectedSlotFile(slot.key)"
+                      variant="tonal"
+                      color="error"
+                      @click="removeCategoryImage(slot)"
+                    >
+                      Удалить фото
+                    </VBtn>
+                    <div class="text-body-2 text-medium-emphasis">
+                      Только для родительской категории
+                    </div>
+                  </div>
+                </div>
+              </VCol>
+
+              <VCol
+                v-if="isParentCategory"
+                cols="12"
+              >
+                <VSwitch
+                  v-model="mobileTripleTileMode"
+                  color="primary"
+                  inset
+                  hide-details
+                  label="Плитка каталога: три фото в ряд"
+                  @update:model-value="onMobileTripleModeToggle"
                 />
+                <div class="text-body-2 text-medium-emphasis mt-1">
+                  Доступно только для родительской категории. Включите и загрузите <strong>ровно три</strong> фото (слоты 1–3). Иначе оставьте выключенным и используйте одно фото для мобильной плитки.
+                </div>
+              </VCol>
+
+              <VCol
+                v-for="slot in separateNonBannerFiltered"
+                :key="slot.key"
+                cols="12"
+              >
+                <VLabel>
+                  <span class="text-sm text-high-emphasis mb-1">{{ ['mobile','mobile2','mobile3'].includes(slot.key) ? getMobileSlotLabel(slot) : slot.label }}</span>
+                </VLabel>
+
+                <div class="d-flex align-center gap-4">
+                  <VAvatar
+                    size="120"
+                    rounded
+                    variant="tonal"
+                  >
+                    <img
+                      v-if="imageSlotsState[slot.key].previewUrl"
+                      :src="imageSlotsState[slot.key].previewUrl"
+                      :alt="categoryTitle || 'Изображение категории'"
+                      style="width: 100%; height: 100%; object-fit: cover;"
+                    >
+                    <img
+                      v-else-if="imageSlotsState[slot.key].currentUrl && !imageSlotsState[slot.key].removeCurrent"
+                      :src="imageSlotsState[slot.key].currentUrl"
+                      :alt="categoryTitle || 'Изображение категории'"
+                      style="width: 100%; height: 100%; object-fit: cover;"
+                    >
+                    <span
+                      v-else
+                      class="text-body-2 text-medium-emphasis"
+                    >
+                      Нет фото
+                    </span>
+                  </VAvatar>
+
+                  <div class="d-flex flex-column gap-2">
+                    <input
+                      :ref="el => setImageSlotInputRef(slot.key, el)"
+                      type="file"
+                      class="d-none"
+                      accept="image/png,image/jpeg,image/jpg,image/webp"
+                      @change="event => handleCategoryFileChange(slot.key, event)"
+                    >
+                    <VBtn
+                      variant="tonal"
+                      @click="triggerCategoryFileSelect(slot.key)"
+                    >
+                      {{ imageSlotsState[slot.key].currentUrl || getSelectedSlotFile(slot.key) ? 'Изменить' : 'Загрузить' }}
+                    </VBtn>
+                    <VBtn
+                      v-if="imageSlotsState[slot.key].currentUrl || getSelectedSlotFile(slot.key)"
+                      variant="tonal"
+                      color="error"
+                      @click="removeCategoryImage(slot)"
+                    >
+                      Удалить фото
+                    </VBtn>
+                    <div class="text-body-2 text-medium-emphasis">
+                      {{
+                        mobileTripleTileMode && isParentCategory && ['mobile','mobile2','mobile3'].includes(slot.key)
+                          ? 'Обязательно все три фото в этом режиме.'
+                          : (slot.key === 'mobile'
+                            ? 'Обязательно: одно фото для мобильной плитки (каталог на телефоне).'
+                            : 'Отдельное фото для этого блока')
+                      }}
+                    </div>
+                  </div>
+                </div>
               </VCol>
 
               <VCol cols="12">

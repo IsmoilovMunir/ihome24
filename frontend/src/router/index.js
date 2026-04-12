@@ -27,6 +27,22 @@ const routes = [
     name: 'Products',
     component: Products,
   },
+  /* Каталог по ЧПУ: /category/slug_родителя/slug_ребёнка/… (тот же компонент, что и /products) */
+  {
+    path: '/category/:parentSlug/:childSlug/:grandSlug',
+    name: 'ProductsCategory3',
+    component: Products,
+  },
+  {
+    path: '/category/:parentSlug/:childSlug',
+    name: 'ProductsCategory2',
+    component: Products,
+  },
+  {
+    path: '/category/:parentSlug',
+    name: 'ProductsCategory1',
+    component: Products,
+  },
   {
     path: '/products/:id/:variantSku?',
     name: 'ProductDetail',

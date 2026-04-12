@@ -302,7 +302,7 @@
             @mouseleave="cancelScheduledSubmenuOpen"
           >
             <router-link
-              :to="`/products?category=${parentCategory.id}`"
+              :to="categoryHref(parentCategory)"
               :class="['menu-link', { 'menu-link-active': isCategoryActive(parentCategory.id) }]"
               exact-active-class=""
               @click="handleMainMenuClick"
@@ -341,7 +341,7 @@
                   <div class="submenu-title">
                     <router-link
                       v-if="!submenu.hasLevel3"
-                      :to="`/products?category=${submenu.level2Category.id}`"
+                      :to="categoryHref(submenu.level2Category)"
                       :class="['submenu-title-link', { 'submenu-title-link-active': isCategoryActive(submenu.level2Category.id) }]"
                       exact-active-class=""
                       @click="handleSubmenuClick"
@@ -363,7 +363,7 @@
                       class="submenu-item-wrapper"
                     >
                       <router-link
-                        :to="`/products?category=${level3Category.id}`"
+                        :to="categoryHref(level3Category)"
                         :class="['submenu-item-link', { 'submenu-item-link-active': isCategoryActive(level3Category.id) }]"
                         exact-active-class=""
                         @click="handleSubmenuClick"
@@ -435,7 +435,7 @@
                   <router-link
                     v-for="cat in searchResultsCategories"
                     :key="'cat-' + cat.id"
-                    :to="`/products?category=${cat.id}`"
+                    :to="categoryHref(cat)"
                     class="search-result-item search-result-category"
                     @click="closeSearch"
                   >
@@ -539,6 +539,7 @@ import { useProductsStore } from '../stores/products'
 import { usePersonalMenuStore } from '../stores/personalMenu'
 import { fileApi, geoApi } from '../services/api'
 import { productPath } from '../utils/productUrl'
+import { buildCategoryPath, resolveCategoryIdFromRoute } from '../utils/categoryUrl'
 
 const route = useRoute()
 const router = useRouter()
@@ -602,17 +603,23 @@ const searchInputRef = ref(null)
 
 const categories = computed(() => productsStore.categories)
 
+const currentCategoryRouteId = computed(() =>
+  resolveCategoryIdFromRoute(route, productsStore.categories),
+)
+
+const categoryHref = cat => buildCategoryPath(cat, productsStore.categories)
+
 // Проверка, активна ли категория
 const isCategoryActive = (categoryId) => {
-  const currentCategoryId = route.query.category
-  if (!currentCategoryId) return false
+  const currentCategoryId = currentCategoryRouteId.value
+  if (currentCategoryId == null) return false
   return String(categoryId) === String(currentCategoryId)
 }
 
 // Проверка, активна ли любая из дочерних категорий уровня 3
 const hasActiveChild = (level2CategoryId) => {
-  const currentCategoryId = route.query.category
-  if (!currentCategoryId) return false
+  const currentCategoryId = currentCategoryRouteId.value
+  if (currentCategoryId == null) return false
   const level3Categories = getChildCategories(level2CategoryId)
   return level3Categories.some(cat => String(cat.id) === String(currentCategoryId))
 }
@@ -636,13 +643,15 @@ const getCurrentCategoryData = () => {
 // Получить картинку категории
 const getCategoryImage = () => {
   const category = getCurrentCategoryData()
-  if (!category || !category.imageUrl) return null
+  if (!category) return null
+  const menuImagePath = category.menuImageUrl || category.imageUrl
+  if (!menuImagePath) return null
   // By design: hide category photo when submenu expands beyond 2 "rows"/columns.
   // This prevents the header dropdown from looking broken for long category lists.
   const groups = getCategoryGroups()
   if (groups && groups.length > 2)
     return null
-  return fileApi.getFileUrl(category.imageUrl)
+  return fileApi.getFileUrl(menuImagePath)
 }
 
 // Группировать дочерние категории для отображения в колонках

@@ -37,7 +37,7 @@
                 <router-link
                   v-for="cat in searchResultsCategories"
                   :key="'cat-' + cat.id"
-                  :to="`/products?category=${cat.id}`"
+                  :to="categoryHref(cat)"
                   class="search-page-category-link"
                 >
                   {{ cat.name }}
@@ -66,11 +66,14 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '../stores/products'
+import { buildCategoryPath } from '../utils/categoryUrl'
 import ProductCard from '../components/ProductCard.vue'
 
 const route = useRoute()
 const router = useRouter()
 const productsStore = useProductsStore()
+
+const categoryHref = cat => buildCategoryPath(cat, productsStore.categories)
 
 const query = computed(() => (route.query.q || '').trim())
 const inputQuery = ref('')

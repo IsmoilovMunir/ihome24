@@ -32,14 +32,16 @@
     </div>
 
     <div :class="['container mx-auto', isMobile ? 'px-2 py-4' : 'px-4 py-8']">
-      <div class="flex flex-col md:flex-row gap-8">
+      <div class="flex flex-col md:flex-row md:items-start gap-8">
         <!-- Sidebar - показываем только если выбрана категория и не мобильное устройство -->
-        <aside v-if="sidebarCategory && !isMobile" class="w-full md:w-64">
-          <div class="category-sidebar sticky top-[110px]">
-            <h3 class="category-sidebar-title">{{ sidebarCategory.name }}</h3>
-            <ul class="category-sidebar-list">
+        <aside v-if="sidebarCategory && !isMobile" class="category-sidebar-aside w-full shrink-0 self-start md:w-64">
+          <div class="category-sidebar category-sidebar-sticky">
+            <div class="category-sidebar-panel">
+              <h3 class="category-sidebar-title">{{ sidebarCategory.name }}</h3>
+              <nav class="category-sidebar-scroll" aria-label="Подкатегории">
+                <ul class="category-sidebar-list">
               <!-- Кнопка "Показать все" вместо родительской категории уровня 2 -->
-              <li class="category-sidebar-item">
+              <li class="category-sidebar-item category-sidebar-item-show-all">
                 <button
                   @click="showAllProducts"
                   :class="['category-sidebar-button', { 'category-sidebar-button-active': !selectedCategoryId || isCategoryActive(sidebarCategory.id) }]"
@@ -80,7 +82,7 @@
                       class="category-sidebar-subitem"
                     >
                       <router-link
-                        :to="`/products?category=${level3Category.id}`"
+                        :to="categoryPath(level3Category)"
                         :class="['category-sidebar-link category-sidebar-sublink', { 'category-sidebar-link-active': isCategoryActive(level3Category.id) }]"
                       >
                         {{ level3Category.name }}
@@ -91,13 +93,15 @@
                 <!-- Если у категории уровня 2 нет дочерних - обычная ссылка -->
                 <router-link
                   v-else
-                  :to="`/products?category=${level2Category.id}`"
+                  :to="categoryPath(level2Category)"
                   :class="['category-sidebar-link', { 'category-sidebar-link-active': isCategoryActive(level2Category.id) }]"
                 >
                   {{ level2Category.name }}
                 </router-link>
               </li>
             </ul>
+              </nav>
+            </div>
           </div>
         </aside>
 
@@ -170,6 +174,7 @@
               <div v-else>
                 <!-- Показываем дочерние категории (уровень 2 или 3) -->
                 <CatalogCategoryGrid
+                  nested-mobile-layout
                   :categories="childCategoriesToShow"
                   :special-categories-config="specialCategoriesConfig"
                 />
@@ -232,6 +237,7 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '../stores/products'
 import { fileApi } from '../services/api'
+import { buildCategoryPath, resolveCategoryIdFromRoute } from '../utils/categoryUrl'
 import ProductCard from '../components/ProductCard.vue'
 import CatalogCategoryGrid from '../components/CatalogCategoryGrid.vue'
 
@@ -240,9 +246,10 @@ const router = useRouter()
 const productsStore = useProductsStore()
 
 const selectedCategoryId = computed(() => {
-  const categoryId = route.query.category
-  return categoryId ? Number(categoryId) : null
+  return resolveCategoryIdFromRoute(route, productsStore.categories)
 })
+
+const categoryPath = cat => buildCategoryPath(cat, productsStore.categories)
 
 const selectedCategory = computed(() => {
   if (!selectedCategoryId.value) return null
@@ -391,12 +398,14 @@ const bannerCategory = computed(() => {
   return topLevelCategory.value
 })
 
-// Для баннера используем original (максимальное качество) с fallback на large/обычный URL
+// Только отдельное поле баннера — не подставляем imageUrl (каталог/меню/коллекции), чтобы картинки не дублировались
 const bannerCategoryImageUrl = computed(() => {
-  if (!bannerCategory.value || !bannerCategory.value.imageUrl) return null
-  return fileApi.getImageUrlOriginal(bannerCategory.value.imageUrl)
-    || fileApi.getImageUrlLarge(bannerCategory.value.imageUrl)
-    || fileApi.getFileUrl(bannerCategory.value.imageUrl)
+  if (!bannerCategory.value) return null
+  const bannerPath = bannerCategory.value.bannerImageUrl
+  if (!bannerPath) return null
+  return fileApi.getImageUrlOriginal(bannerPath)
+    || fileApi.getImageUrlLarge(bannerPath)
+    || fileApi.getFileUrl(bannerPath)
 })
 
 // Получить название родительской категории для отображения рядом со стрелкой "Назад"
@@ -593,7 +602,7 @@ const scrollToProducts = () => {
 
 const showAllProducts = () => {
   // Переходим на страницу с родительской категорией (показываем все товары)
-  router.push(`/products?category=${sidebarCategory.value.id}`)
+  router.push(categoryPath(sidebarCategory.value))
   scrollToProducts()
 }
 
@@ -615,13 +624,50 @@ const goToParentCategory = () => {
     const parent = productsStore.categories.find(c => c.id === selectedCategory.value.parentId)
     if (parent && parent.parentId) {
       // Текущая категория — уровень 3, родитель — уровень 2; переходим на уровень 1
-      router.push(`/products?category=${parent.parentId}`)
-      return
+      const level1 = productsStore.categories.find(c => c.id === parent.parentId)
+      if (level1) {
+        router.push(categoryPath(level1))
+        return
+      }
     }
   }
-  
-  router.push(`/products?category=${selectedCategory.value.parentId}`)
+
+  const parentCat = productsStore.categories.find(c => c.id === selectedCategory.value.parentId)
+  if (parentCat) {
+    router.push(categoryPath(parentCat))
+    return
+  }
+  router.push('/products')
 }
+
+// Старые ссылки ?category=id → канонический путь /category/…
+watch(
+  () => [route.path, route.query.category, productsStore.categories],
+  () => {
+    if (route.path !== '/products') return
+    const raw = route.query?.category
+    if (raw === undefined || raw === null || raw === '') return
+    if (!productsStore.categories.length) return
+    const cat = productsStore.categories.find(c => c.id === Number(raw))
+    if (!cat) return
+    const next = buildCategoryPath(cat, productsStore.categories)
+    if (next.startsWith('/category/'))
+      router.replace(next)
+  },
+  { flush: 'post' },
+)
+
+// Неверный ЧПУ /category/… → каталог
+watch(
+  () => [route.path, productsStore.categories],
+  () => {
+    if (!route.path.startsWith('/category/')) return
+    if (!productsStore.categories.length) return
+    if (resolveCategoryIdFromRoute(route, productsStore.categories) != null) return
+    router.replace('/products')
+  },
+  { flush: 'post' },
+)
 
 onMounted(async () => {
   checkMobile()
@@ -843,13 +889,84 @@ onMounted(async () => {
   }
 }
 
-/* Боковое меню категорий */
+/* Боковое меню категорий: blur на ::before + pointer-events: none — иначе колесо/тач не доходят до overflow */
 .category-sidebar {
-  background: rgba(46, 40, 38, 0.7);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  position: relative;
   border-radius: 12px;
   padding: 24px;
+  box-sizing: border-box;
+  background: transparent;
+}
+
+.category-sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: 12px;
+  background: rgba(46, 40, 38, 0.82);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  pointer-events: none;
+}
+
+.category-sidebar > .category-sidebar-panel {
+  position: relative;
+  z-index: 1;
+}
+
+/* Колонка не тянется на высоту main — иначе flex ломает внутренний overflow */
+.category-sidebar-aside {
+  min-height: 0;
+  align-self: flex-start;
+}
+
+/* Прилипание к шапке; без общей высоты с blur — см. .category-sidebar-panel */
+.category-sidebar-sticky {
+  position: sticky;
+  top: 110px;
+  width: 100%;
+}
+
+/* Панель: только обёртка; высоту задаём только зоне списка — так скролл стабильно внутри nav */
+.category-sidebar-panel {
+  display: block;
+  min-width: 0;
+}
+
+/*
+  Отдельный скролл только этой секции: явная max-height (не flex), иначе блок растёт с контентом.
+  260px ≈ шапка + заголовок «Дом» + отступы; min() ограничивает на низких экранах.
+*/
+.category-sidebar-scroll {
+  display: block;
+  width: 100%;
+  max-height: min(65vh, calc(100vh - 250px));
+  max-height: min(65vh, calc(100dvh - 250px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 4px;
+  margin-right: -4px;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.35) rgba(0, 0, 0, 0.15);
+  pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.category-sidebar-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.category-sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22);
+  border-radius: 3px;
+}
+
+.category-sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 .category-sidebar-title {
@@ -859,8 +976,8 @@ onMounted(async () => {
   color: #fff;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  margin-bottom: 20px;
-  padding-bottom: 12px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -872,6 +989,22 @@ onMounted(async () => {
 
 .category-sidebar-item {
   margin-bottom: 8px;
+}
+
+/* Кнопка «Показать все» — компактнее, подкатегории сразу под ней */
+.category-sidebar-item-show-all {
+  margin-bottom: 4px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.category-sidebar-item-show-all .category-sidebar-button {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.category-sidebar-item-show-all + .category-sidebar-item {
+  margin-top: 4px;
 }
 
 .category-sidebar-item:last-child {
