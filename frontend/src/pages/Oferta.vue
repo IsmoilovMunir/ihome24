@@ -90,7 +90,7 @@
             <p class="oferta-item"><strong>Юридический адрес:</strong><br>115612, г. Москва, МКАД, 19-й километр, вл20с1</p>
             <p class="oferta-item"><strong>Фактический адрес:</strong><br>115612, г. Москва, МКАД, 19-й километр, вл20с1</p>
             <p class="oferta-item">
-              Телефон: <a href="tel:+79267774738" class="oferta-link">+7 926 777 4738</a><br>
+              Телефон: <a href="tel:+79809416666" class="oferta-link">+7 980 941-66-66</a><br>
               Email: <a href="mailto:info@ihome24.ru" class="oferta-link">info@ihome24.ru</a><br>
               Время работы: ежедневно с 08:00 до 22:00
             </p>

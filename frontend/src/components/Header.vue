@@ -7,13 +7,13 @@
           <button
             type="button"
             class="header-phone-btn"
-            aria-label="Контакты +7 (933) 270-82-82"
+            aria-label="Контакты +7 (980) 941-66-66"
             :aria-expanded="phoneContactOpen"
             aria-haspopup="true"
             aria-controls="header-phone-contact-panel"
             @click.stop="togglePhoneContact"
           >
-            <span class="header-phone-btn__text">+7 (933) 270-82-82</span>
+            <span class="header-phone-btn__text">+7 (980) 941-66-66</span>
             <span class="header-phone-btn__icon-mobile" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
@@ -30,7 +30,7 @@
             >
               <a
                 class="header-phone-dropdown__link"
-                href="tel:+79332708282"
+                href="tel:+79809416666"
                 role="menuitem"
                 @click="closePhoneContact"
               >
@@ -43,7 +43,7 @@
               </a>
               <a
                 class="header-phone-dropdown__link"
-                href="https://wa.me/79332708282"
+                href="https://wa.me/message/2OKPZVISKOGCD1"
                 target="_blank"
                 rel="noopener noreferrer"
                 role="menuitem"
@@ -58,7 +58,7 @@
               </a>
               <a
                 class="header-phone-dropdown__link"
-                href="https://t.me/+79332708282"
+                href="https://t.me/ihome24"
                 target="_blank"
                 rel="noopener noreferrer"
                 role="menuitem"
@@ -73,7 +73,7 @@
               </a>
               <a
                 class="header-phone-dropdown__link"
-                href="https://max.ru/"
+                href="https://max.ru/chat?phone=%2B79809416666"
                 target="_blank"
                 rel="noopener noreferrer"
                 role="menuitem"

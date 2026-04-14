@@ -21,10 +21,10 @@
               </a>
             </address>
             <a
-              href="tel:+79332708282"
+              href="tel:+79809416666"
               class="inline-flex w-fit text-base font-medium text-white transition-colors hover:text-[#F47327] md:text-lg"
             >
-              +7 (933) 270-82-82
+              +7 (980) 941-66-66
             </a>
             <div class="footer-social mt-4 flex flex-wrap items-center gap-4">
               <a
@@ -94,7 +94,7 @@ const yandexMapUrl = 'https://yandex.ru/maps/-/CPfc4L3-'
 
 const socialLinks = {
   instagram: 'https://www.instagram.com/ihome.24',
-  telegram: 'https://t.me/ihome_24',
+  telegram: 'https://t.me/ihome24',
 }
 
 const route = useRoute()
