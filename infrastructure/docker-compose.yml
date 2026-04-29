@@ -46,6 +46,8 @@ services:
   minio-setup:
     image: minio/mc:latest
     container_name: ihome24-minio-setup
+    profiles:
+      - init
     depends_on:
       - minio
     entrypoint: >
