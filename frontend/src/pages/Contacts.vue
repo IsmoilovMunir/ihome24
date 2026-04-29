@@ -72,7 +72,57 @@
 </template>
 
 <script setup>
+import { onMounted, onUnmounted } from 'vue'
+
 const phoneClean = '+79809416666'
+const SEO_SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://ihome24.ru').replace(/\/$/, '')
+
+const upsertJsonLdScript = (id, data) => {
+  let script = document.head.querySelector(`script[data-seo-jsonld="${id}"]`)
+  if (!script) {
+    script = document.createElement('script')
+    script.type = 'application/ld+json'
+    script.setAttribute('data-seo-jsonld', id)
+    document.head.appendChild(script)
+  }
+  script.textContent = JSON.stringify(data)
+}
+
+const removeJsonLdScript = (id) => {
+  const script = document.head.querySelector(`script[data-seo-jsonld="${id}"]`)
+  if (script) script.remove()
+}
+
+onMounted(() => {
+  upsertJsonLdScript('contacts-organization', {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'iHome24',
+    url: `${SEO_SITE_URL}/`,
+    email: 'info@ihome24.ru',
+    telephone: phoneClean,
+    address: {
+      '@type': 'PostalAddress',
+      addressCountry: 'RU',
+      addressLocality: 'Москва',
+      postalCode: '115612',
+      streetAddress: 'МКАД, 19-й километр, вл20с1',
+    },
+    contactPoint: [
+      {
+        '@type': 'ContactPoint',
+        telephone: phoneClean,
+        contactType: 'customer support',
+        areaServed: 'RU',
+        availableLanguage: ['ru'],
+      },
+    ],
+  })
+})
+
+onUnmounted(() => {
+  removeJsonLdScript('contacts-organization')
+})
 </script>
 
 <style scoped>

@@ -184,12 +184,29 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useProductsStore } from '../stores/products'
 import ProductCard from '../components/ProductCard.vue'
 import CollectionCard from '../components/CollectionCard.vue'
 
 const productsStore = useProductsStore()
+const SEO_SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://ihome24.ru').replace(/\/$/, '')
+
+const upsertJsonLdScript = (id, data) => {
+  let script = document.head.querySelector(`script[data-seo-jsonld="${id}"]`)
+  if (!script) {
+    script = document.createElement('script')
+    script.type = 'application/ld+json'
+    script.setAttribute('data-seo-jsonld', id)
+    document.head.appendChild(script)
+  }
+  script.textContent = JSON.stringify(data)
+}
+
+const removeJsonLdScript = (id) => {
+  const script = document.head.querySelector(`script[data-seo-jsonld="${id}"]`)
+  if (script) script.remove()
+}
 
 // Функции для вычисления стилей grid позиций
 const getCollectionLeftStyle = (cycle) => {
@@ -252,11 +269,38 @@ const featuredProducts = computed(() => {
 const categories = computed(() => productsStore.categories.filter(cat => cat.imageUrl).slice(0, 10))
 
 onMounted(async () => {
+  upsertJsonLdScript('website', {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'iHome24',
+    url: `${SEO_SITE_URL}/`,
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: `${SEO_SITE_URL}/search?q={search_term_string}`,
+      'query-input': 'required name=search_term_string',
+    },
+  })
+
+  upsertJsonLdScript('organization', {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'iHome24',
+    url: `${SEO_SITE_URL}/`,
+    logo: `${SEO_SITE_URL}/photos/logo.svg`,
+    email: 'info@ihome24.ru',
+    telephone: '+79809416666',
+  })
+
   window.scrollTo(0, 0)
   document.documentElement.scrollTop = 0
   document.body.scrollTop = 0
   await productsStore.fetchProducts()
   await productsStore.fetchCategories()
+})
+
+onUnmounted(() => {
+  removeJsonLdScript('website')
+  removeJsonLdScript('organization')
 })
 </script>
 
@@ -274,7 +318,7 @@ onMounted(async () => {
 .home-hero-banner-bg {
   position: absolute;
   inset: 0;
-  background-image: url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=1600');
+  background-image: url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=1400&q=60');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;

@@ -42,7 +42,7 @@ public class SecurityConfig {
                 )
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/h2-console/**").permitAll()
+                        .requestMatchers("/", "/sitemap.xml", "/sitemap-static.xml", "/sitemap-categories.xml", "/sitemap-products.xml", "/h2-console/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll() // Разрешаем доступ к actuator endpoints для мониторинга
                         .requestMatchers("/api/publicapi/**").permitAll() // Разрешаем публичные API endpoints (регистрация и т.д.)
                         .requestMatchers("/api/auth/**").permitAll() // Разрешаем аутентификацию
