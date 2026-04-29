@@ -165,8 +165,28 @@ const resolveUserStatusVariant = stat => {
 
 const isAddNewUserDrawerVisible = ref(false)
 
-// API base URL для файлов и аватаров
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+// API origin для файлов и аватаров (без суффикса /api)
+const resolveApiOrigin = () => {
+  const configured = (import.meta.env.VITE_API_BASE_URL || '').trim()
+  const fallback = 'http://localhost:8080'
+  const rawBase = configured || fallback
+
+  if (typeof window === 'undefined') {
+    return rawBase.replace(/\/api\/?$/, '')
+  }
+
+  const host = window.location.hostname
+  const isCurrentHostLocal = ['localhost', '127.0.0.1', '::1'].includes(host)
+  const isConfiguredLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(\/.*)?$/i.test(rawBase)
+
+  if (!isCurrentHostLocal && isConfiguredLocalhost) {
+    return window.location.origin
+  }
+
+  return rawBase.replace(/\/api\/?$/, '')
+}
+
+const API_BASE_URL = resolveApiOrigin()
 
 const getAvatarUrl = avatar => {
   if (!avatar)
