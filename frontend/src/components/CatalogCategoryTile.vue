@@ -21,6 +21,8 @@
             v-for="(img, index) in specialImageUrlsList"
             :key="index"
             :src="img"
+            loading="lazy"
+            decoding="async"
             :alt="category.name"
             data-test="catalog-category-tile-img"
             :class="['catalog-category-tile-image', 'catalog-category-tile-image-multi']"
@@ -35,6 +37,8 @@
             v-for="(src, index) in mobileStripUrls"
             :key="index"
             :src="src"
+            loading="lazy"
+            decoding="async"
             :alt="category.name"
             data-test="catalog-category-tile-img"
             class="catalog-category-tile-strip-img"
@@ -43,7 +47,11 @@
         <img
           v-else-if="singleTileImageSrc"
           :src="singleTileImageSrc"
+          :srcset="singleTileImageSrcSet || undefined"
+          sizes="(max-width: 768px) 50vw, 33vw"
           :alt="category.name"
+          loading="lazy"
+          decoding="async"
           data-test="catalog-category-tile-img"
           class="catalog-category-tile-image"
         />
@@ -104,7 +112,7 @@ const specialImageUrlsList = computed(() => {
   return props.images.map(img => {
     if (typeof img === 'string' && (img.startsWith('http://') || img.startsWith('https://')))
       return img
-    return fileApi.getFileUrl(img)
+    return fileApi.getImageUrlBySize(img, 'medium')
   })
 })
 
@@ -121,7 +129,7 @@ const mobileStripUrls = computed(() => {
     props.category.mobileImageUrl3,
   ].filter(Boolean)
   if (paths.length === 3)
-    return paths.map(p => fileApi.getFileUrl(p))
+    return paths.map(p => fileApi.getImageUrlBySize(p, 'small'))
   return []
 })
 
@@ -140,9 +148,23 @@ const singleTileImageSrc = computed(() => {
     props.category.mobileImageUrl3,
   ].filter(Boolean)
   if (mobilePaths.length >= 1 && mobilePaths.length < 3)
-    return fileApi.getFileUrl(mobilePaths[0])
+    return fileApi.getImageUrlBySize(mobilePaths[0], 'small')
   if (props.category.imageUrl)
-    return fileApi.getFileUrl(props.category.imageUrl)
+    return fileApi.getImageUrlBySize(props.category.imageUrl, 'small')
+  return null
+})
+
+const singleTileImageSrcSet = computed(() => {
+  if (specialCarouselActive.value || isMobileStrip.value) return null
+  const mobilePaths = [
+    props.category.mobileImageUrl,
+    props.category.mobileImageUrl2,
+    props.category.mobileImageUrl3,
+  ].filter(Boolean)
+  if (mobilePaths.length >= 1 && mobilePaths.length < 3) {
+    return fileApi.getImageSrcSet(mobilePaths[0])
+  }
+  if (props.category.imageUrl) return fileApi.getImageSrcSet(props.category.imageUrl)
   return null
 })
 

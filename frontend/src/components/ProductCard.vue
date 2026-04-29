@@ -5,7 +5,11 @@
         <img
           v-if="imageUrl"
           :src="imageUrl"
+          :srcset="imageSrcSet || undefined"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           :alt="product.name"
+          loading="lazy"
+          decoding="async"
           class="w-[90%] h-[90%] object-contain transition-transform duration-300 ease-in-out group-hover:scale-[1.20]"
         />
         <div
@@ -132,9 +136,7 @@ onMounted(() => {
 const imageUrl = computed(() => {
   // Проверяем imageUrl
   if (props.product.imageUrl) {
-    const url = fileApi.getFileUrl(props.product.imageUrl)
-    console.log('ProductCard imageUrl:', props.product.imageUrl, '→', url)
-    return url
+    return fileApi.getImageUrlBySize(props.product.imageUrl, 'small')
   }
   
   // Проверяем images массив (в ProductImageResponse поле называется imageUrl, не url!)
@@ -143,13 +145,19 @@ const imageUrl = computed(() => {
     // Проверяем разные возможные поля (imageUrl - правильное поле из ProductImageResponse)
     const imgUrl = img.imageUrl || img.url || (typeof img === 'string' ? img : null)
     if (imgUrl) {
-      const url = fileApi.getFileUrl(imgUrl)
-      console.log('ProductCard images[0]:', img, '→', imgUrl, '→', url)
-      return url
+      return fileApi.getImageUrlBySize(imgUrl, 'small')
     }
   }
-  
-  console.log('ProductCard: No image found for product', props.product.id, props.product)
+  return null
+})
+
+const imageSrcSet = computed(() => {
+  if (props.product.imageUrl) return fileApi.getImageSrcSet(props.product.imageUrl)
+  if (props.product.images && props.product.images.length > 0) {
+    const img = props.product.images[0]
+    const imgUrl = img.imageUrl || img.url || (typeof img === 'string' ? img : null)
+    if (imgUrl) return fileApi.getImageSrcSet(imgUrl)
+  }
   return null
 })
 

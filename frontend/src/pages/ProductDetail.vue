@@ -29,7 +29,14 @@
               <img
                 :key="selectedImageIndex"
                 :src="mainImageUrl"
+                :srcset="mainImageSrcSet || undefined"
+                sizes="(max-width: 1024px) 100vw, 70vw"
                 :alt="product.name"
+                loading="eager"
+                fetchpriority="high"
+                decoding="async"
+                width="1280"
+                height="1280"
                 class="max-w-[97%] max-h-[97%] w-auto h-auto object-contain select-none"
                 draggable="false"
               />
@@ -475,7 +482,13 @@
           >
             <img
               :src="mainImageUrl"
+              :srcset="mainImageSrcSet || undefined"
+              sizes="100vw"
               :alt="product.name"
+              loading="lazy"
+              decoding="async"
+              width="1280"
+              height="1280"
               class="max-w-full max-h-full object-contain select-none pointer-events-none"
               draggable="false"
             />
@@ -548,7 +561,11 @@
             >
               <img
                 :src="getImageUrl(image.imageUrl || image.url)"
+                loading="lazy"
+                decoding="async"
                 :alt="`${product.name} - изображение ${index + 1}`"
+                width="64"
+                height="64"
                 class="w-[90%] h-[90%] object-cover"
               />
             </button>
@@ -1022,6 +1039,18 @@ watch(
 )
 
 const mainImageUrl = computed(() => displayedMainImageUrl.value || mainImageUrlFast.value)
+const mainImageSrcSet = computed(() => {
+  if (!product.value) return null
+  let filePath = null
+  if (product.value.images?.length > 0) {
+    const img = product.value.images[selectedImageIndex.value]
+    filePath = img?.imageUrl || img?.url || (typeof img === 'string' ? img : null)
+  } else if (product.value.imageUrl) {
+    filePath = product.value.imageUrl
+  }
+  if (!filePath) return null
+  return fileApi.getImageSrcSet(filePath)
+})
 
 const goToPrevImage = () => {
   if (!product.value?.images?.length) return

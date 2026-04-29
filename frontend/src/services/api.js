@@ -135,6 +135,27 @@ export const fileApi = {
     if (!base) return null
     return base.replace(/\/medium\//, '/large/').replace(/\/small\//, '/large/')
   },
+  /** URL изображения нужного размера (small | medium | large | original). */
+  getImageUrlBySize: (filePath, size = 'medium') => {
+    if (!filePath || filePath.trim() === '') return null
+    const base = fileApi.getFileUrl(filePath)
+    if (!base) return null
+    const target = String(size).toLowerCase()
+    if (!['small', 'medium', 'large', 'original'].includes(target)) return base
+    return base
+      .replace(/\/small\//, `/${target}/`)
+      .replace(/\/medium\//, `/${target}/`)
+      .replace(/\/large\//, `/${target}/`)
+      .replace(/\/original\//, `/${target}/`)
+  },
+  /** Srcset из доступных размеров (small/medium/large) для responsive image. */
+  getImageSrcSet: (filePath) => {
+    if (!filePath || filePath.trim() === '') return null
+    const small = fileApi.getImageUrlBySize(filePath, 'small')
+    const medium = fileApi.getImageUrlBySize(filePath, 'medium')
+    const large = fileApi.getImageUrlBySize(filePath, 'large')
+    return `${small} 300w, ${medium} 600w, ${large} 1200w`
+  },
   /** URL оригинала — максимальное качество (если доступен) */
   getImageUrlOriginal: (filePath) => {
     if (!filePath || filePath.trim() === '') return null
