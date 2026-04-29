@@ -5,6 +5,8 @@
     <link rel="icon" type="image/svg+xml" href="/photos/fiveicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="yandex-verification" content="af8d96cb29abf22a" />
+    <link rel="preconnect" href="https://images.unsplash.com" crossorigin />
+    <link rel="dns-prefetch" href="//images.unsplash.com" />
     <meta name="description" content="iHome24 - интернет-магазин товаров для дома и офиса. Каталог, актуальные цены, доставка." />
     <meta name="robots" content="index, follow" />
     <link rel="canonical" href="https://ihome24.ru/" />
@@ -55,8 +57,17 @@
     </script>
     <!-- Yandex.Metrika counter -->
     <script type="text/javascript">
-      window.addEventListener('load', function () {
-        setTimeout(function () {
+      (function () {
+        var metrikaLoaded = false;
+        var interactionEvents = ['pointerdown', 'keydown', 'touchstart'];
+
+        function initMetrika() {
+          if (metrikaLoaded) return;
+          metrikaLoaded = true;
+          interactionEvents.forEach(function (evt) {
+            window.removeEventListener(evt, initMetrika, { passive: true });
+          });
+
           (function(m,e,t,r,i,k,a){
             m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
             m[i].l=1*new Date();
@@ -65,8 +76,16 @@
           })(window, document,'script','https://mc.yandex.ru/metrika/tag.js?id=108143024', 'ym');
 
           ym(108143024, 'init', {ssr:true, webvisor:true, clickmap:true, ecommerce:"dataLayer", referrer: document.referrer, url: location.href, accurateTrackBounce:true, trackLinks:true});
-        }, 1200);
-      });
+        }
+
+        window.addEventListener('load', function () {
+          interactionEvents.forEach(function (evt) {
+            window.addEventListener(evt, initMetrika, { passive: true, once: true });
+          });
+          // Fallback: если пользователь ничего не нажал, всё равно запускаем метрику позже.
+          setTimeout(initMetrika, 10000);
+        });
+      })();
     </script>
     <noscript><div><img src="https://mc.yandex.ru/watch/108143024" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
     <!-- /Yandex.Metrika counter -->
