@@ -108,10 +108,10 @@ services:
       context: ../admin
       dockerfile: Dockerfile
       args:
-        VITE_API_BASE_URL: ${ADMIN_API_BASE_URL:-http://localhost:8080}
+        VITE_API_BASE_URL: ${ADMIN_API_BASE_URL:-http://localhost:8080/api}
     container_name: ihome24-admin
     environment:
-      VITE_API_BASE_URL: ${ADMIN_API_BASE_URL:-http://localhost:8080}
+      VITE_API_BASE_URL: ${ADMIN_API_BASE_URL:-http://localhost:8080/api}
     ports:
       - "${ADMIN_PORT:-5173}:5173"
     depends_on:

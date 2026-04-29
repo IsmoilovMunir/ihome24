@@ -1,7 +1,30 @@
 import { ofetch } from 'ofetch'
 
+const resolveAdminApiBaseUrl = () => {
+  const configured = (import.meta.env.VITE_API_BASE_URL || '').trim()
+  const fallback = '/api'
+  const rawBase = configured || fallback
+
+  if (typeof window === 'undefined') return rawBase
+
+  const host = window.location.hostname
+  const isCurrentHostLocal = ['localhost', '127.0.0.1', '::1'].includes(host)
+  const isConfiguredLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?(\/.*)?$/i.test(rawBase)
+
+  if (!isCurrentHostLocal && isConfiguredLocalhost) {
+    return `${window.location.origin}/api`
+  }
+
+  // Для админки endpoints ожидают base с /api.
+  if (/^https?:\/\//i.test(rawBase) && !rawBase.endsWith('/api')) {
+    return `${rawBase.replace(/\/+$/, '')}/api`
+  }
+
+  return rawBase
+}
+
 export const $api = ofetch.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || '/api',
+  baseURL: resolveAdminApiBaseUrl(),
   // Prevent UI "hangs" when backend/proxy doesn't respond.
   // Per-request timeout can still override this default.
   timeout: 15_000,

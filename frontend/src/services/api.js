@@ -1,6 +1,28 @@
 import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+const resolveApiBaseUrl = () => {
+  const configuredBase = (import.meta.env.VITE_API_BASE_URL || '').trim()
+  const fallbackBase = 'http://localhost:8080'
+  const rawBase = configuredBase || fallbackBase
+
+  if (typeof window === 'undefined') {
+    return rawBase
+  }
+
+  const currentHost = window.location.hostname
+  const isCurrentHostLocal = ['localhost', '127.0.0.1', '::1'].includes(currentHost)
+  const isConfiguredLocalhost = /^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(?::\d+)?$/i.test(rawBase)
+
+  // Защита от ошибочного прод-конфига: если сайт открыт не с localhost,
+  // но API_BASE указывает на localhost, используем текущий origin.
+  if (!isCurrentHostLocal && isConfiguredLocalhost) {
+    return window.location.origin
+  }
+
+  return rawBase
+}
+
+const API_BASE_URL = resolveApiBaseUrl()
 
 const api = axios.create({
   baseURL: API_BASE_URL,
