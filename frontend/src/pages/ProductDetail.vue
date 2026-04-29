@@ -614,6 +614,130 @@ const displayName = computed(() => {
   return label ? `${base} ${label}` : base
 })
 
+const SEO_SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://ihome24.ru').replace(/\/$/, '')
+
+const upsertMeta = (name, content) => {
+  if (!content) return
+  let tag = document.head.querySelector(`meta[name="${name}"]`)
+  if (!tag) {
+    tag = document.createElement('meta')
+    tag.setAttribute('name', name)
+    document.head.appendChild(tag)
+  }
+  tag.setAttribute('content', content)
+}
+
+const upsertPropertyMeta = (property, content) => {
+  if (!content) return
+  let tag = document.head.querySelector(`meta[property="${property}"]`)
+  if (!tag) {
+    tag = document.createElement('meta')
+    tag.setAttribute('property', property)
+    document.head.appendChild(tag)
+  }
+  tag.setAttribute('content', content)
+}
+
+const setCanonical = (href) => {
+  if (!href) return
+  let link = document.head.querySelector('link[rel="canonical"]')
+  if (!link) {
+    link = document.createElement('link')
+    link.setAttribute('rel', 'canonical')
+    document.head.appendChild(link)
+  }
+  link.setAttribute('href', href)
+}
+
+const upsertJsonLdScript = (id, data) => {
+  let script = document.head.querySelector(`script[data-seo-jsonld="${id}"]`)
+  if (!script) {
+    script = document.createElement('script')
+    script.type = 'application/ld+json'
+    script.setAttribute('data-seo-jsonld', id)
+    document.head.appendChild(script)
+  }
+  script.textContent = JSON.stringify(data)
+}
+
+const updateProductSeo = () => {
+  if (!product.value) return
+  const title = `${displayName.value || product.value.name} - купить в iHome24`
+  const raw = product.value.description || `Цена, характеристики и наличие товара ${displayName.value || product.value.name} в iHome24.`
+  const description = String(raw).replace(/\s+/g, ' ').trim().slice(0, 160)
+  const canonical = `${SEO_SITE_URL}${route.path}`
+  const image = mainImageUrlLarge.value || mainImageUrlFast.value || ''
+
+  document.title = title
+  upsertMeta('description', description)
+  upsertMeta('robots', 'index, follow')
+  upsertMeta('twitter:title', title)
+  upsertMeta('twitter:description', description)
+  upsertMeta('twitter:card', image ? 'summary_large_image' : 'summary')
+  if (image) upsertMeta('twitter:image', image)
+  setCanonical(canonical)
+
+  upsertPropertyMeta('og:type', 'product')
+  upsertPropertyMeta('og:site_name', 'iHome24')
+  upsertPropertyMeta('og:title', title)
+  upsertPropertyMeta('og:description', description)
+  upsertPropertyMeta('og:url', canonical)
+  if (image) upsertPropertyMeta('og:image', image)
+
+  const offerPrice = selectedVariant.value?.price?.base ?? product.value.price
+  const inStock = isAvailable.value
+  const sku = selectedVariant.value?.sku || product.value.sku || undefined
+  const brandName = product.value.brand || 'iHome24'
+
+  upsertJsonLdScript('product', {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: displayName.value || product.value.name,
+    description,
+    sku,
+    image: image ? [image] : undefined,
+    brand: {
+      '@type': 'Brand',
+      name: brandName,
+    },
+    offers: {
+      '@type': 'Offer',
+      url: canonical,
+      priceCurrency: 'RUB',
+      price: offerPrice != null ? Number(offerPrice) : undefined,
+      availability: inStock
+        ? 'https://schema.org/InStock'
+        : 'https://schema.org/OutOfStock',
+      itemCondition: 'https://schema.org/NewCondition',
+    },
+  })
+
+  upsertJsonLdScript('breadcrumbs', {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Главная',
+        item: `${SEO_SITE_URL}/`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: 'Каталог',
+        item: `${SEO_SITE_URL}/products`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: displayName.value || product.value.name,
+        item: canonical,
+      },
+    ],
+  })
+}
+
 const selectVariant = (index) => {
   selectedVariantIndex.value = index
 
@@ -1118,6 +1242,13 @@ watch(selectedImageIndex, () => {
   resetMainImageZoom()
 })
 
+watch(
+  () => [product.value?.id, displayName.value, route.path],
+  () => {
+    updateProductSeo()
+  },
+)
+
 
 onMounted(async () => {
   window.scrollTo(0, 0)
@@ -1151,6 +1282,7 @@ onMounted(async () => {
       if (route.path !== canonical) {
         router.replace({ path: canonical, query: route.query })
       }
+      updateProductSeo()
     }
   } catch (error) {
     router.push('/products')

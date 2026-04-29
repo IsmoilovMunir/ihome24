@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /
+
+# Service pages should not be indexed
+Disallow: /cart
+Disallow: /checkout
+Disallow: /login
+Disallow: /register
+Disallow: /personal
+Disallow: /search
+
+# Do not index tracking/filter query variations
+Disallow: /*?utm_*
+Disallow: /*?ysclid=*
+Disallow: /*?gclid=*
+Disallow: /*?fbclid=*
+Disallow: /*?sort=*
+Disallow: /*?order=*
+
+Sitemap: https://ihome24.ru/sitemap.xml

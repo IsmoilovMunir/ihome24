@@ -99,6 +99,8 @@ app:
   # Email Configuration
   email:
     from: ${APP_EMAIL_FROM}
+  seo:
+    site-url: ${APP_SEO_SITE_URL:https://ihome24.ru}
   security:
     # В продакшене оставляем email 2FA включенной для админ-входа.
     email-2fa-enabled: ${APP_SECURITY_EMAIL_2FA_ENABLED:true}
