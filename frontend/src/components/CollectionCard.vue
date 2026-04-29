@@ -8,7 +8,11 @@
     <img
       v-if="imageUrl"
       :src="imageUrl"
+      :srcset="imageSrcSet || undefined"
+      sizes="(max-width: 768px) 100vw, 50vw"
       :alt="collection.name"
+      loading="lazy"
+      decoding="async"
       class="absolute inset-0 w-full h-full object-cover transition-transform duration-300 group-hover:scale-110 z-0"
     />
     
@@ -66,9 +70,17 @@ const imageUrl = computed(() => {
     || props.collection.menuImageUrl
     || props.collection.imageUrl
   if (imagePath) {
-    return fileApi.getFileUrl(imagePath)
+    return fileApi.getImageUrlBySize(imagePath, 'medium')
   }
   return null
+})
+
+const imageSrcSet = computed(() => {
+  const imagePath = props.collection.collectionImageUrl
+    || props.collection.menuImageUrl
+    || props.collection.imageUrl
+  if (!imagePath) return null
+  return fileApi.getImageSrcSet(imagePath)
 })
 </script>
 

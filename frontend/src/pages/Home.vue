@@ -2,7 +2,26 @@
   <div>
     <!-- Hero Banner -->
     <section class="home-hero-banner">
-      <div class="home-hero-banner-bg" aria-hidden="true"></div>
+      <picture class="home-hero-banner-bg" aria-hidden="true">
+        <source
+          media="(max-width: 640px)"
+          srcset="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=900&q=55"
+        />
+        <source
+          media="(max-width: 1024px)"
+          srcset="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=1200&q=58"
+        />
+        <img
+          src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=1400&q=60"
+          alt=""
+          loading="eager"
+          fetchpriority="high"
+          decoding="async"
+          width="1400"
+          height="900"
+          class="home-hero-banner-bg-img"
+        />
+      </picture>
       <div class="home-hero-banner-overlay"></div>
       <div class="home-hero-banner-content">
         <div class="container mx-auto px-4 text-center relative z-10">
@@ -318,10 +337,14 @@ onUnmounted(() => {
 .home-hero-banner-bg {
   position: absolute;
   inset: 0;
-  background-image: url('https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?auto=format&fit=crop&w=1400&q=60');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
+}
+
+.home-hero-banner-bg-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
 }
 
 .home-hero-banner-overlay {

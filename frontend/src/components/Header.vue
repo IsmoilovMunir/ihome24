@@ -381,6 +381,10 @@
             :src="getCategoryImage()"
             :alt="getCurrentCategoryData()?.name"
             :title="getCurrentCategoryData()?.name"
+            loading="lazy"
+            decoding="async"
+            width="500"
+            height="445"
             class="dropdown-menu-img"
           />
         </div>
@@ -455,6 +459,10 @@
                       v-if="getProductSearchImageUrl(product)"
                       :src="getProductSearchImageUrl(product)"
                       :alt="product.name"
+                      loading="lazy"
+                      decoding="async"
+                      width="48"
+                      height="48"
                       class="search-result-product-img"
                     />
                     <div class="search-result-product-info">
