@@ -632,6 +632,8 @@ const displayName = computed(() => {
 })
 
 const SEO_SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://ihome24.ru').replace(/\/$/, '')
+const SEO_SHIPPING_COUNTRY = (import.meta.env.VITE_SHIPPING_COUNTRY || 'RU').toUpperCase()
+const SEO_RETURN_DAYS = Number(import.meta.env.VITE_RETURN_DAYS || 14)
 
 const upsertMeta = (name, content) => {
   if (!content) return
@@ -726,6 +728,26 @@ const updateProductSeo = () => {
         ? 'https://schema.org/InStock'
         : 'https://schema.org/OutOfStock',
       itemCondition: 'https://schema.org/NewCondition',
+      shippingDetails: {
+        '@type': 'OfferShippingDetails',
+        shippingDestination: {
+          '@type': 'DefinedRegion',
+          addressCountry: SEO_SHIPPING_COUNTRY,
+        },
+        shippingRate: {
+          '@type': 'MonetaryAmount',
+          value: 0,
+          currency: 'RUB',
+        },
+      },
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        applicableCountry: SEO_SHIPPING_COUNTRY,
+        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
+        merchantReturnDays: Number.isFinite(SEO_RETURN_DAYS) ? SEO_RETURN_DAYS : 14,
+        returnMethod: 'https://schema.org/ReturnByMail',
+        returnFees: 'https://schema.org/FreeReturn',
+      },
     },
   })
 
