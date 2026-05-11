@@ -14,7 +14,7 @@ services:
     networks:
       - ihome24-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-iHome24db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-iHome24db} -d ${POSTGRES_DB:-ihome24}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -96,7 +96,7 @@ services:
     volumes:
       - ./logs/backend:/app/logs
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3

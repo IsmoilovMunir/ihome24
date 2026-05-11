@@ -26,7 +26,7 @@ services:
       - ihome24-network
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME:-iHome24db}"]
+      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME:-iHome24db} -d ${POSTGRES_DB:-ihome24}"]
       interval: 10s
       timeout: 5s
       retries: 5
