@@ -159,7 +159,8 @@ services:
       dockerfile: Dockerfile.prod
       args:
         VITE_API_BASE_URL: ${FRONTEND_API_BASE_URL}
-        VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-}
+        # Один .env.prod: либо VITE_YANDEX_MAPS_API_KEY=..., либо YANDEX_MAPS_API_KEY=... (без префикса VITE_)
+        VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-${YANDEX_MAPS_API_KEY:-}}
     container_name: ihome24-frontend-prod
     environment:
       VITE_API_BASE_URL: ${FRONTEND_API_BASE_URL}
