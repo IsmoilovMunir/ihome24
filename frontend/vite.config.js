@@ -3,6 +3,8 @@ import vue from '@vitejs/plugin-vue'
 import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig({
+  // Явно: .env / .env.local лежат рядом с этим файлом (frontend/), независимо от cwd при запуске vite
+  envDir: fileURLToPath(new URL('.', import.meta.url)),
   plugins: [vue()],
   build: {
     rollupOptions: {
