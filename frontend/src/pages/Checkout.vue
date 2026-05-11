@@ -523,8 +523,8 @@ async function loadYandexAndInitMap() {
   const apiKey = getYandexMapsApiKey()
   if (!apiKey) {
     mapLoadError.value = import.meta.env.DEV
-      ? 'В файле frontend/.env задайте VITE_YANDEX_MAPS_API_KEY=… и полностью перезапустите npm run dev (Vite читает .env только при старте).'
-      : 'Карта недоступна: в .env.prod на сервере задайте VITE_YANDEX_MAPS_API_KEY и пересоберите образ frontend (docker compose … build --no-cache frontend).'
+      ? 'В каталоге frontend/ в файле .env задайте VITE_YANDEX_MAPS_API_KEY=… и полностью перезапустите npm run dev (Vite подхватывает .env только при старте dev-сервера).'
+      : 'Карта недоступна: в .env.prod задайте VITE_YANDEX_MAPS_API_KEY или YANDEX_MAPS_API_KEY, затем пересоберите frontend (docker compose -f docker-compose.prod.yml --env-file .env.prod build --no-cache frontend && … up -d frontend).'
     mapLocationLoading.value = false
     return
   }
