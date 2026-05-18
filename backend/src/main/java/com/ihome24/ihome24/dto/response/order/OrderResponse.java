@@ -16,6 +16,8 @@ public class OrderResponse {
 
     private Long id;
     private Long order;
+    /** ID пользователя в разделе «Клиенты» (роль users), если найден по email/телефону */
+    private Long customerId;
     private String customer;
     private String email;
     private String phone;

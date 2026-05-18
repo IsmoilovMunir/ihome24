@@ -13,7 +13,9 @@ import com.ihome24.ihome24.entity.product.Product;
 import com.ihome24.ihome24.entity.product.ProductImage;
 import com.ihome24.ihome24.exception.ResourceNotFoundException;
 import com.ihome24.ihome24.repository.order.OrderRepository;
+import com.ihome24.ihome24.service.auth.PhoneAuthService;
 import com.ihome24.ihome24.service.company.CompanySettingsService;
+import com.ihome24.ihome24.service.customer.CustomerLookupService;
 import com.ihome24.ihome24.service.email.EmailService;
 import com.ihome24.ihome24.repository.product.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +43,8 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final EmailService emailService;
     private final CompanySettingsService companySettingsService;
+    private final PhoneAuthService phoneAuthService;
+    private final CustomerLookupService customerLookupService;
 
     @Transactional(readOnly = true)
     public OrderCountResponse getTotalOrderCount() {
@@ -56,23 +60,25 @@ public class OrderService {
                 .completed(orderRepository.countByStatus(Order.OrderStatus.DELIVERED))
                 .returned(orderRepository.countByPayment(Order.PaymentStatus.CANCELLED))
                 .failed(orderRepository.countByPayment(Order.PaymentStatus.FAILED))
+                .preliminary(orderRepository.countByStatus(Order.OrderStatus.PRELIMINARY))
                 .build();
     }
 
     @Transactional(readOnly = true)
     public OrderListResponse getOrders(String searchQuery, Integer page, Integer itemsPerPage,
-                                       String sortBy, String orderBy, Boolean completed) {
+                                       String sortBy, String orderBy, Boolean completed, Boolean preliminary) {
         Sort.Direction direction = "desc".equalsIgnoreCase(orderBy) ? Sort.Direction.DESC : Sort.Direction.ASC;
         String sortField = getSortField(sortBy);
         Pageable pageable = PageRequest.of(page - 1, itemsPerPage, Sort.by(direction, sortField));
+        String q = searchQuery != null ? searchQuery.trim() : null;
 
         Page<Order> orderPage;
-        if (completed != null) {
-            orderPage = orderRepository.findOrdersWithSearchAndCompleted(
-                    searchQuery != null ? searchQuery.trim() : null, completed, pageable);
+        if (Boolean.TRUE.equals(preliminary)) {
+            orderPage = orderRepository.findPreliminaryOrdersWithSearch(q, pageable);
+        } else if (completed != null) {
+            orderPage = orderRepository.findOrdersWithSearchAndCompleted(q, completed, pageable);
         } else {
-            orderPage = orderRepository.findOrdersWithSearch(
-                    searchQuery != null ? searchQuery.trim() : null, pageable);
+            orderPage = orderRepository.findOrdersWithSearch(q, pageable);
         }
 
         List<OrderResponse> orderResponses = orderPage.getContent().stream()
@@ -193,6 +199,7 @@ public class OrderService {
     private String orderStatusToDisplayRu(Order.OrderStatus status) {
         if (status == null) return "—";
         return switch (status) {
+            case PRELIMINARY -> "Предварительный";
             case PENDING -> "Ожидает";
             case IN_PROCESSING -> "В обработке";
             case DISPATCHED -> "Отправлено";
@@ -210,12 +217,17 @@ public class OrderService {
             return Order.OrderStatus.valueOf(statusStr.toUpperCase().replace(" ", "_"));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Недопустимый статус: " + statusStr +
-                    ". Допустимые: PENDING, IN_PROCESSING, DISPATCHED, OUT_FOR_DELIVERY, READY_TO_PICKUP, DELIVERED");
+                    ". Допустимые: PRELIMINARY, PENDING, IN_PROCESSING, DISPATCHED, OUT_FOR_DELIVERY, READY_TO_PICKUP, DELIVERED");
         }
     }
 
     @Transactional
     public OrderResponse createOrder(CreateOrderRequest request) {
+        Order preliminary = resolvePreliminaryOrder(request);
+        if (preliminary != null) {
+            return finalizePreliminaryOrder(preliminary, request);
+        }
+
         Long maxNum = orderRepository.findMaxOrderNumber();
         Long nextOrderNumber = (maxNum != null ? maxNum + 1 : 1L);
 
@@ -290,6 +302,92 @@ public class OrderService {
         return mapToResponse(order);
     }
 
+    private Order resolvePreliminaryOrder(CreateOrderRequest request) {
+        Order found = null;
+        if (request.getPreliminaryOrderId() != null) {
+            found = orderRepository.findById(request.getPreliminaryOrderId())
+                    .filter(o -> o.getStatus() == Order.OrderStatus.PRELIMINARY)
+                    .orElse(null);
+        } else {
+            String normalizedPhone = phoneAuthService.normalizePhone(request.getPhone());
+            String emailTrim = request.getEmail() != null ? request.getEmail().trim() : "";
+            found = orderRepository
+                    .findFirstByStatusAndPhoneOrderByUpdatedAtDesc(Order.OrderStatus.PRELIMINARY, normalizedPhone)
+                    .or(() -> orderRepository.findFirstByStatusAndEmailIgnoreCaseOrderByUpdatedAtDesc(
+                            Order.OrderStatus.PRELIMINARY, emailTrim))
+                    .orElse(null);
+        }
+        if (found == null) {
+            return null;
+        }
+        return orderRepository.findByIdWithItems(found.getId()).orElse(found);
+    }
+
+    private OrderResponse finalizePreliminaryOrder(Order order, CreateOrderRequest request) {
+        String address = "delivery".equals(request.getDeliveryMethod())
+                ? request.getAddress()
+                : request.getPickupAddress();
+
+        Order.PaymentMethod paymentMethod = "cash".equalsIgnoreCase(request.getPaymentMethod())
+                ? Order.PaymentMethod.CASH
+                : Order.PaymentMethod.MASTERCARD;
+
+        order.setCustomer(request.getFullName());
+        order.setEmail(request.getEmail().trim());
+        order.setPhone(phoneAuthService.normalizePhone(request.getPhone()));
+        order.setAddress(address);
+        order.setDeliveryMethod(request.getDeliveryMethod());
+        order.setComment(request.getComment());
+        order.setMethod(paymentMethod);
+        order.setPayment(Order.PaymentStatus.PENDING);
+        order.setStatus(Order.OrderStatus.PENDING);
+        order.setOrderDate(LocalDateTime.now());
+
+        if (order.getItems() == null) {
+            order.setItems(new ArrayList<>());
+        } else {
+            order.getItems().clear();
+        }
+
+        BigDecimal totalSpent = BigDecimal.ZERO;
+        for (CreateOrderRequest.OrderItemRequest itemReq : request.getItems()) {
+            Product product = productRepository.findById(itemReq.getProductId())
+                    .orElseThrow(() -> new IllegalArgumentException("Товар не найден: " + itemReq.getProductId()));
+            if (product.getIsActive() == null || !product.getIsActive()) {
+                throw new IllegalArgumentException("Товар недоступен для заказа: " + product.getName());
+            }
+            BigDecimal basePrice = product.getPrice() != null ? product.getPrice() : BigDecimal.ZERO;
+            BigDecimal price = companySettingsService.getUnitPriceForQuantity(basePrice, itemReq.getQuantity());
+            totalSpent = totalSpent.add(price.multiply(BigDecimal.valueOf(itemReq.getQuantity())));
+
+            OrderItem orderItem = OrderItem.builder()
+                    .product(product)
+                    .productName(product.getName())
+                    .quantity(itemReq.getQuantity())
+                    .price(price)
+                    .build();
+            orderItem.setOrder(order);
+            order.getItems().add(orderItem);
+        }
+
+        order.setSpent(totalSpent);
+        order = orderRepository.save(order);
+
+        try {
+            String totalStr = totalSpent != null ? String.format("%.2f ₽", totalSpent) : "";
+            List<EmailService.OrderItemLine> lines = order.getItems().stream()
+                    .map(item -> new EmailService.OrderItemLine(
+                            item.getProductName(),
+                            item.getQuantity() != null ? item.getQuantity() : 0,
+                            item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO))
+                    .toList();
+            emailService.sendOrderConfirmation(order.getEmail(), order.getCustomer(), order.getOrderNumber(), totalStr, lines);
+        } catch (Exception ignored) {
+        }
+
+        return mapToResponse(order);
+    }
+
     private String getSortField(String sortBy) {
         if (sortBy == null || sortBy.isEmpty()) {
             return "createdAt";
@@ -312,11 +410,17 @@ public class OrderService {
     private OrderResponse mapToResponse(Order order) {
         DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("M/d/yyyy");
 
+        Long customerId = customerLookupService
+                .findStoreCustomerIdByEmailOrPhone(order.getEmail(), order.getPhone())
+                .orElse(null);
+
         return OrderResponse.builder()
                 .id(order.getId())
                 .order(order.getOrderNumber())
+                .customerId(customerId)
                 .customer(order.getCustomer())
                 .email(order.getEmail())
+                .phone(order.getPhone())
                 .avatar(order.getAvatarUrl())
                 .payment(mapPaymentStatusToInt(order.getPayment()))
                 .status(mapOrderStatusToString(order.getStatus()))
@@ -389,6 +493,7 @@ public class OrderService {
     private String mapOrderStatusToString(Order.OrderStatus status) {
         if (status == null) return "Delivered";
         switch (status) {
+            case PRELIMINARY: return "Preliminary";
             case PENDING: return "Pending";
             case IN_PROCESSING: return "In Processing";
             case DELIVERED: return "Delivered";

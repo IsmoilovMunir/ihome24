@@ -152,16 +152,22 @@ services:
     restart: always
     # В продакшене используем собранный статический сайт, не dev сервер
 
-  # Frontend (Vue.js) - Production build
+  # Frontend (Nuxt 3 SSR)
   frontend:
     build:
-      context: ../frontend
+      context: ../frontend-nuxt
       dockerfile: Dockerfile.prod
       args:
-        VITE_API_BASE_URL: ${FRONTEND_API_BASE_URL}
+        NUXT_PUBLIC_API_BASE: ${FRONTEND_API_BASE_URL:-}
+        NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-https://ihome24.ru}
+        NUXT_API_BASE_SERVER: http://backend:8080
     container_name: ihome24-frontend-prod
     environment:
-      VITE_API_BASE_URL: ${FRONTEND_API_BASE_URL}
+      NUXT_PUBLIC_API_BASE: ${FRONTEND_API_BASE_URL:-}
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-https://ihome24.ru}
+      NUXT_API_BASE_SERVER: http://backend:8080
+      HOST: 0.0.0.0
+      PORT: 3000
     # Пробрасываем порт только на localhost для nginx reverse proxy
     ports:
       - "127.0.0.1:3000:80"

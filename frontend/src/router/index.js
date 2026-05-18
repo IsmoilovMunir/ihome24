@@ -73,8 +73,7 @@ const routes = [
     name: 'ProductDetail',
     component: ProductDetail,
     meta: {
-      title: 'Карточка товара - iHome24',
-      description: 'Подробная информация о товаре, характеристики, наличие и цена в iHome24.',
+      seoManagedByComponent: true,
       robots: 'index, follow',
     },
   },
@@ -222,6 +221,8 @@ function absoluteCanonical(to) {
 }
 
 router.afterEach((to) => {
+  if (to.meta?.seoManagedByComponent) return
+
   const title = to.meta?.title || SEO_DEFAULTS.title
   const description = to.meta?.description || SEO_DEFAULTS.description
   const robots = to.meta?.robots || SEO_DEFAULTS.robots

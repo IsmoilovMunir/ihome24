@@ -1,10 +1,23 @@
 import { defineStore } from 'pinia'
 import { cartApi } from '../services/api'
+import {
+  deduplicateCartItems,
+  normalizeProductId,
+  resolveCartVariant,
+} from '../utils/cartVariant'
 import { useSettingsStore } from './settings'
+
+function readCartItems() {
+  try {
+    return deduplicateCartItems(JSON.parse(localStorage.getItem('cart') || '[]'))
+  } catch {
+    return []
+  }
+}
 
 export const useCartStore = defineStore('cart', {
   state: () => ({
-    items: JSON.parse(localStorage.getItem('cart') || '[]'),
+    items: readCartItems(),
   }),
 
   getters: {
@@ -26,27 +39,19 @@ export const useCartStore = defineStore('cart', {
 
   actions: {
     addToCart(product, quantity = 1, variant = null) {
-      const variantKey =
-        variant?.variantId ||
-        variant?.sku ||
-        variant?.attributes?.size ||
-        variant?.attributes?.color ||
-        null
-      const variantLabel =
-        variant?.attributes?.size ||
-        variant?.attributes?.color ||
-        null
-      const priceBase = (variant && variant.price && typeof variant.price.base !== 'undefined')
-        ? Number(variant.price.base)
+      const productId = normalizeProductId(product?.id)
+      const { variant: resolvedVariant, variantKey, variantLabel } = resolveCartVariant(product, variant)
+      const priceBase = (resolvedVariant && resolvedVariant.price && typeof resolvedVariant.price.base !== 'undefined')
+        ? Number(resolvedVariant.price.base)
         : (product?.price ?? 0)
       // Остаток варианта: только из variant.stock.quantity, без подстановки общего остатка товара
       const variantStockQuantity =
-        (variant && typeof variant.stock?.quantity === 'number')
-          ? variant.stock.quantity
+        (resolvedVariant && typeof resolvedVariant.stock?.quantity === 'number')
+          ? resolvedVariant.stock.quantity
           : null
 
       const existingItem = this.items.find(item =>
-        item.product.id === product.id &&
+        normalizeProductId(item.product.id) === productId &&
         (item.variantKey ?? null) === (variantKey ?? null),
       )
       
@@ -57,7 +62,7 @@ export const useCartStore = defineStore('cart', {
         existingItem.variantStockQuantity = variantStockQuantity
       } else {
         this.items.push({
-          product,
+          product: { ...product, id: productId },
           quantity,
           variantKey,
           variantLabel,
@@ -70,15 +75,17 @@ export const useCartStore = defineStore('cart', {
     },
 
     removeFromCart(productId, variantKey = null) {
+      const pid = normalizeProductId(productId)
       this.items = this.items.filter(item =>
-        !(item.product.id === productId && (item.variantKey ?? null) === (variantKey ?? null)),
+        !(normalizeProductId(item.product.id) === pid && (item.variantKey ?? null) === (variantKey ?? null)),
       )
       this.saveCart()
     },
 
     updateQuantity(productId, quantity, variantKey = null) {
+      const pid = normalizeProductId(productId)
       const item = this.items.find(item =>
-        item.product.id === productId && (item.variantKey ?? null) === (variantKey ?? null),
+        normalizeProductId(item.product.id) === pid && (item.variantKey ?? null) === (variantKey ?? null),
       )
       if (item) {
         if (quantity <= 0) {
@@ -144,7 +151,7 @@ export const useCartStore = defineStore('cart', {
           })
         }
 
-        this.items = newItems
+        this.items = deduplicateCartItems(newItems)
         this.saveCart()
       } catch (err) {
         console.warn('Cart validation failed:', err)
@@ -152,6 +159,7 @@ export const useCartStore = defineStore('cart', {
     },
 
     saveCart() {
+      this.items = deduplicateCartItems(this.items)
       localStorage.setItem('cart', JSON.stringify(this.items))
     },
   },

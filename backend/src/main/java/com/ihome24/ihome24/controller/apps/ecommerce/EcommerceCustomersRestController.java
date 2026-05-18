@@ -3,6 +3,7 @@ package com.ihome24.ihome24.controller.apps.ecommerce;
 import com.ihome24.ihome24.entity.user.User;
 import com.ihome24.ihome24.repository.order.OrderRepository;
 import com.ihome24.ihome24.repository.user.UserRepository;
+import com.ihome24.ihome24.service.customer.CustomerLookupService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +27,7 @@ public class EcommerceCustomersRestController {
 
     private final UserRepository userRepository;
     private final OrderRepository orderRepository;
+    private final CustomerLookupService customerLookupService;
     private static final String CUSTOMER_ROLE = "users";
 
     @GetMapping
@@ -65,16 +67,26 @@ public class EcommerceCustomersRestController {
         ));
     }
 
+    @GetMapping("/resolve")
+    public ResponseEntity<?> resolveCustomer(
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String phone) {
+        return customerLookupService.findStoreCustomerIdByEmailOrPhone(email, phone)
+                .map(id -> ResponseEntity.ok(Map.of("customerId", id)))
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getCustomer(@PathVariable Long id) {
-        User u = userRepository.findById(id).orElse(null);
+        User u = customerLookupService.findStoreCustomerById(id).orElse(null);
         if (u == null) {
             return ResponseEntity.notFound().build();
         }
-        if (u.getRole() == null || u.getRole().getName() == null || !CUSTOMER_ROLE.equals(u.getRole().getName())) {
-            return ResponseEntity.notFound().build();
-        }
 
+        return ResponseEntity.ok(toCustomerMap(u));
+    }
+
+    private Map<String, Object> toCustomerMap(User u) {
         Map<String, Object> customer = new HashMap<>();
         customer.put("customer", u.getFullName() != null && !u.getFullName().isBlank() ? u.getFullName() : u.getUsername());
         customer.put("customerId", u.getId());
@@ -87,8 +99,8 @@ public class EcommerceCustomersRestController {
         customer.put("contact", u.getContact());
         customer.put("order", orderRepository.countByEmailOrPhone(u.getEmail(), u.getPhone()));
         customer.put("totalSpent", orderRepository.sumSpentByEmailOrPhone(u.getEmail(), u.getPhone()));
-
-        return ResponseEntity.ok(customer);
+        customer.put("createdAt", u.getCreatedAt());
+        return customer;
     }
 
     private Sort resolveSort(String sortBy, String orderBy) {

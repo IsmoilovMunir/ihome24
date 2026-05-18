@@ -124,3 +124,8 @@ minio:
   image-quality-medium: ${MINIO_IMAGE_QUALITY_MEDIUM:0.75}
   image-quality-large: ${MINIO_IMAGE_QUALITY_LARGE:0.8}
 
+# Actuator: не проверяем SMTP при /actuator/health (локально сервер часто недоступен → таймаут ~10 с)
+management:
+  health:
+    mail:
+      enabled: false

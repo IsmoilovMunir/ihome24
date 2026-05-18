@@ -31,6 +31,7 @@ declare module 'vue-router/auto-routes' {
     'apps-ecommerce-order-completed': RouteRecordInfo<'apps-ecommerce-order-completed', '/apps/ecommerce/order/completed', Record<never, never>, Record<never, never>>,
     'apps-ecommerce-order-details-id': RouteRecordInfo<'apps-ecommerce-order-details-id', '/apps/ecommerce/order/details/:id', { id: ParamValue<true> }, { id: ParamValue<false> }>,
     'apps-ecommerce-order-list': RouteRecordInfo<'apps-ecommerce-order-list', '/apps/ecommerce/order/list', Record<never, never>, Record<never, never>>,
+    'apps-ecommerce-order-preliminary': RouteRecordInfo<'apps-ecommerce-order-preliminary', '/apps/ecommerce/order/preliminary', Record<never, never>, Record<never, never>>,
     'apps-ecommerce-product-add': RouteRecordInfo<'apps-ecommerce-product-add', '/apps/ecommerce/product/add', Record<never, never>, Record<never, never>>,
     'apps-ecommerce-product-category-list': RouteRecordInfo<'apps-ecommerce-product-category-list', '/apps/ecommerce/product/category-list', Record<never, never>, Record<never, never>>,
     'apps-ecommerce-product-list': RouteRecordInfo<'apps-ecommerce-product-list', '/apps/ecommerce/product/list', Record<never, never>, Record<never, never>>,

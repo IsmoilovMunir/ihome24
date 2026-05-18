@@ -219,7 +219,7 @@ const deleteOrder = async id => {
             </VAvatar>
             <div class="d-flex flex-column">
               <div class="text-body-1 font-weight-medium">
-                {{ item.customer }}
+                <OrderCustomerLink :item="item" />
               </div>
               <div class="text-body-2">
                 {{ item.email }}

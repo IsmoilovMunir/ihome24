@@ -41,3 +41,5 @@ databaseChangeLog:
       file: db/changelog/changeset/orders_V002__add_order_items.sql
   - include:
       file: db/changelog/changeset/orders_V003__fix_method_and_status_check.sql
+  - include:
+      file: db/changelog/changeset/orders_V004__add_preliminary_status.sql

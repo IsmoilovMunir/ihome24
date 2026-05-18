@@ -36,7 +36,7 @@ public class InvoiceRestController {
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String orderBy) {
 
-        var orderList = orderService.getOrders(q, page, itemsPerPage, sortBy, orderBy, null);
+        var orderList = orderService.getOrders(q, page, itemsPerPage, sortBy, orderBy, null, null);
         List<InvoiceResponse> invoices = orderList.getOrders().stream()
                 .map(this::mapOrderToInvoice)
                 .collect(Collectors.toList());

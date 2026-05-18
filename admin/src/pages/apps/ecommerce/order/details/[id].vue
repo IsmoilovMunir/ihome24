@@ -53,6 +53,7 @@ const resolveStatus = status => {
 
 // API принимает: PENDING, IN_PROCESSING, DISPATCHED, OUT_FOR_DELIVERY, READY_TO_PICKUP, DELIVERED
 const statusDisplayToApi = {
+  Preliminary: 'PRELIMINARY',
   Pending: 'PENDING',
   'In Processing': 'IN_PROCESSING',
   Dispatched: 'DISPATCHED',
@@ -61,6 +62,7 @@ const statusDisplayToApi = {
   Delivered: 'DELIVERED',
 }
 const statusOptions = [
+  { value: 'PRELIMINARY', title: 'Предварительный' },
   { value: 'PENDING', title: 'Ожидает' },
   { value: 'IN_PROCESSING', title: 'В обработке' },
   { value: 'DISPATCHED', title: 'Отправлено' },

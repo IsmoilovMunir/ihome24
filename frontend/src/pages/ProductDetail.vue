@@ -583,7 +583,9 @@ import { useProductsStore } from '../stores/products'
 import { useCartStore } from '../stores/cart'
 import { useSettingsStore } from '../stores/settings'
 import { fileApi } from '../services/api'
+import { resolveCartVariant } from '../utils/cartVariant'
 import { parseProductIdFromRoute, productPath } from '../utils/productUrl'
+import { categoryPathSegment, getCategoryChain } from '../utils/categoryUrl'
 
 const route = useRoute()
 const router = useRouter()
@@ -632,8 +634,6 @@ const displayName = computed(() => {
 })
 
 const SEO_SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://ihome24.ru').replace(/\/$/, '')
-const SEO_SHIPPING_COUNTRY = (import.meta.env.VITE_SHIPPING_COUNTRY || 'RU').toUpperCase()
-const SEO_RETURN_DAYS = Number(import.meta.env.VITE_RETURN_DAYS || 14)
 
 const upsertMeta = (name, content) => {
   if (!content) return
@@ -668,7 +668,25 @@ const setCanonical = (href) => {
   link.setAttribute('href', href)
 }
 
+const pruneJsonLd = (value) => {
+  if (Array.isArray(value)) {
+    const items = value.map(pruneJsonLd).filter(v => v !== undefined && v !== null)
+    return items.length ? items : undefined
+  }
+  if (value && typeof value === 'object') {
+    const out = {}
+    for (const [key, val] of Object.entries(value)) {
+      const cleaned = pruneJsonLd(val)
+      if (cleaned !== undefined && cleaned !== null) out[key] = cleaned
+    }
+    return Object.keys(out).length ? out : undefined
+  }
+  return value === undefined || value === null ? undefined : value
+}
+
 const upsertJsonLdScript = (id, data) => {
+  const pruned = pruneJsonLd(data)
+  if (!pruned) return
   let script = document.head.querySelector(`script[data-seo-jsonld="${id}"]`)
   if (!script) {
     script = document.createElement('script')
@@ -676,14 +694,135 @@ const upsertJsonLdScript = (id, data) => {
     script.setAttribute('data-seo-jsonld', id)
     document.head.appendChild(script)
   }
-  script.textContent = JSON.stringify(data)
+  script.textContent = JSON.stringify(pruned)
+}
+
+const removeJsonLdScript = (id) => {
+  document.head.querySelector(`script[data-seo-jsonld="${id}"]`)?.remove()
+}
+
+const buildProductJsonLd = ({ canonical, description, image, offerPrice, inStock, sku, brandName }) => {
+  const name = productSeoName() || product.value?.name
+  const priceValue = offerPrice != null ? Number(offerPrice) : null
+
+  const offer = {
+    '@type': 'Offer',
+    url: canonical,
+    priceCurrency: 'RUB',
+    price: priceValue != null && Number.isFinite(priceValue) ? priceValue.toFixed(2) : undefined,
+    availability: inStock
+      ? 'https://schema.org/InStock'
+      : 'https://schema.org/OutOfStock',
+    itemCondition: 'https://schema.org/NewCondition',
+  }
+
+  const schema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    '@id': `${canonical}#product`,
+    name,
+    description,
+    sku: sku || undefined,
+    mpn: sku || undefined,
+    image: image ? [image] : undefined,
+    brand: brandName
+      ? { '@type': 'Brand', name: brandName }
+      : undefined,
+    offers: offer,
+  }
+
+  const ratingValue = Number(
+    product.value?.ratingAverage ?? product.value?.averageRating ?? product.value?.rating,
+  )
+  const reviewCount = Number(
+    product.value?.reviewCount ?? product.value?.reviewsCount ?? product.value?.ratingCount,
+  )
+  if (Number.isFinite(ratingValue) && Number.isFinite(reviewCount) && reviewCount > 0) {
+    schema.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue,
+      reviewCount,
+      bestRating: 5,
+      worstRating: 1,
+    }
+  }
+
+  return schema
+}
+
+const buildBreadcrumbsJsonLd = (canonical) => {
+  const elements = [
+    {
+      '@type': 'ListItem',
+      position: 1,
+      name: 'Главная',
+      item: `${SEO_SITE_URL}/`,
+    },
+    {
+      '@type': 'ListItem',
+      position: 2,
+      name: 'Каталог',
+      item: `${SEO_SITE_URL}/products`,
+    },
+  ]
+
+  let position = 3
+  const category = product.value?.category
+  const categories = productsStore.categories
+  if (category?.id && categories?.length) {
+    const chain = getCategoryChain(category, categories)
+    let pathPrefix = '/category'
+    for (const cat of chain) {
+      pathPrefix += `/${encodeURIComponent(categoryPathSegment(cat))}`
+      elements.push({
+        '@type': 'ListItem',
+        position: position++,
+        name: cat.name,
+        item: `${SEO_SITE_URL}${pathPrefix}`,
+      })
+    }
+  }
+
+  elements.push({
+    '@type': 'ListItem',
+    position,
+    name: productSeoName() || product.value?.name,
+    item: canonical,
+  })
+
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: elements,
+  }
+}
+
+const formatPriceRub = (price) => {
+  const n = Number(price)
+  if (!Number.isFinite(n) || n < 0) return '0'
+  return new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 0 }).format(Math.round(n))
+}
+
+const productSeoName = () => (displayName.value || product.value?.name || '').trim()
+
+const buildProductSeoTitle = () => {
+  const name = productSeoName()
+  return name ? `${name} — купить в ihome24.ru` : 'Купить в ihome24.ru'
+}
+
+const buildProductSeoDescription = () => {
+  const name = productSeoName()
+  const price = formatPriceRub(
+    selectedVariant.value?.price?.base ?? product.value?.price,
+  )
+  if (!name) return 'Доставка. Гарантия.'
+  return `${name} по цене ${price} руб. Доставка. Гарантия.`
 }
 
 const updateProductSeo = () => {
   if (!product.value) return
-  const title = `${displayName.value || product.value.name} - купить в iHome24`
-  const raw = product.value.description || `Цена, характеристики и наличие товара ${displayName.value || product.value.name} в iHome24.`
-  const description = String(raw).replace(/\s+/g, ' ').trim().slice(0, 160)
+  const title = buildProductSeoTitle()
+  const description = buildProductSeoDescription().slice(0, 160)
   const canonical = `${SEO_SITE_URL}${route.path}`
   const image = mainImageUrlLarge.value || mainImageUrlFast.value || ''
 
@@ -708,73 +847,17 @@ const updateProductSeo = () => {
   const sku = selectedVariant.value?.sku || product.value.sku || undefined
   const brandName = product.value.brand || 'iHome24'
 
-  upsertJsonLdScript('product', {
-    '@context': 'https://schema.org',
-    '@type': 'Product',
-    name: displayName.value || product.value.name,
+  upsertJsonLdScript('product', buildProductJsonLd({
+    canonical,
     description,
+    image,
+    offerPrice,
+    inStock,
     sku,
-    image: image ? [image] : undefined,
-    brand: {
-      '@type': 'Brand',
-      name: brandName,
-    },
-    offers: {
-      '@type': 'Offer',
-      url: canonical,
-      priceCurrency: 'RUB',
-      price: offerPrice != null ? Number(offerPrice) : undefined,
-      availability: inStock
-        ? 'https://schema.org/InStock'
-        : 'https://schema.org/OutOfStock',
-      itemCondition: 'https://schema.org/NewCondition',
-      shippingDetails: {
-        '@type': 'OfferShippingDetails',
-        shippingDestination: {
-          '@type': 'DefinedRegion',
-          addressCountry: SEO_SHIPPING_COUNTRY,
-        },
-        shippingRate: {
-          '@type': 'MonetaryAmount',
-          value: 0,
-          currency: 'RUB',
-        },
-      },
-      hasMerchantReturnPolicy: {
-        '@type': 'MerchantReturnPolicy',
-        applicableCountry: SEO_SHIPPING_COUNTRY,
-        returnPolicyCategory: 'https://schema.org/MerchantReturnFiniteReturnWindow',
-        merchantReturnDays: Number.isFinite(SEO_RETURN_DAYS) ? SEO_RETURN_DAYS : 14,
-        returnMethod: 'https://schema.org/ReturnByMail',
-        returnFees: 'https://schema.org/FreeReturn',
-      },
-    },
-  })
+    brandName,
+  }))
 
-  upsertJsonLdScript('breadcrumbs', {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      {
-        '@type': 'ListItem',
-        position: 1,
-        name: 'Главная',
-        item: `${SEO_SITE_URL}/`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: 'Каталог',
-        item: `${SEO_SITE_URL}/products`,
-      },
-      {
-        '@type': 'ListItem',
-        position: 3,
-        name: displayName.value || product.value.name,
-        item: canonical,
-      },
-    ],
-  })
+  upsertJsonLdScript('breadcrumbs', buildBreadcrumbsJsonLd(canonical))
 }
 
 const selectVariant = (index) => {
@@ -1089,13 +1172,8 @@ const goToNextImage = () => {
 }
 
 const currentVariantKey = computed(() => {
-  return (
-    selectedVariant.value?.variantId ||
-    selectedVariant.value?.sku ||
-    selectedVariant.value?.attributes?.size ||
-    selectedVariant.value?.attributes?.color ||
-    null
-  )
+  if (!product.value) return null
+  return resolveCartVariant(product.value, selectedVariant.value).variantKey
 })
 
 const isInCart = computed(() => {
@@ -1294,7 +1372,14 @@ watch(selectedImageIndex, () => {
 })
 
 watch(
-  () => [product.value?.id, displayName.value, route.path],
+  () => [
+    product.value?.id,
+    displayName.value,
+    selectedVariantIndex.value,
+    selectedVariant.value?.price?.base,
+    product.value?.price,
+    route.path,
+  ],
   () => {
     updateProductSeo()
   },
@@ -1341,6 +1426,8 @@ onMounted(async () => {
 })
 
 onUnmounted(() => {
+  removeJsonLdScript('product')
+  removeJsonLdScript('breadcrumbs')
   document.removeEventListener('keydown', onFullscreenKeydown)
   document.removeEventListener('mousemove', onFullscreenPanMove)
   document.removeEventListener('mouseup', onFullscreenPanEnd)

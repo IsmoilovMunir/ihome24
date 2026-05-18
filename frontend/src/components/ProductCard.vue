@@ -116,6 +116,7 @@ import { useRouter } from 'vue-router'
 import { useCartStore } from '../stores/cart'
 import { fileApi } from '../services/api'
 import { productPath } from '../utils/productUrl'
+import { getDefaultVariant, normalizeProductId, resolveCartVariant } from '../utils/cartVariant'
 import { useSettingsStore } from '../stores/settings'
 
 const props = defineProps({
@@ -166,16 +167,28 @@ const isAvailable = computed(() => {
          (props.product.stockQuantity === null || props.product.stockQuantity > 0)
 })
 
+const cardVariantKey = computed(() => resolveCartVariant(props.product).variantKey)
+
 const isInCart = computed(() => {
-  return cartStore.items.some(item => item.product.id === props.product.id)
+  const pid = normalizeProductId(props.product.id)
+  const vk = cardVariantKey.value ?? null
+  return cartStore.items.some(item =>
+    normalizeProductId(item.product.id) === pid && (item.variantKey ?? null) === vk,
+  )
 })
 
 const cartQuantity = computed(() => {
-  const item = cartStore.items.find(item => item.product.id === props.product.id)
+  const pid = normalizeProductId(props.product.id)
+  const vk = cardVariantKey.value ?? null
+  const item = cartStore.items.find(item =>
+    normalizeProductId(item.product.id) === pid && (item.variantKey ?? null) === vk,
+  )
   return item?.quantity ?? 0
 })
 
 const maxQuantity = computed(() => {
+  const variant = getDefaultVariant(props.product)
+  if (typeof variant?.stock?.quantity === 'number') return variant.stock.quantity
   if (props.product.stockQuantity == null) return 999
   return props.product.stockQuantity
 })
@@ -197,15 +210,15 @@ const maxDiscountUnitPrice = computed(() => {
 
 const decreaseQuantity = () => {
   if (cartQuantity.value > 1) {
-    cartStore.updateQuantity(props.product.id, cartQuantity.value - 1)
+    cartStore.updateQuantity(props.product.id, cartQuantity.value - 1, cardVariantKey.value)
   } else {
-    cartStore.removeFromCart(props.product.id)
+    cartStore.removeFromCart(props.product.id, cardVariantKey.value)
   }
 }
 
 const increaseQuantity = () => {
   if (cartQuantity.value < maxQuantity.value) {
-    cartStore.updateQuantity(props.product.id, cartQuantity.value + 1)
+    cartStore.updateQuantity(props.product.id, cartQuantity.value + 1, cardVariantKey.value)
   }
 }
 
@@ -220,7 +233,7 @@ const formatPrice = (price) => {
 
 const addToCart = () => {
   if (isAvailable.value) {
-    cartStore.addToCart(props.product, 1)
+    cartStore.addToCart(props.product, 1, getDefaultVariant(props.product))
   }
 }
 

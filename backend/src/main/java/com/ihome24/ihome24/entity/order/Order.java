@@ -100,6 +100,7 @@ public class Order {
     }
 
     public enum OrderStatus {
+        PRELIMINARY,       // Оформление начато (контакты), оплата не завершена
         PENDING,           // Новый заказ, в очереди
         IN_PROCESSING,     // Менеджер обрабатывает (звонит, уточняет)
         DISPATCHED,        // Отправлено

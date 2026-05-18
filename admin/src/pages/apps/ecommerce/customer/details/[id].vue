@@ -43,10 +43,11 @@ const isAddCustomerDrawerOpen = ref(false)
     <div class="d-flex justify-space-between align-center flex-wrap gap-y-4 mb-6">
       <div>
         <h4 class="text-h4 mb-1">
-          ID клиента #{{ route.params.id }}
+          {{ customerData?.customer || 'Клиент' }}
         </h4>
-        <div class="text-body-1">
-          Aug 17, 2020, 5:48 (ET)
+        <div class="text-body-1 text-medium-emphasis">
+          ID #{{ route.params.id }}
+          <span v-if="customerData?.email"> · {{ customerData.email }}</span>
         </div>
       </div>
       <div class="d-flex gap-4">

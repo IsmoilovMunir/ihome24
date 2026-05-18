@@ -154,6 +154,11 @@ const resolvePaymentStatus = status => {
 }
 
 const resolveStatus = status => {
+  if (status === 'Preliminary')
+    return {
+      text: 'Предварительный',
+      color: 'secondary',
+    }
   if (status === 'Pending')
     return {
       text: 'Ожидает',
@@ -361,12 +366,7 @@ const deleteOrder = async id => {
 
             <div class="d-flex flex-column">
               <div class="text-body-1 font-weight-medium">
-                <RouterLink
-                  :to="{ name: 'pages-user-profile-tab', params: { tab: 'profile' } }"
-                  class="text-link"
-                >
-                  {{ item.customer }}
-                </RouterLink>
+                <OrderCustomerLink :item="item" />
               </div>
               <div class="text-body-2">
                 {{ item.email }}

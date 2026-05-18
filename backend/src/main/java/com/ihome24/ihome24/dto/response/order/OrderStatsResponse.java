@@ -15,4 +15,5 @@ public class OrderStatsResponse {
     private long completed;        // Завершено (DELIVERED)
     private long returned;         // Возвращено (CANCELLED)
     private long failed;           // Неудачно (FAILED)
+    private long preliminary;      // Предварительные (оформление не завершено)
 }

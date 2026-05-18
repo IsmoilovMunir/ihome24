@@ -28,6 +28,7 @@ export default [
         subject: 'Ecommerce',
         children: [
           { title: 'Список', to: 'apps-ecommerce-order-list', action: 'manage', subject: 'Ecommerce' },
+          { title: 'Предварительные', to: 'apps-ecommerce-order-preliminary', action: 'manage', subject: 'Ecommerce' },
           { title: 'Завершённые', to: 'apps-ecommerce-order-completed', action: 'manage', subject: 'Ecommerce' },
           // Детали должны открываться из списка конкретного заказа
         ],

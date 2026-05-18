@@ -43,6 +43,9 @@ public class CreateOrderRequest {
     @Valid
     private List<OrderItemRequest> items;
 
+    /** Если оформление начиналось как предварительный заказ */
+    private Long preliminaryOrderId;
+
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
