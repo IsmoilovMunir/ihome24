@@ -3,6 +3,7 @@
 # ОБЯЗАТЕЛЬНО указывайте --env-file .env.prod (иначе переменные пустые и backend не стартует):
 #   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
 #   docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --force-recreate backend
+#   docker compose -f docker-compose.prod.yml --env-file .env.prod --profile init run --rm minio-setup
 #
 # ВАЖНО:
 # - Все сервисы работают на localhost и доступны только через nginx reverse proxy
@@ -53,8 +54,10 @@ services:
       timeout: 20s
       retries: 3
 
-  # MinIO Client (для создания bucket при старте)
+  # MinIO Client (одноразовый init; не в обычном up -d — см. profiles)
   minio-setup:
+    profiles:
+      - init
     image: minio/mc:latest
     container_name: ihome24-minio-setup-prod
     depends_on:
@@ -179,7 +182,7 @@ services:
       PORT: 3000
     # Пробрасываем порт только на localhost для nginx reverse proxy
     ports:
-      - "127.0.0.1:3000:80"
+      - "127.0.0.1:3000:3000"
     depends_on:
       - backend
     networks:
