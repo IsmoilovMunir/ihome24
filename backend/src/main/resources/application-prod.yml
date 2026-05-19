@@ -29,9 +29,11 @@ spring:
     properties:
       hibernate:
         format_sql: false
-        # dialect выбирается автоматически по драйверу БД (PostgreSQL)
-        # Оптимизации для продакшена
+        # application.yml по умолчанию H2Dialect — в prod явно PostgreSQL
+        dialect: org.hibernate.dialect.PostgreSQLDialect
         jdbc:
+          lob:
+            non_contextual_creation: true
           batch_size: 20
         order_inserts: true
         order_updates: true
