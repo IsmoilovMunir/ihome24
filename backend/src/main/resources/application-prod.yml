@@ -135,21 +135,15 @@ minio:
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:http://ihome24.ru,http://www.ihome24.ru,https://ihome24.ru,https://www.ihome24.ru,http://admin.ihome24.ru,https://admin.ihome24.ru,http://api.ihome24.ru,https://api.ihome24.ru}
 
-# Logging configuration для продакшена
+# Logging: в Docker — в stdout (docker logs). Файл на хосте: volume ./logs/backend + chown (см. infrastructure/README).
 logging:
   level:
     root: INFO
     com.ihome24: INFO
     org.springframework: WARN
     org.hibernate: WARN
-    # Конфигурация Security намеренная (DaoAuthenticationProvider + UserDetailsService) — убираем предупреждение
     org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: ERROR
-  file:
-    name: /app/logs/application.log
-    max-size: 100MB
-    max-history: 30
   pattern:
-    file: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 # Actuator endpoints (для мониторинга)
