@@ -23,9 +23,8 @@ spring:
   jpa:
     open-in-view: false  # Отключаем, чтобы не держать сессию БД открытой во время рендера (рекомендуется для prod)
     hibernate:
-      # В продакшене НЕ создавать таблицы автоматически!
-      # Используйте Liquibase для миграций
-      ddl-auto: validate
+      # Схема только через Liquibase (validate ломается на PostgreSQL + @Enumerated в Hibernate 6/7)
+      ddl-auto: none
     show-sql: false  # Отключить SQL логи в продакшене
     properties:
       hibernate:

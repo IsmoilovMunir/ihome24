@@ -2,8 +2,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/changeset/users_roles_permissions_V001__initial.sql
   - include:
-      file: db/changelog/changeset/registration_requests_V001__initial.sql
-  - include:
       file: db/changelog/changeset/products_V001__initial.sql
   - include:
       file: db/changelog/changeset/categories_V001__initial.sql
