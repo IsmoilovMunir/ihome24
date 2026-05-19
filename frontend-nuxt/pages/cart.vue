@@ -1,8 +1,8 @@
 <script setup>
-definePageMeta({ layout: 'default' })
+definePageMeta({ layout: 'default', ssr: false })
 useSeoMeta({
   title: 'Корзина - iHome24',
-  robots: 'noindex, nofollow',
+  robots: 'noindex',
 })
 </script>
 

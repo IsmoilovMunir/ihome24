@@ -8,41 +8,47 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * Публичные sitemap для поисковиков (без префикса /api).
+ * Кеш ответа: 6 часов ({@link #CACHE_MAX_AGE_SECONDS}).
+ */
 @RestController
 @RequiredArgsConstructor
-public class SeoController {
+public class SitemapController {
+
+    /** 6 часов — по требованиям SEO-спринта */
+    static final int CACHE_MAX_AGE_SECONDS = 21_600;
+
+    private static final String CACHE_CONTROL = "public, max-age=" + CACHE_MAX_AGE_SECONDS;
 
     private final SitemapService sitemapService;
 
+    /**
+     * Основной sitemap: статические страницы, все активные категории и товары.
+     */
     @GetMapping(value = "/sitemap.xml", produces = MediaType.APPLICATION_XML_VALUE)
-    public ResponseEntity<String> sitemapIndex() {
-        String xml = sitemapService.generateSitemapIndexXml();
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=300")
-                .body(xml);
+    public ResponseEntity<String> sitemap() {
+        return xmlResponse(sitemapService.generateSitemapXml());
     }
 
     @GetMapping(value = "/sitemap-static.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> sitemapStatic() {
-        String xml = sitemapService.generateStaticSitemapXml();
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=300")
-                .body(xml);
+        return xmlResponse(sitemapService.generateStaticSitemapXml());
     }
 
     @GetMapping(value = "/sitemap-categories.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> sitemapCategories() {
-        String xml = sitemapService.generateCategoriesSitemapXml();
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=300")
-                .body(xml);
+        return xmlResponse(sitemapService.generateCategoriesSitemapXml());
     }
 
     @GetMapping(value = "/sitemap-products.xml", produces = MediaType.APPLICATION_XML_VALUE)
     public ResponseEntity<String> sitemapProducts() {
-        String xml = sitemapService.generateProductsSitemapXml();
+        return xmlResponse(sitemapService.generateProductsSitemapXml());
+    }
+
+    private static ResponseEntity<String> xmlResponse(String xml) {
         return ResponseEntity.ok()
-                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=300")
+                .header(HttpHeaders.CACHE_CONTROL, CACHE_CONTROL)
                 .body(xml);
     }
 }

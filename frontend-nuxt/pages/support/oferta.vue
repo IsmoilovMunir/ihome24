@@ -5,7 +5,7 @@ useSeoMeta({
   description: 'Публичная оферта интернет-магазина iHome24.',
   robots: 'index, follow',
 })
-useHead({ link: [{ rel: 'canonical', href: `${siteUrl}/support/oferta` }] })
+useHead({ link: [{ rel: 'canonical', href: `${siteUrl}/support/oferta`, key: 'canonical' }] })
 </script>
 
 <template>

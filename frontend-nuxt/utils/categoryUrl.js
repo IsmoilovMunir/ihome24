@@ -1,4 +1,4 @@
-import { slugify } from './productUrl'
+import { slugify } from './productUrl.js'
 
 /**
  * Сегмент пути для категории: slug из API или ЧПУ из названия.
@@ -81,6 +81,59 @@ export function resolveCategoryIdFromSegments(segments, categories) {
  * @param {Array} categories
  * @returns {number|null}
  */
+/**
+ * Найти категорию по одному сегменту slug (маршрут /catalog/:slug).
+ * @param {string} slug
+ * @param {Array} categories
+ * @returns {object|null}
+ */
+export function findCategoryBySlug(slug, categories) {
+  if (!slug || !categories?.length) return null
+  let decoded = String(slug)
+  try {
+    decoded = decodeURIComponent(decoded)
+  } catch {
+    /* keep raw */
+  }
+  const want = decoded.toLowerCase()
+
+  const active = categories.filter(c => c.isActive !== false)
+
+  const byApiSlug = active.find(
+    c => c.slug && String(c.slug).trim().toLowerCase() === want,
+  )
+  if (byApiSlug) return byApiSlug
+
+  const matches = active.filter(
+    c => categoryPathSegment(c).toLowerCase() === want,
+  )
+  if (matches.length === 0) return null
+  if (matches.length === 1) return matches[0]
+
+  return matches.sort((a, b) => {
+    const depthA = getCategoryChain(a, categories).length
+    const depthB = getCategoryChain(b, categories).length
+    return depthA - depthB
+  })[0]
+}
+
+/** Id категории и всех её потомков (для фильтра товаров). */
+export function getCategoryAndDescendantIds(categoryId, categories) {
+  if (!categoryId || !categories?.length) return []
+  const ids = new Set([categoryId])
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const c of categories) {
+      if (c.parentId && ids.has(c.parentId) && !ids.has(c.id)) {
+        ids.add(c.id)
+        changed = true
+      }
+    }
+  }
+  return [...ids]
+}
+
 export function resolveCategoryIdFromRoute(route, categories) {
   if (typeof route.path === 'string' && route.path.startsWith('/category/')) {
     if (!categories?.length) return null

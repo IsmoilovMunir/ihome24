@@ -1,9 +1,11 @@
 <script setup>
-const apiBase = useApiBase()
+import { SITE_DEFAULT_DESCRIPTION, SITE_DEFAULT_TITLE } from '~/utils/siteSeo'
+
+const { api } = useApi()
 const siteUrl = useSiteUrl()
 
 const { data: categories } = await useAsyncData('catalog-categories', () =>
-  $fetch('/api/categories', { baseURL: apiBase }),
+  api('/categories'),
 )
 
 const productsStore = useProductsStore()
@@ -14,13 +16,15 @@ productsStore.$patch({
 })
 
 useSeoMeta({
-  title: 'Каталог товаров - iHome24',
-  description: 'Каталог товаров iHome24: товары для дома и офиса с актуальными ценами и наличием.',
+  title: SITE_DEFAULT_TITLE,
+  description: SITE_DEFAULT_DESCRIPTION,
+  ogTitle: SITE_DEFAULT_TITLE,
+  ogDescription: SITE_DEFAULT_DESCRIPTION,
   robots: 'index, follow',
 })
 
 useHead({
-  link: [{ rel: 'canonical', href: `${siteUrl}/products` }],
+  link: [{ rel: 'canonical', href: `${siteUrl}/products`, key: 'canonical' }],
 })
 </script>
 

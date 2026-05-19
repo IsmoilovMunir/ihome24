@@ -1,66 +1,35 @@
 <script setup>
-const apiBase = useApiBase()
-const siteUrl = useSiteUrl()
+/**
+ * Главная страница (SSR).
+ * Данные загружаются на сервере — в view-source видны h1, товары и meta.
+ */
+const { api } = useApi()
 
-const fetchOpts = { baseURL: apiBase, timeout: 60_000 }
-
-const [{ data: products }, { data: categories }] = await Promise.all([
-  useAsyncData('home-products', () => $fetch('/api/products', fetchOpts)),
-  useAsyncData('home-categories', () => $fetch('/api/categories', fetchOpts)),
-])
+const { data: home } = await useAsyncData('home', async () => {
+  const [products, categories] = await Promise.all([
+    api('/products', { timeout: 60_000 }),
+    api('/categories', { timeout: 60_000 }),
+  ])
+  return {
+    products: toPlainSerializable(products) ?? [],
+    categories: toPlainSerializable(categories) ?? [],
+  }
+})
 
 const productsStore = useProductsStore()
 productsStore.$patch({
-  products: products.value ? toPlainSerializable(products.value) : [],
-  categories: categories.value ? toPlainSerializable(categories.value) : [],
+  products: home.value?.products ?? [],
+  categories: home.value?.categories ?? [],
   loading: false,
   error: null,
 })
 
-// После добавления товара в админке — подтянуть свежий каталог на клиенте
+useHomeSeo()
+
+/** Фоновое обновление каталога после гидратации (без спиннера). */
 onMounted(() => {
   const { refreshCatalog } = useCatalogRefresh()
   refreshCatalog()
-})
-
-useSeoMeta({
-  title: 'iHome24 - Интернет-магазин товаров для дома',
-  description: 'iHome24 - интернет-магазин товаров для дома и офиса. Каталог, выгодные цены, доставка.',
-  robots: 'index, follow',
-})
-
-useHead({
-  link: [{ rel: 'canonical', href: `${siteUrl}/` }],
-  script: [
-    {
-      type: 'application/ld+json',
-      key: 'jsonld-website',
-      innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        name: 'iHome24',
-        url: `${siteUrl}/`,
-        potentialAction: {
-          '@type': 'SearchAction',
-          target: `${siteUrl}/search?q={search_term_string}`,
-          'query-input': 'required name=search_term_string',
-        },
-      }),
-    },
-    {
-      type: 'application/ld+json',
-      key: 'jsonld-org',
-      innerHTML: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@type': 'Organization',
-        name: 'iHome24',
-        url: `${siteUrl}/`,
-        logo: `${siteUrl}/photos/logo.svg`,
-        email: 'info@ihome24.ru',
-        telephone: '+79809416666',
-      }),
-    },
-  ],
 })
 </script>
 

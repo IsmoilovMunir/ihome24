@@ -143,6 +143,12 @@
               <span v-if="pm.desc" data-test="checkout-payment-method-card-description" class="text-gray-400 text-xs">{{ pm.desc }}</span>
             </button>
           </div>
+          <CheckoutCompanyPicker
+            v-if="paymentMethod === 'invoice'"
+            ref="companyPickerRef"
+            v-model="selectedCompany"
+            class="mt-4"
+          />
           <div class="mt-4">
             <label class="block text-sm font-medium text-gray-300 mb-1">Комментарий к заказу</label>
             <textarea
@@ -397,8 +403,42 @@
               #{{ formatOrderNumber(orderSuccessNumber) }}
             </p>
             <p class="text-gray-400 text-sm mb-6">
-              Подтверждение придёт на указанный email
+              <template v-if="lastPaymentMethod === 'invoice'">
+                Реквизиты для оплаты отправлены на email. Назначение платежа: «Оплата заказа №{{ formatOrderNumber(orderSuccessNumber) }}».
+              </template>
+              <template v-else>
+                Подтверждение придёт на указанный email
+              </template>
             </p>
+            <div
+              v-if="lastPaymentMethod === 'invoice' && paymentDetailsForSuccess"
+              class="text-left text-xs text-gray-300 bg-white/5 border border-white/10 rounded-xl p-4 mb-6 space-y-1"
+            >
+              <p class="font-semibold text-white text-sm mb-2">
+                Реквизиты для оплаты
+              </p>
+              <p v-if="paymentDetailsForSuccess.name">
+                Получатель: {{ paymentDetailsForSuccess.name }}
+              </p>
+              <p v-if="paymentDetailsForSuccess.inn">
+                ИНН: {{ paymentDetailsForSuccess.inn }}
+              </p>
+              <p v-if="paymentDetailsForSuccess.kpp">
+                КПП: {{ paymentDetailsForSuccess.kpp }}
+              </p>
+              <p v-if="paymentDetailsForSuccess.bankName">
+                Банк: {{ paymentDetailsForSuccess.bankName }}
+              </p>
+              <p v-if="paymentDetailsForSuccess.bik">
+                БИК: {{ paymentDetailsForSuccess.bik }}
+              </p>
+              <p v-if="paymentDetailsForSuccess.bankAccount">
+                Р/с: {{ paymentDetailsForSuccess.bankAccount }}
+              </p>
+              <p v-if="paymentDetailsForSuccess.correspondentAccount">
+                К/с: {{ paymentDetailsForSuccess.correspondentAccount }}
+              </p>
+            </div>
             <button
               type="button"
               class="w-full py-3.5 px-6 rounded-xl bg-[#F47327] text-white font-semibold hover:bg-[#F47327]/90 active:bg-[#F47327]/80 transition-colors"
@@ -474,7 +514,7 @@ import { onMounted } from 'vue'
 import { useCartStore } from '~/stores/cart'
 import { useAuthStore } from '~/stores/auth'
 import { useSettingsStore } from '~/stores/settings'
-import { fileApi, orderApi, checkoutApi } from '~/utils/api'
+import { fileApi, orderApi, checkoutApi, settingsApi } from '~/utils/api'
 import { productPath } from '~/utils/productUrl'
 import { validateCheckoutContacts } from '~/utils/checkoutValidation'
 
@@ -506,6 +546,8 @@ const loading = ref(false)
 const error = ref(null)
 const deliveryMethod = ref('delivery')
 const paymentMethod = ref(null)
+const selectedCompany = ref(null)
+const companyPickerRef = ref(null)
 
 // Диалог карты доставки
 const showDeliveryMapDialog = ref(false)
@@ -526,6 +568,8 @@ const mapLocationLoading = ref(false)
 // Успешное оформление заказа
 const showOrderSuccess = ref(false)
 const orderSuccessNumber = ref('')
+const lastPaymentMethod = ref(null)
+const paymentDetailsForSuccess = ref(null)
 const formatOrderNumber = (value) => {
   if (value == null) return '—'
   const n = Number(value)
@@ -758,6 +802,7 @@ onUnmounted(() => {
 
 const paymentMethods = [
   { id: 'cash', name: 'При получении', desc: 'наличными или картой' },
+  { id: 'invoice', name: 'По расчётному счёту', desc: 'для юр. лиц' },
 ]
 
 function normalizePhoneForDisplay(phone) {
@@ -900,12 +945,28 @@ function validateDeliveryStep() {
 function selectPayment(id) {
   paymentMethod.value = id
   paymentConfirmed.value = true
+  if (id === 'invoice' && !paymentDetailsForSuccess.value) {
+    settingsApi.getPaymentDetails()
+      .then(res => { paymentDetailsForSuccess.value = res?.data ?? res })
+      .catch(() => {})
+  }
+}
+
+function validateInvoiceCompany() {
+  if (paymentMethod.value !== 'invoice') return true
+  const msg = companyPickerRef.value?.validate?.()
+  if (msg) {
+    error.value = msg
+    return false
+  }
+  return true
 }
 
 watch(checkoutStep, (step) => {
   if (step === 'payment') {
     paymentConfirmed.value = false
     paymentMethod.value = null
+    selectedCompany.value = null
   }
 })
 
@@ -1033,6 +1094,10 @@ const submitOrder = async () => {
     scrollToCheckoutSection('checkout-payment-method')
     return
   }
+  if (!validateInvoiceCompany()) {
+    scrollToCheckoutSection('checkout-payment-method')
+    return
+  }
   if (!validateDeliveryStep()) return
 
   loading.value = true
@@ -1062,6 +1127,19 @@ const submitOrder = async () => {
       pickupAddress: form.value.pickupAddress?.trim() || '',
       paymentMethod: paymentMethod.value,
       comment: form.value.comment.trim(),
+      ...(paymentMethod.value === 'invoice' && selectedCompany.value
+        ? {
+            companyName: selectedCompany.value.name?.trim(),
+            companyInn: selectedCompany.value.inn,
+            companyKpp: selectedCompany.value.kpp || undefined,
+            companyAddress: selectedCompany.value.address || undefined,
+            companyOgrn: selectedCompany.value.ogrn || undefined,
+            companyOkpo: selectedCompany.value.okpo || undefined,
+            companyCorrAccount: selectedCompany.value.corrAccount || undefined,
+            companyBik: selectedCompany.value.bik || undefined,
+            companySettlementAccount: selectedCompany.value.settlementAccount || undefined,
+          }
+        : {}),
       items: cartStore.items.map((item) => ({
         productId: item.product.id,
         quantity: item.quantity,
@@ -1071,6 +1149,13 @@ const submitOrder = async () => {
     const response = await orderApi.create(orderData)
     const payload = response?.data ?? response
     orderSuccessNumber.value = payload?.order ?? payload?.orderNumber ?? '—'
+    lastPaymentMethod.value = paymentMethod.value
+    if (paymentMethod.value === 'invoice' && !paymentDetailsForSuccess.value) {
+      try {
+        const res = await settingsApi.getPaymentDetails()
+        paymentDetailsForSuccess.value = res?.data ?? res
+      } catch (_) {}
+    }
     preliminaryOrderId.value = null
     if (import.meta.client) sessionStorage.removeItem(PRELIMINARY_ORDER_KEY)
     cartStore.clearCart()

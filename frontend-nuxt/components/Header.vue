@@ -235,25 +235,25 @@
                   </router-link>
 
                   <!-- Пункты меню (при клике проверяется авторизация) -->
-                  <router-link to="/personal" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
+                  <router-link to="/account" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
                     <svg class="personal-menu__icon" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path d="m9.268 3.603-4.94 3.85c-.825.642-1.495 2.008-1.495 3.044v6.792c0 2.127 1.733 3.869 3.86 3.869h10.614a3.871 3.871 0 0 0 3.86-3.86v-6.673c0-1.11-.743-2.53-1.65-3.162l-5.665-3.97c-1.284-.898-3.346-.852-4.584.11zM12 17.49v-2.75" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     Личный кабинет
                   </router-link>
-                  <router-link to="/personal/orders" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
+                  <router-link to="/account/orders" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
                     <svg class="personal-menu__icon" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path d="M9.5 22h6c4.02 0 4.74-1.61 4.95-3.57l.75-6C21.47 9.99 20.77 8 16.5 8h-8c-4.27 0-4.97 1.99-4.7 4.43l.75 6C4.76 20.39 5.48 22 9.5 22zM8 7.67V6.7c0-2.25 1.81-4.46 4.06-4.67A4.5 4.5 0 0 1 17 6.51v1.38" stroke="currentColor" stroke-width="1.5" stroke-miterlimit="10" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     Заказы
                   </router-link>
-                  <router-link to="/personal/favorites" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
+                  <router-link to="/account/favorites" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
                     <svg class="personal-menu__icon" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path d="M12.62 20.81C12.28 20.93 11.72 20.93 11.38 20.81C8.48 19.82 2 15.69 2 8.68998C2 5.59998 4.49 3.09998 7.56 3.09998C9.38 3.09998 10.99 3.97998 12 5.33998C13.01 3.97998 14.63 3.09998 16.44 3.09998C19.51 3.09998 22 5.59998 22 8.68998C22 15.69 15.52 19.82 12.62 20.81Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
                     Избранное
                   </router-link>
-                  <router-link to="/personal/profile" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
+                  <router-link to="/account/profile" class="personal-menu__item personal-menu__link" @click="handlePersonalMenuClick">
                     <svg class="personal-menu__icon" width="24" height="24" fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path d="M12.5 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM21.09 22c0-3.87-3.85-7-8.59-7s-8.59 3.13-8.59 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>

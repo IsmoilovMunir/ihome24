@@ -1,3 +1,8 @@
+<script setup>
+useLayoutCanonical()
+useSeoMeta({ robots: 'noindex, nofollow' })
+</script>
+
 <template>
   <div class="min-h-screen flex flex-col bg-[#3A3331]">
     <Header />

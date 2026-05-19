@@ -5,7 +5,7 @@ useSeoMeta({
   description: 'Проверка статуса заказа iHome24.',
   robots: 'index, follow',
 })
-useHead({ link: [{ rel: 'canonical', href: `${siteUrl}/order-tracking` }] })
+useHead({ link: [{ rel: 'canonical', href: `${siteUrl}/order-tracking`, key: 'canonical' }] })
 </script>
 
 <template>

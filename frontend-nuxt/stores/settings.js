@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { settingsApi } from '~/utils/api'
+import { toPlainSerializable } from '~/utils/serializable'
 
 /**
  * Уровни цен (розница / мелкий опт / крупный опт).
@@ -55,7 +56,7 @@ export const useSettingsStore = defineStore('settings', {
       if (this.priceTiersLoaded) return
       try {
         const { data } = await settingsApi.getPriceTiers()
-        this.priceTiers = data?.tiers ?? []
+        this.priceTiers = toPlainSerializable(data?.tiers ?? []) ?? []
         this.priceTiersLoaded = true
       } catch (err) {
         console.warn('Price tiers load failed:', err)

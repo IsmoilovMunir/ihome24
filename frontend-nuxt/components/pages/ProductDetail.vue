@@ -583,7 +583,12 @@ import { useCartStore } from '~/stores/cart'
 import { useSettingsStore } from '~/stores/settings'
 import { fileApi } from '~/utils/api'
 import { resolveCartVariant } from '~/utils/cartVariant'
-import { parseProductIdFromRoute, productPath } from '~/utils/productUrl'
+import {
+  parseProductIdFromRoute,
+  productPath,
+  productSeoPath,
+} from '~/utils/productUrl'
+import { fetchProductBySlug } from '~/utils/fetchProductBySlug'
 import { categoryPathSegment, getCategoryChain } from '~/utils/categoryUrl'
 
 const props = defineProps({
@@ -824,10 +829,11 @@ const buildProductSeoDescription = () => {
 }
 
 const updateProductSeo = () => {
+  if (props.ssrProduct) return
   if (!product.value) return
   const title = buildProductSeoTitle()
   const description = buildProductSeoDescription().slice(0, 160)
-  const canonical = `${SEO_SITE_URL}${route.path}`
+  const canonical = `${SEO_SITE_URL}${productSeoPath(product.value)}`
   const image = mainImageUrlLarge.value || mainImageUrlFast.value || ''
 
   document.title = title
@@ -868,7 +874,7 @@ const selectVariant = (index) => {
   selectedVariantIndex.value = index
 
   const sku = selectedVariant.value?.sku
-  const basePath = productPath(product.value)
+  const basePath = productSeoPath(product.value)
 
   if (sku) {
     router.replace({ path: `${basePath}/${sku}`, query: route.query })
@@ -1403,7 +1409,7 @@ function applyProductFromStore(p) {
   if (import.meta.client && route.path !== canonical) {
     router.replace({ path: canonical, query: route.query })
   }
-  if (import.meta.client) updateProductSeo()
+  if (import.meta.client && !props.ssrProduct) updateProductSeo()
 }
 
 onMounted(async () => {
@@ -1413,22 +1419,59 @@ onMounted(async () => {
     document.body.scrollTop = 0
   }
   await settingsStore.fetchPriceTiers()
-  const productId = parseProductIdFromRoute(route.params.id)
-  if (productId == null) {
-    if (import.meta.client) router.push('/products')
-    return
-  }
+
   if (props.ssrProduct) {
     productsStore.selectedProduct = props.ssrProduct
+    if (productsStore.categories?.length === 0) {
+      try {
+        const { api } = useApi()
+        productsStore.categories = (await api('/categories')) ?? []
+      } catch {
+        /* optional */
+      }
+    }
     applyProductFromStore(props.ssrProduct)
     return
   }
-  try {
-    await productsStore.fetchProductById(productId)
-    applyProductFromStore(productsStore.selectedProduct)
-  } catch {
-    if (import.meta.client) router.push('/products')
+
+  const slugOrId = route.params.slug ?? route.params.id
+  const productId = parseProductIdFromRoute(slugOrId)
+
+  if (productId != null) {
+    try {
+      await productsStore.fetchProductById(productId)
+      applyProductFromStore(productsStore.selectedProduct)
+    } catch {
+      if (import.meta.client) router.push('/products')
+    }
+    return
   }
+
+  const slug = String(slugOrId || '').trim()
+  if (slug) {
+    try {
+      const config = useRuntimeConfig()
+      const result = await fetchProductBySlug(slug, {
+        apiBaseServer: String(config.apiBaseServer || ''),
+        public: { apiBase: String(config.public.apiBase || '') },
+      })
+      if (result.kind === 'redirect' && result.canonicalPath) {
+        const sku = route.params.variantSku
+        const path = sku ? `${result.canonicalPath}/${sku}` : result.canonicalPath
+        if (import.meta.client) router.replace({ path, query: route.query })
+        return
+      }
+      if (result.kind === 'product') {
+        productsStore.selectedProduct = result.product
+        applyProductFromStore(result.product)
+        return
+      }
+    } catch {
+      /* fall through to catalog */
+    }
+  }
+
+  if (import.meta.client) router.push('/products')
 })
 
 onUnmounted(() => {

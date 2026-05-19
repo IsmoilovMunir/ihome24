@@ -1,5 +1,6 @@
 <script setup>
-useSeoMeta({ title: 'Оформление заказа - iHome24', robots: 'noindex, nofollow' })
+definePageMeta({ ssr: false })
+useSeoMeta({ title: 'Оформление заказа - iHome24', robots: 'noindex' })
 </script>
 
 <template>

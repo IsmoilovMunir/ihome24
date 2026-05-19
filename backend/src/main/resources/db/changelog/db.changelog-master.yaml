@@ -30,6 +30,18 @@ databaseChangeLog:
   - include:
       file: db/changelog/changeset/products_V004__quantity_per_package.sql
   - include:
+      file: db/changelog/changeset/products_V005__seo_and_returns.sql
+  - include:
+      file: db/changelog/changeset/products_V006__seo_slug_unique_redirects.sql
+  - include:
+      file: db/changelog/changeset/products_V007__seo_meta_title_length.sql
+  - include:
+      file: db/changelog/changeset/products_V008__seo_meta_description_length.sql
+  - include:
+      file: db/changelog/changeset/products_V009__seo_model_b1.sql
+  - include:
+      file: db/changelog/changeset/products_V010__slug_redirects_old_new.sql
+  - include:
       file: db/changelog/changeset/company_settings_V001__initial.sql
   - include:
       file: db/changelog/changeset/company_settings_V002__currency.sql
@@ -43,3 +55,13 @@ databaseChangeLog:
       file: db/changelog/changeset/orders_V003__fix_method_and_status_check.sql
   - include:
       file: db/changelog/changeset/orders_V004__add_preliminary_status.sql
+  - include:
+      file: db/changelog/changeset/wholesale_leads_V001__initial.sql
+  - include:
+      file: db/changelog/changeset/wholesale_leads_V002__assignment.sql
+  - include:
+      file: db/changelog/changeset/orders_V005__bank_transfer_and_company.sql
+  - include:
+      file: db/changelog/changeset/orders_V006__company_extra_fields.sql
+  - include:
+      file: db/changelog/changeset/orders_V007__company_bank_fields.sql

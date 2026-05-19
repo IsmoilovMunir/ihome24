@@ -7,6 +7,7 @@ import com.ihome24.ihome24.dto.request.company.CurrencySettingsRequest;
 import com.ihome24.ihome24.dto.request.company.PriceTierItem;
 import com.ihome24.ihome24.dto.request.company.PriceTiersSettingsRequest;
 import com.ihome24.ihome24.dto.response.company.CompanySettingsResponse;
+import com.ihome24.ihome24.dto.response.company.PaymentDetailsResponse;
 import com.ihome24.ihome24.dto.response.company.PriceTiersSettingsResponse;
 import com.ihome24.ihome24.entity.company.CompanySettings;
 import com.ihome24.ihome24.repository.company.CompanySettingsRepository;
@@ -227,6 +228,23 @@ public class CompanySettingsService {
         list.add(PriceTierItem.builder().minQty(11).maxQty(100).discountPercent(BigDecimal.TEN).label("Мелкий опт").build());
         list.add(PriceTierItem.builder().minQty(101).maxQty(null).discountPercent(BigDecimal.valueOf(15)).label("Крупный опт").build());
         return list;
+    }
+
+    public PaymentDetailsResponse getPublicPaymentDetails() {
+        CompanySettings settings = companySettingsRepository.findFirstByIsActiveTrue()
+                .orElseGet(() -> companySettingsRepository.findFirstByOrderByIdAsc().orElse(null));
+        if (settings == null) {
+            return PaymentDetailsResponse.builder().build();
+        }
+        return PaymentDetailsResponse.builder()
+                .name(settings.getName())
+                .inn(settings.getInn())
+                .kpp(settings.getKpp())
+                .bankName(settings.getBankName())
+                .bankAccount(settings.getBankAccount())
+                .correspondentAccount(settings.getCorrespondentAccount())
+                .bik(settings.getBik())
+                .build();
     }
 
     private CompanySettingsResponse mapToResponse(CompanySettings settings) {

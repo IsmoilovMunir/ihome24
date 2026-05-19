@@ -15,6 +15,7 @@ import com.ihome24.ihome24.exception.ResourceNotFoundException;
 import com.ihome24.ihome24.repository.order.OrderRepository;
 import com.ihome24.ihome24.service.auth.PhoneAuthService;
 import com.ihome24.ihome24.service.company.CompanySettingsService;
+import com.ihome24.ihome24.util.CompanyRequisitesFormat;
 import com.ihome24.ihome24.service.customer.CustomerLookupService;
 import com.ihome24.ihome24.service.email.EmailService;
 import com.ihome24.ihome24.repository.product.ProductRepository;
@@ -235,9 +236,8 @@ public class OrderService {
                 ? request.getAddress()
                 : request.getPickupAddress();
 
-        Order.PaymentMethod paymentMethod = "cash".equalsIgnoreCase(request.getPaymentMethod())
-                ? Order.PaymentMethod.CASH
-                : Order.PaymentMethod.MASTERCARD;
+        Order.PaymentMethod paymentMethod = resolvePaymentMethod(request.getPaymentMethod());
+        validateCompanyForInvoice(paymentMethod, request);
 
         BigDecimal totalSpent = BigDecimal.ZERO;
         List<OrderItem> items = new ArrayList<>();
@@ -277,6 +277,8 @@ public class OrderService {
                 .orderDate(LocalDateTime.now())
                 .build();
 
+        applyCompanyInfo(order, paymentMethod, request);
+
         order = orderRepository.save(order);
 
         for (OrderItem item : items) {
@@ -286,20 +288,37 @@ public class OrderService {
         order = orderRepository.save(order);
 
         // Отправляем письмо клиенту о принятии заказа со списком товаров
+        sendOrderCreatedEmail(order);
+
+        return mapToResponse(order);
+    }
+
+    private void sendOrderCreatedEmail(Order order) {
         try {
-            String totalStr = totalSpent != null ? String.format("%.2f ₽", totalSpent) : "";
+            String totalStr = order.getSpent() != null ? String.format("%.2f ₽", order.getSpent()) : "";
             List<EmailService.OrderItemLine> lines = order.getItems().stream()
                     .map(item -> new EmailService.OrderItemLine(
                             item.getProductName(),
                             item.getQuantity() != null ? item.getQuantity() : 0,
                             item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO))
                     .toList();
-            emailService.sendOrderConfirmation(order.getEmail(), order.getCustomer(), order.getOrderNumber(), totalStr, lines);
+            if (order.getMethod() == Order.PaymentMethod.BANK_TRANSFER) {
+                emailService.sendOrderBankTransferConfirmation(
+                        order.getEmail(),
+                        order.getCustomer(),
+                        order.getOrderNumber(),
+                        totalStr,
+                        lines,
+                        order.getCompanyName(),
+                        order.getCompanyInn(),
+                        order.getCompanyKpp(),
+                        companySettingsService.getPublicPaymentDetails());
+            } else {
+                emailService.sendOrderConfirmation(order.getEmail(), order.getCustomer(), order.getOrderNumber(), totalStr, lines);
+            }
         } catch (Exception e) {
             // Заказ создан, письмо не критично — не прерываем
         }
-
-        return mapToResponse(order);
     }
 
     private Order resolvePreliminaryOrder(CreateOrderRequest request) {
@@ -328,9 +347,8 @@ public class OrderService {
                 ? request.getAddress()
                 : request.getPickupAddress();
 
-        Order.PaymentMethod paymentMethod = "cash".equalsIgnoreCase(request.getPaymentMethod())
-                ? Order.PaymentMethod.CASH
-                : Order.PaymentMethod.MASTERCARD;
+        Order.PaymentMethod paymentMethod = resolvePaymentMethod(request.getPaymentMethod());
+        validateCompanyForInvoice(paymentMethod, request);
 
         order.setCustomer(request.getFullName());
         order.setEmail(request.getEmail().trim());
@@ -342,6 +360,7 @@ public class OrderService {
         order.setPayment(Order.PaymentStatus.PENDING);
         order.setStatus(Order.OrderStatus.PENDING);
         order.setOrderDate(LocalDateTime.now());
+        applyCompanyInfo(order, paymentMethod, request);
 
         if (order.getItems() == null) {
             order.setItems(new ArrayList<>());
@@ -373,19 +392,78 @@ public class OrderService {
         order.setSpent(totalSpent);
         order = orderRepository.save(order);
 
-        try {
-            String totalStr = totalSpent != null ? String.format("%.2f ₽", totalSpent) : "";
-            List<EmailService.OrderItemLine> lines = order.getItems().stream()
-                    .map(item -> new EmailService.OrderItemLine(
-                            item.getProductName(),
-                            item.getQuantity() != null ? item.getQuantity() : 0,
-                            item.getPrice() != null ? item.getPrice() : BigDecimal.ZERO))
-                    .toList();
-            emailService.sendOrderConfirmation(order.getEmail(), order.getCustomer(), order.getOrderNumber(), totalStr, lines);
-        } catch (Exception ignored) {
-        }
+        sendOrderCreatedEmail(order);
 
         return mapToResponse(order);
+    }
+
+    private static Order.PaymentMethod resolvePaymentMethod(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return Order.PaymentMethod.MASTERCARD;
+        }
+        return switch (raw.trim().toLowerCase()) {
+            case "cash" -> Order.PaymentMethod.CASH;
+            case "invoice", "bank_transfer", "bank" -> Order.PaymentMethod.BANK_TRANSFER;
+            default -> Order.PaymentMethod.MASTERCARD;
+        };
+    }
+
+    private static void validateCompanyForInvoice(Order.PaymentMethod method, CreateOrderRequest request) {
+        if (method != Order.PaymentMethod.BANK_TRANSFER) {
+            return;
+        }
+        String companyName = request.getCompanyName() != null ? request.getCompanyName().trim() : "";
+        String inn = request.getCompanyInn() != null ? request.getCompanyInn().replaceAll("\\D", "") : "";
+        if (companyName.isBlank()) {
+            throw new IllegalArgumentException("Укажите название организации для оплаты по счёту");
+        }
+        if (inn.length() != 10 && inn.length() != 12) {
+            throw new IllegalArgumentException("ИНН должен содержать 10 или 12 цифр");
+        }
+        String address = request.getCompanyAddress() != null ? request.getCompanyAddress().trim() : "";
+        if (address.isBlank()) {
+            throw new IllegalArgumentException("Укажите адрес организации");
+        }
+        String ogrn = request.getCompanyOgrn() != null ? request.getCompanyOgrn().replaceAll("\\D", "") : "";
+        if (ogrn.length() != 13 && ogrn.length() != 15) {
+            throw new IllegalArgumentException("ОГРН должен содержать 13 или 15 цифр");
+        }
+        String okpo = request.getCompanyOkpo() != null ? request.getCompanyOkpo().replaceAll("\\D", "") : "";
+        if (!okpo.isEmpty() && okpo.length() != 8 && okpo.length() != 10) {
+            throw new IllegalArgumentException("ОКПО должен содержать 8 или 10 цифр");
+        }
+    }
+
+    private static void applyCompanyInfo(Order order, Order.PaymentMethod method, CreateOrderRequest request) {
+        if (method != Order.PaymentMethod.BANK_TRANSFER) {
+            order.setCompanyName(null);
+            order.setCompanyInn(null);
+            order.setCompanyKpp(null);
+            order.setCompanyAddress(null);
+            order.setCompanyOgrn(null);
+            order.setCompanyOkpo(null);
+            order.setCompanyCorrAccount(null);
+            order.setCompanyBik(null);
+            order.setCompanySettlementAccount(null);
+            return;
+        }
+        order.setCompanyName(request.getCompanyName().trim());
+        order.setCompanyInn(CompanyRequisitesFormat.formatInn(request.getCompanyInn()));
+        order.setCompanyKpp(CompanyRequisitesFormat.formatKpp(request.getCompanyKpp()));
+        order.setCompanyAddress(CompanyRequisitesFormat.formatAddress(request.getCompanyAddress()));
+        order.setCompanyOgrn(CompanyRequisitesFormat.formatOgrn(request.getCompanyOgrn()));
+        order.setCompanyOkpo(CompanyRequisitesFormat.formatOkpo(request.getCompanyOkpo()));
+        order.setCompanyCorrAccount(CompanyRequisitesFormat.formatBankAccount(request.getCompanyCorrAccount()));
+        order.setCompanyBik(CompanyRequisitesFormat.formatBik(request.getCompanyBik()));
+        order.setCompanySettlementAccount(
+                CompanyRequisitesFormat.formatBankAccount(request.getCompanySettlementAccount()));
+    }
+
+    private static String trimOrNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
     }
 
     private String getSortField(String sortBy) {
@@ -428,6 +506,15 @@ public class OrderService {
                 .method(mapPaymentMethodToString(order.getMethod()))
                 .date(order.getOrderDate().format(dateFormatter))
                 .methodNumber(order.getMethodNumber())
+                .companyName(order.getCompanyName())
+                .companyInn(order.getCompanyInn())
+                .companyKpp(order.getCompanyKpp())
+                .companyAddress(order.getCompanyAddress())
+                .companyOgrn(order.getCompanyOgrn())
+                .companyOkpo(order.getCompanyOkpo())
+                .companyCorrAccount(order.getCompanyCorrAccount())
+                .companyBik(order.getCompanyBik())
+                .companySettlementAccount(order.getCompanySettlementAccount())
                 .build();
     }
 
@@ -510,6 +597,7 @@ public class OrderService {
             case PAYPAL: return "paypalLogo";
             case MASTERCARD: return "mastercard";
             case CASH: return "cash";
+            case BANK_TRANSFER: return "invoice";
             default: return "paypalLogo";
         }
     }

@@ -2,7 +2,7 @@
   <div class="personal-index">
     <div class="personal-index__grid">
       <!-- Карточка пользователя -->
-      <router-link to="/personal/profile" class="personal-user-panel">
+      <router-link to="/account/profile" class="personal-user-panel">
         <div class="personal-user-panel__avatar">
           <img
             v-if="avatarUrl"
@@ -24,7 +24,7 @@
       </router-link>
 
       <!-- Карточки быстрого доступа -->
-      <router-link to="/personal/orders" class="personal-dashboard-card">
+      <router-link to="/account/orders" class="personal-dashboard-card">
         <svg class="personal-dashboard-card__icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
           <path d="M19.59 7.17999H16.47V5.82999C16.47 4.64447 15.9991 3.50751 15.1608 2.66922C14.3225 1.83093 13.1855 1.35999 12 1.35999C10.8145 1.35999 9.67752 1.83093 8.83923 2.66922C8.00095 3.50751 7.53 4.64447 7.53 5.82999V7.17999H4.41C4.30206 7.18253 4.19925 7.22654 4.1229 7.30288C4.04655 7.37923 4.00254 7.48205 4 7.58999V21.15C4.00518 21.5435 4.16382 21.9195 4.44214 22.1978C4.72045 22.4762 5.09644 22.6348 5.49 22.64H18.49C18.887 22.64 19.2681 22.4837 19.5507 22.2048C19.8333 21.9259 19.9947 21.547 20 21.15V7.58999C20 7.48125 19.9568 7.37696 19.8799 7.30007C19.803 7.22318 19.6987 7.17999 19.59 7.17999Z"/>
         </svg>
@@ -33,7 +33,7 @@
 
       <!-- Карточка "Избранное" скрыта, раздел пока не используется -->
 
-      <router-link to="/personal/profile" class="personal-dashboard-card">
+      <router-link to="/account/profile" class="personal-dashboard-card">
         <svg class="personal-dashboard-card__icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
           <path d="M12.5 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10zM21.09 22c0-3.87-3.85-7-8.59-7s-8.59 3.13-8.59 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>

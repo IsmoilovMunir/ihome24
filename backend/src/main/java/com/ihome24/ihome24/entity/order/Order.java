@@ -44,6 +44,33 @@ public class Order {
     @Column(name = "comment", columnDefinition = "TEXT")
     private String comment;
 
+    @Column(name = "company_name")
+    private String companyName;
+
+    @Column(name = "company_inn", length = 12)
+    private String companyInn;
+
+    @Column(name = "company_kpp", length = 9)
+    private String companyKpp;
+
+    @Column(name = "company_address", columnDefinition = "TEXT")
+    private String companyAddress;
+
+    @Column(name = "company_ogrn", length = 20)
+    private String companyOgrn;
+
+    @Column(name = "company_okpo", length = 20)
+    private String companyOkpo;
+
+    @Column(name = "company_corr_account", length = 20)
+    private String companyCorrAccount;
+
+    @Column(name = "company_bik", length = 9)
+    private String companyBik;
+
+    @Column(name = "company_settlement_account", length = 20)
+    private String companySettlementAccount;
+
     @Column(name = "avatar_url")
     private String avatarUrl;
 
@@ -112,6 +139,7 @@ public class Order {
     public enum PaymentMethod {
         PAYPAL,
         MASTERCARD,
-        CASH
+        CASH,
+        BANK_TRANSFER
     }
 }

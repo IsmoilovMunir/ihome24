@@ -10,6 +10,8 @@ export function useLegacyApi() {
     geoApi: nuxtApp.$geoApi,
     settingsApi: nuxtApp.$settingsApi,
     cartApi: nuxtApp.$cartApi,
+    companyApi: nuxtApp.$companyApi,
+    wholesaleApi: nuxtApp.$wholesaleApi,
     fileApi: nuxtApp.$fileApi,
   }
 }
@@ -45,12 +47,20 @@ export const geoApi = {
 }
 export const settingsApi = {
   getPriceTiers: () => useNuxtApp().$settingsApi.getPriceTiers(),
+  getPaymentDetails: () => useNuxtApp().$settingsApi.getPaymentDetails(),
 }
 export const checkoutApi = {
   saveLead: (data, issueToken) => useNuxtApp().$checkoutApi.saveLead(data, issueToken),
 }
 export const cartApi = {
   validate: (items) => useNuxtApp().$cartApi.validate(items),
+}
+export const companyApi = {
+  suggest: (q, count) => useNuxtApp().$companyApi.suggest(q, count),
+  findByInn: (inn) => useNuxtApp().$companyApi.findByInn(inn),
+}
+export const wholesaleApi = {
+  submitLead: (data) => useNuxtApp().$wholesaleApi.submitLead(data),
 }
 export const fileApi = {
   getFileUrl: (p) => useNuxtApp().$fileApi.getFileUrl(p),

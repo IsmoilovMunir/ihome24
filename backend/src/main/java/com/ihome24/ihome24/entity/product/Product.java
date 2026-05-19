@@ -120,6 +120,29 @@ public class Product {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "slug", nullable = false, length = 100)
+    private String slug;
+
+    @Column(name = "meta_title", length = 120)
+    private String metaTitle;
+
+    @Column(name = "meta_description", length = 300)
+    private String metaDescription;
+
+    @Column(name = "og_image", length = 500)
+    private String ogImage;
+
+    @Column(name = "returns_allowed")
+    @Builder.Default
+    private Boolean returnsAllowed = true;
+
+    @Column(name = "returns_days")
+    @Builder.Default
+    private Integer returnsDays = 14;
+
+    @Column(name = "returns_conditions", columnDefinition = "TEXT")
+    private String returnsConditions;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

@@ -83,4 +83,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT COALESCE(SUM(o.spent), 0) FROM Order o WHERE ((:email IS NOT NULL AND o.email = :email) OR (:phone IS NOT NULL AND o.phone = :phone))")
     BigDecimal sumSpentByEmailOrPhone(@Param("email") String email, @Param("phone") String phone);
+
+    @Query("SELECT o FROM Order o WHERE o.status <> 'PRELIMINARY' ORDER BY o.orderDate DESC")
+    List<Order> findRecentOrders(Pageable pageable);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.status <> 'PRELIMINARY'")
+    long countRecentOrders();
 }

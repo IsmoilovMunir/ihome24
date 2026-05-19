@@ -35,6 +35,14 @@ const resolvePaymentStatus = payment => {
     return { text: 'Ошибка', color: 'error' }
 }
 
+const resolvePaymentMethodLabel = method => {
+  if (method === 'cash') return 'Наличные при получении'
+  if (method === 'invoice') return 'По расчётному счёту'
+  if (method === 'mastercard') return 'Карта'
+  if (method === 'paypalLogo') return 'PayPal'
+  return method || '—'
+}
+
 const resolveStatus = status => {
   if (status === 'Pending')
     return { text: 'Ожидает', color: 'warning' }
@@ -550,8 +558,29 @@ const handleDeleteOrder = async () => {
               Способ оплаты
             </h5>
             <div class="text-body-1">
-              {{ orderData.method === 'cash' ? 'Наличные при получении' : orderData.method || '—' }}
+              {{ resolvePaymentMethodLabel(orderData.method) }}
             </div>
+          </VCardText>
+        </VCard>
+
+        <VCard
+          v-if="orderData.method === 'invoice' && (orderData.companyName || orderData.companyInn)"
+          class="mt-6"
+        >
+          <VCardItem>
+            <VCardTitle>Организация (юр. лицо)</VCardTitle>
+          </VCardItem>
+          <VCardText class="d-flex flex-column gap-y-1">
+            <span v-if="orderData.companyName">{{ orderData.companyName }}</span>
+            <span v-if="orderData.companyAddress">Адрес: {{ orderData.companyAddress }}</span>
+            <span v-if="orderData.companyInn">ИНН: {{ orderData.companyInn }}</span>
+            <span v-if="orderData.companyKpp">КПП: {{ orderData.companyKpp }}</span>
+            <span v-if="orderData.companyOgrn">ОГРН: {{ orderData.companyOgrn }}</span>
+            <span v-if="orderData.companyCorrAccount">Корр.сч: {{ orderData.companyCorrAccount }}</span>
+            <span v-if="orderData.companyBik">БИК: {{ orderData.companyBik }}</span>
+            <span v-if="orderData.companySettlementAccount">р/с: {{ orderData.companySettlementAccount }}</span>
+            <span v-if="orderData.companyKpp">КПП: {{ orderData.companyKpp }}</span>
+            <span v-if="orderData.companyOkpo">ОКПО: {{ orderData.companyOkpo }}</span>
           </VCardText>
         </VCard>
       </VCol>

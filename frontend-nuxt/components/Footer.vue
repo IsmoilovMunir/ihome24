@@ -73,6 +73,9 @@
           <router-link to="/support/contacts" class="text-sm text-gray-400 transition-colors hover:text-white">
             Контакты
           </router-link>
+          <NuxtLink to="/optovym-klientam" class="text-sm text-gray-400 transition-colors hover:text-white">
+            Оптовым клиентам
+          </NuxtLink>
           <router-link to="/support/oferta" class="text-sm text-gray-400 transition-colors hover:text-white">
             Договор оферты
           </router-link>

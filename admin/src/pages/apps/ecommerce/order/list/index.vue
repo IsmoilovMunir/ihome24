@@ -414,6 +414,10 @@ const deleteOrder = async id => {
               height="18"
             >
             <span
+              v-else-if="item.method === 'invoice'"
+              class="text-body-1"
+            >По счёту</span>
+            <span
               v-else
               class="text-body-1"
             >Наличные</span>

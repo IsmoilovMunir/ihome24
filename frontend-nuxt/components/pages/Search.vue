@@ -34,14 +34,14 @@
             <section v-if="searchResultsCategories.length > 0" class="mb-10">
               <h2 class="text-xl font-semibold text-white mb-4">Категории</h2>
               <div class="flex flex-wrap gap-3">
-                <router-link
+                <NuxtLink
                   v-for="cat in searchResultsCategories"
                   :key="'cat-' + cat.id"
                   :to="categoryHref(cat)"
                   class="search-page-category-link"
                 >
                   {{ cat.name }}
-                </router-link>
+                </NuxtLink>
               </div>
             </section>
 
@@ -67,7 +67,16 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '~/stores/products'
 import { buildCategoryPath } from '~/utils/categoryUrl'
+import {
+  filterCategoriesByQuery,
+  filterProductsByQuery,
+} from '~/utils/searchFilter'
 import ProductCard from '~/components/ProductCard.vue'
+
+const props = defineProps({
+  /** Каталог уже загружен на странице (SSR) */
+  catalogPrefetched: { type: Boolean, default: false },
+})
 
 const route = useRoute()
 const router = useRouter()
@@ -86,38 +95,13 @@ watch(
   { immediate: true }
 )
 
-const normalizeQuery = (q) => (q || '').toLowerCase().trim()
+const searchResultsProducts = computed(() =>
+  filterProductsByQuery(productsStore.products, query.value),
+)
 
-const matchesQuery = (text, searchQ) => {
-  if (!text || !searchQ) return false
-  return normalizeQuery(String(text)).includes(normalizeQuery(searchQ))
-}
-
-const searchResultsProducts = computed(() => {
-  const q = normalizeQuery(query.value)
-  if (q.length < 1) return []
-  const products = productsStore.products || []
-  return products.filter((p) => {
-    if (matchesQuery(p.name, q)) return true
-    if (matchesQuery(p.description, q)) return true
-    if (p.category?.name && matchesQuery(p.category.name, q)) return true
-    if (p.sku && matchesQuery(p.sku, q)) return true
-    if (Array.isArray(p.benefits)) {
-      if (p.benefits.some((b) => matchesQuery(b, q))) return true
-    }
-    if (Array.isArray(p.characteristics)) {
-      if (p.characteristics.some((c) => matchesQuery(c.name, q) || matchesQuery(c.value, q))) return true
-    }
-    return false
-  })
-})
-
-const searchResultsCategories = computed(() => {
-  const q = normalizeQuery(query.value)
-  if (q.length < 1) return []
-  const cats = productsStore.categories || []
-  return cats.filter((c) => c.name && matchesQuery(c.name, q))
-})
+const searchResultsCategories = computed(() =>
+  filterCategoriesByQuery(productsStore.categories, query.value),
+)
 
 function submitSearch() {
   const q = inputQuery.value.trim()
@@ -127,9 +111,11 @@ function submitSearch() {
 }
 
 onMounted(async () => {
-  const { refreshCatalog } = useCatalogRefresh()
-  await refreshCatalog()
   inputQuery.value = route.query.q || ''
+  if (!props.catalogPrefetched) {
+    const { refreshCatalog } = useCatalogRefresh()
+    await refreshCatalog()
+  }
 })
 </script>
 

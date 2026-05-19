@@ -111,6 +111,13 @@ services:
       APP_EMAIL_FROM: ${APP_EMAIL_FROM:-}
       # Resend API (если SMTP блокируется хостингом — письма через HTTPS)
       RESEND_API_KEY: ${RESEND_API_KEY:-}
+      APP_WHOLESALE_EMAIL: ${APP_WHOLESALE_EMAIL:-opt@ihome24.ru}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      TELEGRAM_POLLING_ENABLED: ${TELEGRAM_POLLING_ENABLED:-false}
+      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      TELEGRAM_ALLOWED_CHAT_IDS: ${TELEGRAM_ALLOWED_CHAT_IDS:-}
     # Пробрасываем порт только на localhost для nginx reverse proxy
     ports:
       - "127.0.0.1:8080:8080"

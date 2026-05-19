@@ -27,7 +27,7 @@ const titles = {
 }
 
 const title = computed(() => {
-  const path = route.path.replace(/^\/personal\/?/, '').replace(/^\//, '') || 'personal'
+  const path = route.path.replace(/^\/account\/?/, '').replace(/^\//, '') || 'account'
   return titles[path] || 'Личный кабинет'
 })
 </script>

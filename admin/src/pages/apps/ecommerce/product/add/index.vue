@@ -4,6 +4,24 @@ import { useRouter, useRoute } from 'vue-router'
 import { $api } from '@/utils/api'
 import FileUploader from '@/components/file-upload/FileUploader.vue'
 import { useAbility } from '@casl/vue'
+import {
+  buildProductPageUrl,
+  containsCyrillic,
+  defaultMetaDescription,
+  defaultMetaTitle,
+  getMetaDescriptionLengthStatus,
+  getMetaTitleLengthStatus,
+  isValidSlugFormat,
+  META_DESCRIPTION_MAX,
+  META_TITLE_MAX,
+  SEO_FIELD_HINTS,
+  slugifyProductName,
+  truncateSerpText,
+  YANDEX_SNIPPET_DESC_DESKTOP,
+  YANDEX_SNIPPET_DESC_MOBILE,
+  YANDEX_SNIPPET_TITLE_DESKTOP,
+  YANDEX_SNIPPET_TITLE_MOBILE,
+} from '@/utils/productSeo'
 
 const router = useRouter()
 const route = useRoute()
@@ -391,6 +409,190 @@ const seoSlug = ref('')
 const seoMetaTitle = ref('')
 const seoMetaDescription = ref('')
 
+const seoPreviewTitle = computed(() =>
+  seoMetaTitle.value?.trim() || defaultMetaTitle(productTitle.value),
+)
+
+const seoMetaTitleIsManual = computed(() => Boolean(seoMetaTitle.value?.trim()))
+
+const seoMetaTitleLength = computed(() => seoMetaTitle.value?.length ?? 0)
+
+const seoMetaTitleStatus = computed(() =>
+  getMetaTitleLengthStatus(seoMetaTitleLength.value, seoMetaTitleIsManual.value),
+)
+const seoPreviewDescription = computed(() =>
+  seoMetaDescription.value?.trim()
+  || defaultMetaDescription(productTitle.value, variants.value[0]?.price?.base),
+)
+
+const seoMetaDescriptionIsManual = computed(() => Boolean(seoMetaDescription.value?.trim()))
+
+const seoMetaDescriptionLength = computed(() => seoMetaDescription.value?.length ?? 0)
+
+const seoMetaDescriptionStatus = computed(() =>
+  getMetaDescriptionLengthStatus(seoMetaDescriptionLength.value, seoMetaDescriptionIsManual.value),
+)
+
+const seoSlugError = ref('')
+const seoSlugWarning = ref('')
+const seoSaveWarnings = ref([])
+
+const productPageUrl = computed(() =>
+  buildProductPageUrl(seoSlug.value || slugifyProductName(productTitle.value)),
+)
+
+/** F-3: сниппет Яндекса с обрезкой как в выдаче */
+const seoSnippetTitleFull = computed(() => seoPreviewTitle.value)
+const seoSnippetDescFull = computed(() => seoPreviewDescription.value)
+
+const seoSnippetTitleDesktop = computed(() =>
+  truncateSerpText(seoSnippetTitleFull.value, YANDEX_SNIPPET_TITLE_DESKTOP),
+)
+const seoSnippetTitleMobile = computed(() =>
+  truncateSerpText(seoSnippetTitleFull.value, YANDEX_SNIPPET_TITLE_MOBILE),
+)
+const seoSnippetDescDesktop = computed(() =>
+  truncateSerpText(seoSnippetDescFull.value, YANDEX_SNIPPET_DESC_DESKTOP),
+)
+const seoSnippetDescMobile = computed(() =>
+  truncateSerpText(seoSnippetDescFull.value, YANDEX_SNIPPET_DESC_MOBILE),
+)
+
+const isSnippetTitleTruncatedDesktop = computed(() =>
+  seoSnippetTitleFull.value.length > YANDEX_SNIPPET_TITLE_DESKTOP,
+)
+const isSnippetTitleTruncatedMobile = computed(() =>
+  seoSnippetTitleFull.value.length > YANDEX_SNIPPET_TITLE_MOBILE,
+)
+const isSnippetDescTruncatedDesktop = computed(() =>
+  seoSnippetDescFull.value.length > YANDEX_SNIPPET_DESC_DESKTOP,
+)
+const isSnippetDescTruncatedMobile = computed(() =>
+  seoSnippetDescFull.value.length > YANDEX_SNIPPET_DESC_MOBILE,
+)
+
+/** Блокировка сохранения при невалидном slug (F-1). */
+const isSeoSlugValidForSubmit = computed(() => {
+  if (seoSlugError.value || seoSlugWarning.value) return false
+  const s = seoSlug.value?.trim()
+  if (!s) return true
+  return isValidSlugFormat(s)
+})
+
+const applySeoFromProductResponse = (product) => {
+  if (!product) return
+  const seo = product.seo || product
+  seoSlug.value = seo.slug ?? product.slug ?? ''
+  seoMetaTitle.value = seo.metaTitle ?? product.metaTitle ?? ''
+  seoMetaDescription.value = seo.metaDescription ?? product.metaDescription ?? ''
+  seoSlugError.value = ''
+  seoSlugWarning.value = ''
+}
+
+/** F-2: живая валидация slug при вводе (без автозамены). */
+const validateSeoSlugLive = () => {
+  const raw = seoSlug.value
+  if (!raw?.trim()) {
+    seoSlugError.value = ''
+    seoSlugWarning.value = ''
+    return true
+  }
+
+  if (containsCyrillic(raw)) {
+    seoSlugWarning.value = 'В slug обнаружена кириллица — используйте латиницу (a-z, 0-9, дефис)'
+    seoSlugError.value = 'Кириллица в URL недопустима'
+    return false
+  }
+  seoSlugWarning.value = ''
+
+  const normalized = slugifyProductName(raw)
+  if (!normalized || !isValidSlugFormat(normalized)) {
+    seoSlugError.value = 'Только a-z, 0-9 и дефис. Без пробелов и спецсимволов. До 100 символов.'
+    return false
+  }
+
+  if (raw.trim().toLowerCase() !== normalized) {
+    seoSlugError.value = ''
+    return true
+  }
+
+  seoSlugError.value = ''
+  return true
+}
+
+const validateSeoSlug = () => {
+  if (!seoSlug.value?.trim()) {
+    seoSlugError.value = ''
+    seoSlugWarning.value = ''
+    return true
+  }
+  const normalized = slugifyProductName(seoSlug.value)
+  if (normalized) {
+    seoSlug.value = normalized
+  }
+  seoSlugWarning.value = ''
+  if (!isValidSlugFormat(seoSlug.value)) {
+    seoSlugError.value = 'Только a-z, 0-9 и дефис. Без кириллицы и спецсимволов. До 100 символов.'
+    return false
+  }
+  seoSlugError.value = ''
+  return true
+}
+
+const ensureSeoSlugForSubmit = () => {
+  if (!seoSlug.value?.trim() && productTitle.value?.trim()) {
+    seoSlug.value = slugifyProductName(productTitle.value)
+    seoSlugError.value = ''
+    seoSlugWarning.value = ''
+  }
+}
+
+const validateSeoForSubmit = () => {
+  ensureSeoSlugForSubmit()
+  return validateSeoSlug()
+}
+
+const buildSeoPatchBody = () => ({
+  slug: seoSlug.value?.trim() ?? '',
+  metaTitle: seoMetaTitle.value?.trim() ?? '',
+  metaDescription: seoMetaDescription.value?.trim() ?? '',
+})
+
+const handleSeoPatchError = (error) => {
+  const status = error?.response?.status ?? error?.statusCode ?? error?.status
+  const data = error?.data || {}
+  const message = data.message || error?.message || ''
+  const code = data.error
+
+  if (status === 409 || code === 'SLUG_TAKEN') {
+    seoSlugError.value = message || 'Slug уже занят другим товаром'
+    activeTab.value = 'seo'
+    return true
+  }
+  if (status === 422 || code === 'INVALID_SLUG' || (status === 400 && /slug/i.test(message))) {
+    seoSlugError.value = message || 'Slug содержит недопустимые символы'
+    activeTab.value = 'seo'
+    return true
+  }
+  return false
+}
+
+/** F-1: сохранение SEO через PATCH /api/admin/products/{id}/seo */
+const saveProductSeo = async (id) => {
+  const response = await $api(`/admin/products/${id}/seo`, {
+    method: 'PATCH',
+    body: buildSeoPatchBody(),
+  })
+  seoSaveWarnings.value = response?.warnings ?? []
+  if (response?.slug) {
+    seoSlug.value = response.slug
+  }
+  if (response?.product) {
+    applySeoFromProductResponse(response.product)
+  }
+  return response
+}
+
 // ========== STATUS ==========
 const status = ref('draft')
 
@@ -661,16 +863,8 @@ const loadProductData = async () => {
       returnsConditions.value = ''
     }
     
-    // SEO
-    if (response.seo) {
-      seoSlug.value = response.seo.slug || ''
-      seoMetaTitle.value = response.seo.metaTitle || ''
-      seoMetaDescription.value = response.seo.metaDescription || ''
-    } else {
-      seoSlug.value = ''
-      seoMetaTitle.value = ''
-      seoMetaDescription.value = ''
-    }
+    // SEO (вложенный объект или поля верхнего уровня)
+    applySeoFromProductResponse(response)
     
     status.value = response.status || (response.isActive ? 'published' : 'draft')
     
@@ -705,16 +899,26 @@ const loadProductData = async () => {
 }
 
 // ========== AUTO GENERATE SLUG ==========
-const generateSlug = () => {
-  if (productTitle.value && !seoSlug.value) {
-    seoSlug.value = productTitle.value
-      .toLowerCase()
-      .replace(/[^a-zа-я0-9\s-]/g, '')
-      .replace(/\s+/g, '-')
-      .replace(/-+/g, '-')
-      .trim()
+const generateSlugFromTitle = (force = false) => {
+  if (!productTitle.value?.trim()) return
+  if (force || !seoSlug.value?.trim()) {
+    seoSlug.value = slugifyProductName(productTitle.value)
+    seoSlugError.value = ''
+    seoSlugWarning.value = ''
+    validateSeoSlugLive()
   }
 }
+
+watch(productTitle, () => {
+  if (!isLoadingData.value) {
+    generateSlugFromTitle(false)
+  }
+})
+
+watch(seoSlug, () => {
+  if (isLoadingData.value) return
+  validateSeoSlugLive()
+})
 
 // ========== SUBMIT ==========
 const buildProductRequest = () => {
@@ -851,11 +1055,6 @@ const buildProductRequest = () => {
       days: returnsDays.value || 14,
       conditions: returnsConditions.value || null
     },
-    seo: {
-      slug: seoSlug.value || null,
-      metaTitle: seoMetaTitle.value || null,
-      metaDescription: seoMetaDescription.value || null
-    },
     status: status.value
   }
   
@@ -871,14 +1070,53 @@ const buildProductRequest = () => {
   return requestData
 }
 
-const publishProduct = async () => {
-  if (!productTitle.value || !variants.value[0]?.price?.base) {
-    alert('Пожалуйста, заполните обязательные поля: Название товара и базовая цена варианта')
+const persistSeoAfterProductSave = async (savedProduct) => {
+  const id = savedProduct?.id ?? productId.value
+  if (!id) return
+  productId.value = id
+  isEditMode.value = true
+  await saveProductSeo(id)
+}
+
+/** Только SEO (режим SEO-специалиста без прав на товар). */
+const saveSeoOnly = async () => {
+  if (!isEditMode.value || !productId.value) {
+    alert('Сохранение SEO доступно только для существующего товара')
+    return
+  }
+  if (!validateSeoForSubmit()) {
+    activeTab.value = 'seo'
     return
   }
 
   try {
     isFetching.value = true
+    seoSaveWarnings.value = []
+    await saveProductSeo(productId.value)
+    alert('SEO сохранено')
+  } catch (error) {
+    console.error('Ошибка сохранения SEO:', error)
+    if (!handleSeoPatchError(error)) {
+      alert('Ошибка сохранения SEO: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
+    }
+  } finally {
+    isFetching.value = false
+  }
+}
+
+const publishProduct = async () => {
+  if (!productTitle.value || !variants.value[0]?.price?.base) {
+    alert('Пожалуйста, заполните обязательные поля: Название товара и базовая цена варианта')
+    return
+  }
+  if (!validateSeoForSubmit()) {
+    activeTab.value = 'seo'
+    return
+  }
+
+  try {
+    isFetching.value = true
+    seoSaveWarnings.value = []
     const productData = buildProductRequest()
     productData.status = 'published'
 
@@ -886,52 +1124,101 @@ const publishProduct = async () => {
     if (isEditMode.value && productId.value) {
       response = await $api(`/admin/products/${productId.value}`, {
         method: 'PUT',
-        body: productData
+        body: productData,
       })
+      try {
+        await saveProductSeo(productId.value)
+      } catch (seoError) {
+        if (handleSeoPatchError(seoError)) {
+          alert('Товар сохранён, но SEO не обновлено: исправьте slug на вкладке SEO')
+          return
+        }
+        throw seoError
+      }
     } else {
       response = await $api('/admin/products', {
         method: 'POST',
-        body: productData
+        body: productData,
       })
+      try {
+        await persistSeoAfterProductSave(response)
+      } catch (seoError) {
+        if (handleSeoPatchError(seoError)) {
+          alert('Товар создан, но SEO не сохранено: исправьте slug на вкладке SEO')
+          return
+        }
+        throw seoError
+      }
     }
-    
+
     router.push('/apps/ecommerce/product/list')
   } catch (error) {
     console.error('Ошибка при создании товара:', error)
-    alert('Ошибка при создании товара: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
+    if (!handleSeoPatchError(error)) {
+      alert('Ошибка при создании товара: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
+    }
   } finally {
     isFetching.value = false
   }
 }
 
 const saveDraft = async () => {
+  if (!canManageEcommerceProduct.value && canManageEcommerceProductSEO.value) {
+    await saveSeoOnly()
+    return
+  }
+
   if (!productTitle.value) {
     alert('Пожалуйста, заполните название товара')
+    return
+  }
+  if (!validateSeoForSubmit()) {
+    activeTab.value = 'seo'
     return
   }
 
   try {
     isFetching.value = true
+    seoSaveWarnings.value = []
     const productData = buildProductRequest()
     productData.status = 'draft'
 
-    let response
     if (isEditMode.value && productId.value) {
-      response = await $api(`/admin/products/${productId.value}`, {
+      await $api(`/admin/products/${productId.value}`, {
         method: 'PUT',
-        body: productData
+        body: productData,
       })
+      try {
+        await saveProductSeo(productId.value)
+      } catch (seoError) {
+        if (handleSeoPatchError(seoError)) {
+          alert('Черновик сохранён, но SEO не обновлено: исправьте slug на вкладке SEO')
+          return
+        }
+        throw seoError
+      }
       alert('Черновик обновлен успешно!')
     } else {
-      response = await $api('/admin/products', {
+      const response = await $api('/admin/products', {
         method: 'POST',
-        body: productData
+        body: productData,
       })
+      try {
+        await persistSeoAfterProductSave(response)
+      } catch (seoError) {
+        if (handleSeoPatchError(seoError)) {
+          alert('Черновик создан, но SEO не сохранено: исправьте slug на вкладке SEO')
+          return
+        }
+        throw seoError
+      }
       alert('Черновик сохранен успешно!')
     }
   } catch (error) {
     console.error('Ошибка при сохранении черновика:', error)
-    alert('Ошибка при сохранении черновика: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
+    if (!handleSeoPatchError(error)) {
+      alert('Ошибка при сохранении черновика: ' + (error.data?.message || error.message || 'Неизвестная ошибка'))
+    }
   } finally {
     isFetching.value = false
   }
@@ -1060,13 +1347,15 @@ definePage({
           variant="tonal"
           color="primary"
           :loading="isFetching"
+          :disabled="!isSeoSlugValidForSubmit"
           @click="saveDraft"
         >
-          Сохранить черновик
+          {{ canManageEcommerceProduct ? 'Сохранить черновик' : 'Сохранить SEO' }}
         </VBtn>
         <VBtn
           v-if="canManageEcommerceProduct"
           :loading="isFetching"
+          :disabled="!isSeoSlugValidForSubmit"
           @click="publishProduct"
         >
           Опубликовать товар
@@ -1135,7 +1424,7 @@ definePage({
                   label="Название товара"
                   placeholder="Футболка мужская хлопковая oversize"
                   required
-                  @blur="generateSlug"
+                  @blur="generateSlugFromTitle(false)"
                 />
               </VCol>
               <VCol
@@ -1736,27 +2025,228 @@ definePage({
           <VCardText>
             <VRow>
               <VCol cols="12">
-                <AppTextField
-                  v-model="seoSlug"
-                  label="URL slug"
-                  placeholder="futbolka-muzhskaya-hlopkovaya-oversize"
-                  hint="Автоматически генерируется из названия товара"
-                />
+                <div class="d-flex align-center gap-1 mb-1">
+                  <span class="text-body-2">URL slug</span>
+                  <VTooltip
+                    location="top"
+                    max-width="320"
+                  >
+                    <template #activator="{ props: tipProps }">
+                      <VIcon
+                        v-bind="tipProps"
+                        icon="tabler-info-circle"
+                        size="18"
+                        class="text-medium-emphasis cursor-pointer"
+                      />
+                    </template>
+                    {{ SEO_FIELD_HINTS.slug }}
+                  </VTooltip>
+                </div>
+                <div class="d-flex flex-wrap gap-3 align-end">
+                  <AppTextField
+                    v-model="seoSlug"
+                    placeholder="kukhonnyi-nozh-chef-20sm"
+                    class="flex-grow-1"
+                    style="min-inline-size: 240px;"
+                    :error-messages="seoSlugError ? [seoSlugError] : []"
+                    :hint="seoSlugWarning || undefined"
+                    :persistent-hint="Boolean(seoSlugWarning)"
+                    @blur="validateSeoSlug"
+                    @update:model-value="validateSeoSlugLive"
+                  />
+                  <VBtn
+                    variant="tonal"
+                    color="secondary"
+                    prepend-icon="tabler-wand"
+                    :disabled="!productTitle?.trim()"
+                    @click="generateSlugFromTitle(true)"
+                  >
+                    Сгенерировать
+                  </VBtn>
+                </div>
+                <p class="text-caption text-medium-emphasis mt-2 mb-0">
+                  <VIcon
+                    icon="tabler-link"
+                    size="14"
+                    class="me-1"
+                  />
+                  Страница товара:
+                  <span class="font-weight-medium text-high-emphasis">{{ productPageUrl }}</span>
+                </p>
+              </VCol>
+              <VCol
+                v-if="seoSaveWarnings.length"
+                cols="12"
+              >
+                <VAlert
+                  type="warning"
+                  variant="tonal"
+                  density="compact"
+                >
+                  <div
+                    v-for="(w, idx) in seoSaveWarnings"
+                    :key="idx"
+                  >
+                    {{ w }}
+                  </div>
+                </VAlert>
               </VCol>
               <VCol cols="12">
+                <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-1">
+                  <div class="d-flex align-center gap-1">
+                    <span class="text-body-2">Meta Title</span>
+                    <VTooltip
+                      location="top"
+                      max-width="320"
+                    >
+                      <template #activator="{ props: tipProps }">
+                        <VIcon
+                          v-bind="tipProps"
+                          icon="tabler-info-circle"
+                          size="18"
+                          class="text-medium-emphasis cursor-pointer"
+                        />
+                      </template>
+                      {{ SEO_FIELD_HINTS.metaTitle }}
+                    </VTooltip>
+                  </div>
+                  <span
+                    class="text-caption font-weight-medium"
+                    :class="`text-${seoMetaTitleStatus.color}`"
+                  >
+                    {{ seoMetaTitleLength }} симв.
+                  </span>
+                </div>
                 <AppTextField
                   v-model="seoMetaTitle"
-                  label="Meta Title"
-                  placeholder="Футболка мужская oversize купить"
+                  placeholder="Кухонный нож шеф 20 см — купить в ihome24.ru"
+                  :maxlength="META_TITLE_MAX"
+                  hint="Пусто — автогенерация из названия товара"
+                  persistent-hint
                 />
+                <p
+                  class="text-caption mt-1 mb-0"
+                  :class="`text-${seoMetaTitleStatus.color}`"
+                >
+                  <span v-if="seoMetaTitleStatus.message">{{ seoMetaTitleStatus.message }}</span>
+                  <span
+                    v-else
+                    class="text-medium-emphasis"
+                  >Зелёный 50–65 · жёлтый 65–80 · красный &gt;80</span>
+                </p>
               </VCol>
               <VCol cols="12">
+                <div class="d-flex align-center justify-space-between flex-wrap gap-2 mb-1">
+                  <div class="d-flex align-center gap-1">
+                    <span class="text-body-2">Meta Description</span>
+                    <VTooltip
+                      location="top"
+                      max-width="320"
+                    >
+                      <template #activator="{ props: tipProps }">
+                        <VIcon
+                          v-bind="tipProps"
+                          icon="tabler-info-circle"
+                          size="18"
+                          class="text-medium-emphasis cursor-pointer"
+                        />
+                      </template>
+                      {{ SEO_FIELD_HINTS.metaDescription }}
+                    </VTooltip>
+                  </div>
+                  <span
+                    class="text-caption font-weight-medium"
+                    :class="`text-${seoMetaDescriptionStatus.color}`"
+                  >
+                    {{ seoMetaDescriptionLength }} симв.
+                  </span>
+                </div>
                 <AppTextField
                   v-model="seoMetaDescription"
-                  label="Meta Description"
-                  placeholder="Хлопковая мужская футболка с доставкой по России"
+                  placeholder="Кухонный нож шеф 20 см из нержавеющей стали. Цена 1 490 ₽. Доставка по России. Гарантия 1 год."
+                  :maxlength="META_DESCRIPTION_MAX"
+                  hint="Пусто — автогенерация из названия и цены"
+                  persistent-hint
                   rows="3"
                 />
+                <p
+                  class="text-caption mt-1 mb-0"
+                  :class="`text-${seoMetaDescriptionStatus.color}`"
+                >
+                  <span v-if="seoMetaDescriptionStatus.message">{{ seoMetaDescriptionStatus.message }}</span>
+                  <span
+                    v-else
+                    class="text-medium-emphasis"
+                  >Зелёный 120–160 · жёлтый 160–200 · красный &gt;200</span>
+                </p>
+              </VCol>
+              <VCol cols="12">
+                <h6 class="text-h6 mb-1">
+                  Предпросмотр в поиске
+                </h6>
+                <p class="text-body-2 text-medium-emphasis mb-4">
+                  Как может выглядеть сниппет в Яндексе при текущих SEO-полях (обновляется сразу)
+                </p>
+                <VRow>
+                  <VCol
+                    cols="12"
+                    md="6"
+                  >
+                    <p class="text-caption text-medium-emphasis mb-2 d-flex align-center gap-1">
+                      <VIcon
+                        icon="tabler-device-desktop"
+                        size="16"
+                      />
+                      Десктоп
+                    </p>
+                    <div class="seo-snippet-preview seo-snippet-preview--desktop pa-4 rounded">
+                      <div
+                        class="seo-snippet-preview__title"
+                        :title="isSnippetTitleTruncatedDesktop ? seoSnippetTitleFull : undefined"
+                      >
+                        {{ seoSnippetTitleDesktop }}
+                      </div>
+                      <div class="seo-snippet-preview__url">
+                        {{ productPageUrl }}
+                      </div>
+                      <div
+                        class="seo-snippet-preview__desc"
+                        :title="isSnippetDescTruncatedDesktop ? seoSnippetDescFull : undefined"
+                      >
+                        {{ seoSnippetDescDesktop }}
+                      </div>
+                    </div>
+                  </VCol>
+                  <VCol
+                    cols="12"
+                    md="6"
+                  >
+                    <p class="text-caption text-medium-emphasis mb-2 d-flex align-center gap-1">
+                      <VIcon
+                        icon="tabler-device-mobile"
+                        size="16"
+                      />
+                      Мобильный
+                    </p>
+                    <div class="seo-snippet-preview seo-snippet-preview--mobile pa-4 rounded">
+                      <div
+                        class="seo-snippet-preview__title"
+                        :title="isSnippetTitleTruncatedMobile ? seoSnippetTitleFull : undefined"
+                      >
+                        {{ seoSnippetTitleMobile }}
+                      </div>
+                      <div class="seo-snippet-preview__url">
+                        {{ productPageUrl }}
+                      </div>
+                      <div
+                        class="seo-snippet-preview__desc"
+                        :title="isSnippetDescTruncatedMobile ? seoSnippetDescFull : undefined"
+                      >
+                        {{ seoSnippetDescMobile }}
+                      </div>
+                    </div>
+                  </VCol>
+                </VRow>
               </VCol>
               <VCol cols="12">
                 <VDivider class="my-4" />
@@ -1800,5 +2290,60 @@ definePage({
 .border {
   border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
   border-radius: 6px;
+}
+
+/* F-3: предпросмотр сниппета Яндекса */
+.seo-snippet-preview {
+  background: #fff;
+  border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
+  font-family: arial, helvetica, sans-serif;
+
+  &--desktop {
+    max-width: 600px;
+  }
+
+  &--mobile {
+    max-width: 320px;
+  }
+
+  &__title {
+    color: #1a0dab;
+    font-size: 18px;
+    line-height: 1.3;
+    cursor: default;
+    word-break: break-word;
+
+    .seo-snippet-preview--mobile & {
+      font-size: 16px;
+    }
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  &__url {
+    color: #006621;
+    font-size: 14px;
+    line-height: 1.4;
+    margin-top: 4px;
+    word-break: break-all;
+
+    .seo-snippet-preview--mobile & {
+      font-size: 13px;
+    }
+  }
+
+  &__desc {
+    color: #545454;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 6px;
+    word-break: break-word;
+
+    .seo-snippet-preview--mobile & {
+      font-size: 12px;
+    }
+  }
 }
 </style>

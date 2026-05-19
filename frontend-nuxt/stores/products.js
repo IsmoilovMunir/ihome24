@@ -31,7 +31,8 @@ export const useProductsStore = defineStore('products', {
       }
       try {
         const response = await productApi.getAll()
-        this.products = toPlainSerializable(response.data) || []
+        const list = Array.isArray(response) ? response : response?.data
+        this.products = toPlainSerializable(list) || []
         if (silent) this.error = null
       } catch (error) {
         const message = error?.message || 'Не удалось загрузить товары'
@@ -47,8 +48,8 @@ export const useProductsStore = defineStore('products', {
       this.error = null
       try {
         const response = await productApi.getById(id)
-        this.selectedProduct = response.data
-        return response.data
+        this.selectedProduct = toPlainSerializable(response.data)
+        return this.selectedProduct
       } catch (error) {
         this.error = error.message
         console.error('Error fetching product:', error)

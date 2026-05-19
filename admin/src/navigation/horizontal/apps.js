@@ -42,7 +42,14 @@ export default [
             subject: 'Ecommerce',
             children: [
               { title: 'Список', to: 'apps-ecommerce-customer-list', action: 'manage', subject: 'Ecommerce' },
-              // Детали должны открываться из списка конкретного клиента
+            ],
+          },
+          {
+            title: 'Заявки',
+            action: 'manage',
+            subject: 'Ecommerce',
+            children: [
+              { title: 'Список', to: 'apps-ecommerce-wholesale-lead-list', action: 'manage', subject: 'Ecommerce' },
             ],
           },
           {

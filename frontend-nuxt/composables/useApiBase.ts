@@ -1,11 +1,13 @@
-/** Базовый URL API: на сервере — backend, в браузере — public или origin */
+import { resolveApiBase } from '~/utils/apiFetch'
+
+/** @deprecated Предпочтительно useApi() / $apiFetch */
 export function useApiBase() {
   const config = useRuntimeConfig()
-  if (import.meta.server) {
-    return String(config.apiBaseServer || 'http://localhost:8080').replace(/\/$/, '')
-  }
-  const pub = String(config.public.apiBase || '').trim()
-  if (pub) return pub.replace(/\/$/, '')
+  const base = resolveApiBase({
+    apiBaseServer: String(config.apiBaseServer || ''),
+    public: { apiBase: String(config.public.apiBase || '') },
+  })
+  if (base) return base
   if (import.meta.client && typeof window !== 'undefined') {
     return window.location.origin
   }

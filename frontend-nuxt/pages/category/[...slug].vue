@@ -1,9 +1,10 @@
 <script setup>
-const apiBase = useApiBase()
-const siteUrl = useSiteUrl()
+import { SITE_DEFAULT_DESCRIPTION, SITE_DEFAULT_TITLE } from '~/utils/siteSeo'
+
+const { api } = useApi()
 
 const { data: categories } = await useAsyncData('catalog-categories', () =>
-  $fetch('/api/categories', { baseURL: apiBase }),
+  api('/categories'),
 )
 
 const productsStore = useProductsStore()
@@ -14,14 +15,12 @@ productsStore.$patch({
 })
 
 useSeoMeta({
-  title: 'Каталог товаров - iHome24',
-  description: 'Категории каталога iHome24: подбор товаров для дома и офиса.',
+  title: SITE_DEFAULT_TITLE,
+  description: SITE_DEFAULT_DESCRIPTION,
   robots: 'index, follow',
 })
 
-useHead({
-  link: [{ rel: 'canonical', href: `${siteUrl}${useRoute().path}` }],
-})
+// canonical — layouts/default.vue (без page/sort)
 </script>
 
 <template>

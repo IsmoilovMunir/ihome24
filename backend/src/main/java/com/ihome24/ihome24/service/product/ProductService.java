@@ -2,6 +2,7 @@ package com.ihome24.ihome24.service.product;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ihome24.ihome24.dto.request.product.ProductSeoPatchRequest;
 import com.ihome24.ihome24.dto.request.product.CharacteristicRequest;
 import com.ihome24.ihome24.dto.request.product.DescriptionRequest;
 import com.ihome24.ihome24.dto.request.product.ProductInfoRequest;
@@ -14,9 +15,17 @@ import com.ihome24.ihome24.dto.response.product.CharacteristicResponse;
 import com.ihome24.ihome24.dto.response.product.ProductImageResponse;
 import com.ihome24.ihome24.dto.response.product.ProductListResponse;
 import com.ihome24.ihome24.dto.response.product.ProductResponse;
+import com.ihome24.ihome24.dto.response.product.ProductSeoPatchResponse;
+import com.ihome24.ihome24.dto.response.product.ProductSlugRedirectLookupResponse;
+import com.ihome24.ihome24.dto.response.product.ProductSlugResolveResponse;
+import com.ihome24.ihome24.dto.response.product.ProductSlugValidationResponse;
+import com.ihome24.ihome24.exception.ProductSlugInvalidException;
+import com.ihome24.ihome24.exception.ResourceNotFoundException;
+import com.ihome24.ihome24.dto.response.product.SeoResponse;
 import com.ihome24.ihome24.dto.response.product.VariantResponse;
 import com.ihome24.ihome24.entity.category.Category;
 import com.ihome24.ihome24.entity.product.Product;
+import com.ihome24.ihome24.util.ProductSlugUtils;
 import com.ihome24.ihome24.entity.product.ProductImage;
 import com.ihome24.ihome24.repository.category.CategoryRepository;
 import com.ihome24.ihome24.repository.product.ProductRepository;
@@ -35,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -46,6 +56,9 @@ public class ProductService {
     private final ObjectMapper objectMapper;
     private final FileService fileService;
     private final CompanySettingsService companySettingsService;
+    private final ProductSeoService productSeoService;
+    private final SlugService slugService;
+    private final ProductSlugRedirectService slugRedirectService;
 
     @Transactional
     public ProductResponse createProduct(ProductRequest request) {
@@ -171,6 +184,15 @@ public class ProductService {
                 .status(request.getStatus())
                 .category(category)
                 .build();
+
+        productSeoService.applySeoAndReturns(
+                product,
+                request.getSeo(),
+                request.getReturns(),
+                productInfo.getTitle(),
+                description,
+                price,
+                imageUrl);
 
         Product savedProduct = productRepository.save(product);
 
@@ -305,6 +327,255 @@ public class ProductService {
         Product product = productRepository.findByIdWithImages(id)
                 .orElseThrow(() -> new IllegalArgumentException("Товар с ID " + id + " не найден"));
         return mapToResponse(product, applyCurrency);
+    }
+
+    /**
+     * B-2: GET /api/products/{identifier} — числовой id, SKU, slug или legacy-путь.
+     */
+    @Transactional(readOnly = true)
+    public ProductSlugResolveResponse getProductByIdentifier(String identifier, boolean publicCatalog) {
+        String key = ProductSlugUtils.normalizeRouteParam(identifier);
+        if (key.isBlank()) {
+            throw new IllegalArgumentException("Идентификатор товара не указан");
+        }
+
+        if (key.matches("\\d+")) {
+            Optional<Product> bySku = productRepository.findBySku(key);
+            if (bySku.isPresent()) {
+                return legacyRedirectResponse(loadProductWithImages(bySku.get()), key, publicCatalog);
+            }
+
+            try {
+                long id = Long.parseLong(key);
+                Optional<Product> byId = productRepository.findByIdWithImages(id);
+                if (byId.isPresent()) {
+                    Product product = byId.get();
+                    if (publicCatalog && !isVisibleInPublicCatalog(product)) {
+                        throw new IllegalArgumentException("Товар не найден");
+                    }
+                    String canonicalSlug = productSeoService.effectiveSlugPart(product);
+                    if (key.equals(canonicalSlug)) {
+                        return ProductSlugResolveResponse.builder()
+                                .product(mapToResponse(product, publicCatalog))
+                                .redirect(false)
+                                .canonicalPath(productSeoService.buildProductPath(product))
+                                .build();
+                    }
+                    return ProductSlugResolveResponse.builder()
+                            .product(mapToResponse(product, publicCatalog))
+                            .redirect(true)
+                            .canonicalPath(productSeoService.buildProductPath(product))
+                            .redirectTargetSlug(canonicalSlug)
+                            .build();
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        return resolveProductBySlug(key, publicCatalog);
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> getAllActiveProductSlugs() {
+        return productRepository.findByIsActiveTrue().stream()
+                .map(productSeoService::effectiveSlugPart)
+                .filter(slug -> slug != null && !slug.isBlank())
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    /**
+     * N-2: lookup для Nitro middleware — newSlug при редиректе, null если slug канонический.
+     * Empty — товар не найден (404).
+     */
+    @Transactional(readOnly = true)
+    public Optional<ProductSlugRedirectLookupResponse> lookupSlugRedirect(String slugParam) {
+        String slug = ProductSlugUtils.normalizeRouteParam(slugParam);
+        if (slug.isBlank()) {
+            return Optional.empty();
+        }
+
+        Optional<String> redirectNewSlug = slugRedirectService.resolveNewSlug(slug);
+        if (redirectNewSlug.isPresent()) {
+            return Optional.of(ProductSlugRedirectLookupResponse.builder()
+                    .newSlug(redirectNewSlug.get())
+                    .build());
+        }
+
+        if (productRepository.findBySlug(slug).isPresent()) {
+            return Optional.of(ProductSlugRedirectLookupResponse.builder().newSlug(null).build());
+        }
+
+        Optional<Product> bySku = productRepository.findBySku(slug);
+        if (bySku.isPresent()) {
+            String canonicalSlug = productSeoService.effectiveSlugPart(bySku.get());
+            if (!slug.equals(canonicalSlug)) {
+                return Optional.of(ProductSlugRedirectLookupResponse.builder()
+                        .newSlug(canonicalSlug)
+                        .build());
+            }
+            return Optional.of(ProductSlugRedirectLookupResponse.builder().newSlug(null).build());
+        }
+
+        Long legacyId = ProductSlugUtils.parseLegacyIdPrefix(slug);
+        if (legacyId != null && productRepository.findById(legacyId).isPresent()) {
+            return Optional.of(ProductSlugRedirectLookupResponse.builder().newSlug(null).build());
+        }
+
+        if (slug.matches("\\d+")) {
+            try {
+                long id = Long.parseLong(slug);
+                if (productRepository.findById(id).isPresent()) {
+                    return Optional.of(ProductSlugRedirectLookupResponse.builder().newSlug(null).build());
+                }
+            } catch (NumberFormatException ignored) {
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private Product loadProductWithImages(Product product) {
+        return productRepository.findByIdWithImages(product.getId()).orElse(product);
+    }
+
+    /**
+     * Поиск товара по SEO-slug с поддержкой 301 (старый slug, legacy id / id-slug).
+     */
+    @Transactional(readOnly = true)
+    public ProductSlugResolveResponse resolveProductBySlug(String slugParam, boolean publicCatalog) {
+        String slug = ProductSlugUtils.normalizeRouteParam(slugParam);
+        if (slug.isBlank()) {
+            throw new IllegalArgumentException("Slug не указан");
+        }
+
+        Optional<Product> bySlug = productRepository.findBySlugWithImages(slug);
+        if (bySlug.isPresent()) {
+            Product product = bySlug.get();
+            if (publicCatalog && !isVisibleInPublicCatalog(product)) {
+                throw new IllegalArgumentException("Товар не найден");
+            }
+            return ProductSlugResolveResponse.builder()
+                    .product(mapToResponse(product, publicCatalog))
+                    .redirect(false)
+                    .canonicalPath(productSeoService.buildProductPath(product))
+                    .build();
+        }
+
+        Optional<String> redirectNewSlug = slugRedirectService.resolveNewSlug(slug);
+        if (redirectNewSlug.isPresent()) {
+            String newSlug = redirectNewSlug.get();
+            Optional<Product> target = productRepository.findBySlugWithImages(newSlug);
+            if (target.isEmpty() || (publicCatalog && !isVisibleInPublicCatalog(target.get()))) {
+                throw new IllegalArgumentException("Товар не найден");
+            }
+            return ProductSlugResolveResponse.builder()
+                    .redirect(true)
+                    .canonicalPath(slugRedirectService.buildCanonicalPath(newSlug))
+                    .redirectTargetSlug(newSlug)
+                    .build();
+        }
+
+        Optional<Product> bySku = productRepository.findBySku(slug);
+        if (bySku.isPresent()) {
+            return legacyRedirectResponse(bySku.get(), slug, publicCatalog);
+        }
+
+        Long legacyId = ProductSlugUtils.parseLegacyIdPrefix(slug);
+        if (legacyId != null) {
+            Optional<Product> productOpt = productRepository.findByIdWithImages(legacyId);
+            if (productOpt.isPresent()) {
+                return legacyRedirectResponse(productOpt.get(), slug, publicCatalog);
+            }
+        }
+
+        throw new IllegalArgumentException("Товар не найден");
+    }
+
+    private ProductSlugResolveResponse legacyRedirectResponse(Product product, String requestedSlug,
+                                                              boolean publicCatalog) {
+        if (publicCatalog && !isVisibleInPublicCatalog(product)) {
+            throw new IllegalArgumentException("Товар не найден");
+        }
+        String canonicalPath = productSeoService.buildProductPath(product);
+        String canonicalSlug = productSeoService.effectiveSlugPart(product);
+        if (requestedSlug.equals(canonicalSlug)) {
+            return ProductSlugResolveResponse.builder()
+                    .product(mapToResponse(product, publicCatalog))
+                    .redirect(false)
+                    .canonicalPath(canonicalPath)
+                    .build();
+        }
+        return ProductSlugResolveResponse.builder()
+                .redirect(true)
+                .canonicalPath(canonicalPath)
+                .redirectTargetSlug(canonicalSlug)
+                .build();
+    }
+
+    private boolean isVisibleInPublicCatalog(Product product) {
+        if (product.getIsActive() == null || !product.getIsActive()) {
+            return false;
+        }
+        return product.getStockQuantity() == null || product.getStockQuantity() > 0;
+    }
+
+    /**
+     * B-3: PATCH SEO — только slug, metaTitle, metaDescription.
+     */
+    @Transactional
+    public ProductSeoPatchResponse patchProductSeo(Long id, ProductSeoPatchRequest request) {
+        Product product = productRepository.findByIdWithImages(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Товар с ID " + id + " не найден"));
+
+        SeoPatchOutcome outcome = productSeoService.patchSeoFields(product, request);
+        Product saved = productRepository.save(product);
+        String effectiveSlug = productSeoService.effectiveSlugPart(saved);
+
+        return ProductSeoPatchResponse.builder()
+                .success(true)
+                .slug(effectiveSlug)
+                .redirectCreated(outcome.redirectCreated())
+                .warnings(outcome.warnings())
+                .product(mapToResponse(saved, false))
+                .build();
+    }
+
+    /**
+     * §5: GET /api/admin/products/seo/validate-slug?slug=...&excludeProductId=...
+     */
+    @Transactional(readOnly = true)
+    public ProductSlugValidationResponse validateProductSlug(String rawSlug, Long excludeProductId) {
+        if (rawSlug == null || rawSlug.isBlank()) {
+            return ProductSlugValidationResponse.builder()
+                    .available(false)
+                    .error("INVALID_SLUG")
+                    .message("Slug не может быть пустым")
+                    .build();
+        }
+        String normalized;
+        try {
+            normalized = slugService.normalizeWithoutUniqueness(rawSlug);
+        } catch (ProductSlugInvalidException e) {
+            return ProductSlugValidationResponse.builder()
+                    .available(false)
+                    .error("INVALID_SLUG")
+                    .message(e.getMessage())
+                    .build();
+        }
+        return slugService.findConflictingProduct(normalized, excludeProductId)
+                .map(other -> ProductSlugValidationResponse.builder()
+                        .available(false)
+                        .slug(normalized)
+                        .error("SLUG_TAKEN")
+                        .message("Slug уже используется товаром #" + other.getId())
+                        .takenByProductId(other.getId())
+                        .build())
+                .orElseGet(() -> ProductSlugValidationResponse.builder()
+                        .available(true)
+                        .slug(normalized)
+                        .build());
     }
 
     @Transactional
@@ -449,6 +720,15 @@ public class ProductService {
             }
         }
 
+        productSeoService.applySeoAndReturns(
+                product,
+                request.getSeo(),
+                request.getReturns(),
+                productInfo.getTitle(),
+                description,
+                price,
+                imageUrl);
+
         Product updatedProduct = productRepository.save(product);
         return mapToResponse(updatedProduct, false);
     }
@@ -591,6 +871,7 @@ public class ProductService {
                 .sku(product.getSku())
                 .brand(product.getBrand())
                 .stockQuantity(product.getStockQuantity())
+                .inStock(product.getStockQuantity() != null && product.getStockQuantity() > 0)
                 .quantityPerPackage(product.getQuantityPerPackage())
                 .isActive(product.getIsActive())
                 .isFeatured(product.getIsFeatured())
@@ -741,6 +1022,14 @@ public class ProductService {
         if (product.getCategory() != null) {
             builder.category(mapCategoryToResponse(product.getCategory()));
         }
+
+        SeoResponse seo = productSeoService.toSeoResponse(product);
+        builder.seo(seo)
+                .slug(seo.getSlug())
+                .metaTitle(seo.getMetaTitle())
+                .metaDescription(seo.getMetaDescription())
+                .ogImage(seo.getOgImage())
+                .returns(productSeoService.toReturnsResponse(product));
 
         return builder.build();
     }

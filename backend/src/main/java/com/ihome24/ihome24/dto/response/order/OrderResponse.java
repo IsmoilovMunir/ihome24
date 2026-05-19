@@ -29,5 +29,14 @@ public class OrderResponse {
     private String method;
     private String date;
     private String methodNumber;
+    private String companyName;
+    private String companyInn;
+    private String companyKpp;
+    private String companyAddress;
+    private String companyOgrn;
+    private String companyOkpo;
+    private String companyCorrAccount;
+    private String companyBik;
+    private String companySettlementAccount;
     private List<OrderItemResponse> items;
 }

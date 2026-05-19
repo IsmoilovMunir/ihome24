@@ -122,6 +122,7 @@ export function createApiServices(baseURL: string) {
     },
     settingsApi: {
       getPriceTiers: () => api.get('/api/settings/price-tiers'),
+      getPaymentDetails: () => api.get('/api/settings/payment-details'),
     },
     checkoutApi: {
       saveLead: (
@@ -145,6 +146,21 @@ export function createApiServices(baseURL: string) {
             quantity: item.quantity,
           })),
       }),
+    },
+    companyApi: {
+      suggest: (q: string, count = 8) =>
+        api.get('/api/publicapi/company/suggest', { params: { q, count } }),
+      findByInn: (inn: string) =>
+        api.get('/api/publicapi/company/party', { params: { inn } }),
+    },
+    wholesaleApi: {
+      submitLead: (data: {
+        name: string
+        phone: string
+        inn?: string
+        message?: string
+        website?: string
+      }) => api.post('/api/publicapi/wholesale/lead', data),
     },
   }
 }

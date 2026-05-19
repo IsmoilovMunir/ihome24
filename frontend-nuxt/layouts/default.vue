@@ -18,4 +18,6 @@
 <script setup>
 const route = useRoute()
 const isCheckoutFlow = computed(() => route.path === '/cart' || route.path === '/checkout')
+
+useLayoutCanonical()
 </script>
