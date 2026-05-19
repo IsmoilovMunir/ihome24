@@ -1,9 +1,10 @@
 package com.ihome24.ihome24.service.seo;
 
 import com.ihome24.ihome24.dto.response.category.CategoryResponse;
-import com.ihome24.ihome24.dto.response.product.ProductResponse;
+import com.ihome24.ihome24.entity.product.Product;
+import com.ihome24.ihome24.repository.product.ProductRepository;
 import com.ihome24.ihome24.service.category.CategoryService;
-import com.ihome24.ihome24.service.product.ProductService;
+import com.ihome24.ihome24.service.product.ProductSeoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -26,32 +27,23 @@ public class SitemapService {
 
     private static final DateTimeFormatter W3C_DATE = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
-    private final ProductService productService;
+    private final ProductRepository productRepository;
+    private final ProductSeoService productSeoService;
     private final CategoryService categoryService;
 
     @Value("${app.seo.site-url:https://ihome24.ru}")
     private String siteUrl;
 
-    public String generateSitemapIndexXml() {
+    /**
+     * Полный sitemap для {@code GET /sitemap.xml}: статика + категории + товары.
+     */
+    public String generateSitemapXml() {
         String baseUrl = normalizeBaseUrl(siteUrl);
-        String now = W3C_DATE.format(OffsetDateTime.now(ZoneOffset.UTC));
-        return """
-                <?xml version="1.0" encoding="UTF-8"?>
-                <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-                  <sitemap>
-                    <loc>%s/sitemap-static.xml</loc>
-                    <lastmod>%s</lastmod>
-                  </sitemap>
-                  <sitemap>
-                    <loc>%s/sitemap-categories.xml</loc>
-                    <lastmod>%s</lastmod>
-                  </sitemap>
-                  <sitemap>
-                    <loc>%s/sitemap-products.xml</loc>
-                    <lastmod>%s</lastmod>
-                  </sitemap>
-                </sitemapindex>
-                """.formatted(baseUrl, now, baseUrl, now, baseUrl, now);
+        List<SitemapUrl> urls = new ArrayList<>();
+        addStaticUrls(urls, baseUrl);
+        addCategoryUrls(urls, baseUrl);
+        addProductUrls(urls, baseUrl);
+        return buildUrlSetXml(urls);
     }
 
     public String generateStaticSitemapXml() {
@@ -82,6 +74,7 @@ public class SitemapService {
         urls.add(new SitemapUrl(baseUrl + "/support/oferta", null, "monthly", "0.4"));
         urls.add(new SitemapUrl(baseUrl + "/order-tracking", null, "weekly", "0.5"));
         urls.add(new SitemapUrl(baseUrl + "/services", null, "monthly", "0.4"));
+        urls.add(new SitemapUrl(baseUrl + "/optovym-klientam", null, "monthly", "0.85"));
     }
 
     private void addCategoryUrls(List<SitemapUrl> urls, String baseUrl) {
@@ -99,27 +92,24 @@ public class SitemapService {
             urls.add(new SitemapUrl(
                     baseUrl + path,
                     toIsoDate(category.getUpdatedAt()),
-                    "weekly",
-                    "0.8"
+                    "daily",
+                    "0.9"
             ));
         }
     }
 
     private void addProductUrls(List<SitemapUrl> urls, String baseUrl) {
-        List<ProductResponse> products = productService.getActiveProductsInStock().stream()
+        List<Product> products = productRepository.findByIsActiveTrue().stream()
                 .filter(p -> p.getId() != null)
-                .sorted(Comparator.comparing(ProductResponse::getId))
+                .sorted(Comparator.comparing(Product::getId))
                 .toList();
-        for (ProductResponse product : products) {
-            String slug = slugify(product.getName());
-            String path = slug.isEmpty()
-                    ? "/products/" + product.getId()
-                    : "/products/" + product.getId() + "-" + slug;
+        for (Product product : products) {
+            String path = productSeoService.buildProductPath(product);
             urls.add(new SitemapUrl(
                     baseUrl + path,
                     toIsoDate(product.getUpdatedAt()),
-                    "daily",
-                    "0.7"
+                    "weekly",
+                    "0.8"
             ));
         }
     }

@@ -4,10 +4,9 @@
 
 set -e
 
-# Загружаем переменные окружения если есть .env файл
-if [ -f .env ]; then
-    export $(cat .env | grep -v '^#' | xargs)
-fi
+# Секреты backend — backend/.env; порты Docker — infrastructure/.env (опционально)
+# shellcheck source=scripts/load-env.sh
+source "$(dirname "$0")/scripts/load-env.sh"
 
 echo "🔧 Запуск Backend с зависимостями..."
 

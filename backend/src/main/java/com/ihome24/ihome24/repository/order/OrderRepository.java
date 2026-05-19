@@ -37,7 +37,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> findOrdersWithSearch(@Param("searchQuery") String searchQuery, Pageable pageable);
 
     @Query("SELECT o FROM Order o WHERE " +
-           "((:completed = true AND o.status = 'DELIVERED') OR (:completed = false AND o.status <> 'DELIVERED')) " +
+           "((:completed = true AND o.status = 'DELIVERED') OR (:completed = false AND o.status <> 'DELIVERED' AND o.status <> 'PRELIMINARY')) " +
            "AND (:searchQuery IS NULL OR :searchQuery = '' OR " +
            "LOWER(o.customer) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
            "LOWER(o.email) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
@@ -45,6 +45,17 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     Page<Order> findOrdersWithSearchAndCompleted(@Param("searchQuery") String searchQuery,
                                                  @Param("completed") boolean completed,
                                                  Pageable pageable);
+
+    @Query("SELECT o FROM Order o WHERE o.status = 'PRELIMINARY' " +
+           "AND (:searchQuery IS NULL OR :searchQuery = '' OR " +
+           "LOWER(o.customer) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+           "LOWER(o.email) LIKE LOWER(CONCAT('%', :searchQuery, '%')) OR " +
+           "CAST(o.orderNumber AS string) LIKE CONCAT('%', :searchQuery, '%'))")
+    Page<Order> findPreliminaryOrdersWithSearch(@Param("searchQuery") String searchQuery, Pageable pageable);
+
+    Optional<Order> findFirstByStatusAndPhoneOrderByUpdatedAtDesc(Order.OrderStatus status, String phone);
+
+    Optional<Order> findFirstByStatusAndEmailIgnoreCaseOrderByUpdatedAtDesc(Order.OrderStatus status, String email);
 
     long countByPayment(Order.PaymentStatus payment);
 
@@ -63,7 +74,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     /** Заказы текущего пользователя: точное совпадение по email или по телефону, сразу с позициями заказа и товарами */
     @EntityGraph(attributePaths = {"items", "items.product"})
-    @Query("SELECT o FROM Order o WHERE (:email IS NOT NULL AND o.email = :email) OR (:phone IS NOT NULL AND o.phone = :phone)")
+    @Query("SELECT o FROM Order o WHERE o.status <> 'PRELIMINARY' " +
+           "AND ((:email IS NOT NULL AND o.email = :email) OR (:phone IS NOT NULL AND o.phone = :phone))")
     Page<Order> findOrdersByEmailOrPhone(@Param("email") String email, @Param("phone") String phone, Pageable pageable);
 
     @Query("SELECT COUNT(o) FROM Order o WHERE (:email IS NOT NULL AND o.email = :email) OR (:phone IS NOT NULL AND o.phone = :phone)")
@@ -71,4 +83,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
 
     @Query("SELECT COALESCE(SUM(o.spent), 0) FROM Order o WHERE ((:email IS NOT NULL AND o.email = :email) OR (:phone IS NOT NULL AND o.phone = :phone))")
     BigDecimal sumSpentByEmailOrPhone(@Param("email") String email, @Param("phone") String phone);
+
+    @Query("SELECT o FROM Order o WHERE o.status <> 'PRELIMINARY' ORDER BY o.orderDate DESC")
+    List<Order> findRecentOrders(Pageable pageable);
+
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.status <> 'PRELIMINARY'")
+    long countRecentOrders();
 }

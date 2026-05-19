@@ -399,7 +399,7 @@ onMounted(async () => {
 const loading = ref(false)
 const error = ref(null)
 const deliveryMethod = ref('delivery')
-const paymentMethod = ref('cash')
+const paymentMethod = ref(null)
 
 // Диалог карты доставки
 const showDeliveryMapDialog = ref(false)

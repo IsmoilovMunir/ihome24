@@ -173,7 +173,8 @@ const settingsStore = useSettingsStore()
 
 onMounted(async () => {
   await settingsStore.fetchPriceTiers()
-  cartStore.validateCart()
+  cartStore.saveCart()
+  await cartStore.validateCart()
 })
 
 const getDisplayName = (item) => {

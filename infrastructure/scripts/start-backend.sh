@@ -8,9 +8,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-if [ -f .env ]; then
-    export $(cat .env | grep -v '^#' | xargs)
-fi
+# shellcheck source=load-env.sh
+source "$SCRIPT_DIR/load-env.sh"
 
 echo "🔧 Запуск Backend..."
 

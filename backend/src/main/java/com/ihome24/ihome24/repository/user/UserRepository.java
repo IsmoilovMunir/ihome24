@@ -32,6 +32,15 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByPhoneWithRole(@Param("phone") String phone);
     
     Optional<User> findByEmail(String email);
+
+    @EntityGraph(attributePaths = {"role"})
+    @Query("SELECT u FROM User u WHERE LOWER(u.email) = LOWER(:email)")
+    Optional<User> findByEmailIgnoreCaseWithRole(@Param("email") String email);
+
+    @EntityGraph(attributePaths = {"role"})
+    @Query("SELECT u FROM User u WHERE u.id = :id")
+    Optional<User> findByIdWithRole(@Param("id") Long id);
+
     Optional<User> findByPhone(String phone);
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);

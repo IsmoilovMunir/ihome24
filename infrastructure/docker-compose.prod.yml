@@ -26,7 +26,7 @@ services:
       - ihome24-network
     restart: always
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME:-iHome24db} -d ${POSTGRES_DB:-ihome24}"]
+      test: ["CMD-SHELL", "pg_isready -U ${SPRING_DATASOURCE_USERNAME:-iHome24db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -111,6 +111,13 @@ services:
       APP_EMAIL_FROM: ${APP_EMAIL_FROM:-}
       # Resend API (если SMTP блокируется хостингом — письма через HTTPS)
       RESEND_API_KEY: ${RESEND_API_KEY:-}
+      APP_WHOLESALE_EMAIL: ${APP_WHOLESALE_EMAIL:-opt@ihome24.ru}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      TELEGRAM_POLLING_ENABLED: ${TELEGRAM_POLLING_ENABLED:-false}
+      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      TELEGRAM_ALLOWED_CHAT_IDS: ${TELEGRAM_ALLOWED_CHAT_IDS:-}
     # Пробрасываем порт только на localhost для nginx reverse proxy
     ports:
       - "127.0.0.1:8080:8080"
@@ -152,18 +159,24 @@ services:
     restart: always
     # В продакшене используем собранный статический сайт, не dev сервер
 
-  # Frontend (Vue.js) - Production build
+  # Frontend (Nuxt 3 SSR)
   frontend:
     build:
-      context: ../frontend
+      context: ../frontend-nuxt
       dockerfile: Dockerfile.prod
       args:
-        VITE_API_BASE_URL: ${FRONTEND_API_BASE_URL}
+        NUXT_PUBLIC_API_BASE: ${FRONTEND_API_BASE_URL:-}
+        NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-https://ihome24.ru}
+        NUXT_API_BASE_SERVER: http://backend:8080
         # Один .env.prod: либо VITE_YANDEX_MAPS_API_KEY=..., либо YANDEX_MAPS_API_KEY=... (без префикса VITE_)
         VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-${YANDEX_MAPS_API_KEY:-}}
     container_name: ihome24-frontend-prod
     environment:
-      VITE_API_BASE_URL: ${FRONTEND_API_BASE_URL}
+      NUXT_PUBLIC_API_BASE: ${FRONTEND_API_BASE_URL:-}
+      NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-https://ihome24.ru}
+      NUXT_API_BASE_SERVER: http://backend:8080
+      HOST: 0.0.0.0
+      PORT: 3000
     # Пробрасываем порт только на localhost для nginx reverse proxy
     ports:
       - "127.0.0.1:3000:80"

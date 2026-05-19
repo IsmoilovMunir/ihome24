@@ -1,5 +1,6 @@
 package com.ihome24.ihome24.controller.publicapi.settings;
 
+import com.ihome24.ihome24.dto.response.company.PaymentDetailsResponse;
 import com.ihome24.ihome24.dto.response.company.PriceTiersSettingsResponse;
 import com.ihome24.ihome24.service.company.CompanySettingsService;
 import lombok.RequiredArgsConstructor;
@@ -22,5 +23,11 @@ public class SettingsRestController {
     @GetMapping("/price-tiers")
     public ResponseEntity<PriceTiersSettingsResponse> getPriceTiers() {
         return ResponseEntity.ok(companySettingsService.getPriceTiers());
+    }
+
+    /** Реквизиты для оплаты по расчётному счёту (публичные поля). */
+    @GetMapping("/payment-details")
+    public ResponseEntity<PaymentDetailsResponse> getPaymentDetails() {
+        return ResponseEntity.ok(companySettingsService.getPublicPaymentDetails());
     }
 }

@@ -6,12 +6,12 @@ set -e
 
 echo "🚀 Запуск iHome24 Infrastructure..."
 
-# Проверяем наличие .env файла
-if [ ! -f .env ]; then
-    echo "⚠️  Файл .env не найден. Создаю из .env.example..."
-    cp .env.example .env
-    echo "✅ Файл .env создан. Проверьте настройки перед запуском."
+# Секреты Spring — в backend/.env (обязательно для DaData, почты, Telegram)
+if [ ! -f ../backend/.env ]; then
+    echo "⚠️  Нет backend/.env — скопируйте backend/.env.example → backend/.env и заполните."
 fi
+# shellcheck source=scripts/load-env.sh
+source "$(dirname "$0")/scripts/load-env.sh"
 
 # Создаем директорию для логов если её нет
 mkdir -p logs/backend

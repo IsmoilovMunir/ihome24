@@ -39,6 +39,29 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(ProductSlugConflictException.class)
+    public ResponseEntity<Map<String, Object>> handleProductSlugConflict(ProductSlugConflictException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.CONFLICT.value());
+        response.put("error", "SLUG_TAKEN");
+        response.put("message", ex.getMessage());
+        if (ex.getConflictingProductId() != null) {
+            response.put("takenByProductId", ex.getConflictingProductId());
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(ProductSlugInvalidException.class)
+    public ResponseEntity<Map<String, Object>> handleProductSlugInvalid(ProductSlugInvalidException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("timestamp", LocalDateTime.now());
+        response.put("status", HttpStatus.UNPROCESSABLE_ENTITY.value());
+        response.put("error", "INVALID_SLUG");
+        response.put("message", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(response);
+    }
+
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleResourceNotFound(ResourceNotFoundException ex) {
         Map<String, Object> response = new HashMap<>();

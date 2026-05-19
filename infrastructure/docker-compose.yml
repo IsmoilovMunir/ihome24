@@ -68,6 +68,8 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     container_name: ihome24-backend
+    env_file:
+      - ../backend/.env
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-ihome24}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-iHome24db}
@@ -83,6 +85,7 @@ services:
       ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@demo.com}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-iHome242025admin}
       SHOW_SQL: ${SHOW_SQL:-false}
+      # DADATA_API_KEY, MAIL_*, TELEGRAM_* — только из env_file ../backend/.env (не переопределять пустым ${...})
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     depends_on:

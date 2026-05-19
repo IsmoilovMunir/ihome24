@@ -1,5 +1,6 @@
 <script setup>
 import * as XLSX from 'xlsx'
+import { getProductSeoListStatus, SEO_LIST_STATUS_META } from '@/utils/productSeo'
 
 definePage({
   meta: {
@@ -72,6 +73,13 @@ const headers = [
   {
     title: 'Статус',
     key: 'status',
+  },
+  {
+    title: 'SEO',
+    key: 'seo',
+    sortable: false,
+    width: 72,
+    align: 'center',
   },
   {
     title: 'Действия',
@@ -221,10 +229,15 @@ const products = computed(() => {
       status: product.isActive ? 'Published' : 'Inactive',
       image: product.imageUrl || '',
       variants: product.variants || [],
+      seo: product.seo,
       raw: product,
     }
   })
 })
+
+const resolveSeoListStatus = item => getProductSeoListStatus(item?.raw ?? item)
+
+const seoListStatusMeta = status => SEO_LIST_STATUS_META[status] ?? SEO_LIST_STATUS_META.empty
 
 const totalProduct = computed(() => {
   const data = productsData.value
@@ -301,6 +314,89 @@ const productToRow = p => ({
   'URL изображения': p.imageUrl ?? p.image ?? '',
   'Дата создания': p.createdAt ? new Date(p.createdAt).toLocaleString('ru-RU') : '',
 })
+
+const seoImportLoading = ref(false)
+const seoGenerateLoading = ref(false)
+const seoExportLoading = ref(false)
+const seoImportResult = ref(null)
+const seoGenerateResult = ref(null)
+const seoGenerateDialog = ref(false)
+const seoImportInputRef = ref(null)
+
+const triggerSeoImport = () => {
+  seoImportInputRef.value?.click()
+}
+
+const importSeoCsv = async event => {
+  const file = event.target?.files?.[0]
+  if (!file) return
+  seoImportLoading.value = true
+  seoImportResult.value = null
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    seoImportResult.value = await $api('/admin/products/seo/import-csv', {
+      method: 'POST',
+      body: formData,
+    })
+    await fetchProducts()
+  } catch (error) {
+    console.error('Ошибка импорта SEO:', error)
+    seoImportResult.value = { errors: [error?.message || 'Ошибка импорта'] }
+  } finally {
+    seoImportLoading.value = false
+    event.target.value = ''
+  }
+}
+
+const exportSeoCsv = async () => {
+  seoExportLoading.value = true
+  try {
+    const blob = await $api('/admin/products/seo/export-csv', { responseType: 'blob' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `products-seo_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('Ошибка экспорта SEO:', error)
+    // eslint-disable-next-line no-alert
+    alert('Ошибка экспорта SEO CSV')
+  } finally {
+    seoExportLoading.value = false
+  }
+}
+
+const closeSeoGenerateDialog = () => {
+  seoGenerateDialog.value = false
+  if (!seoGenerateLoading.value) {
+    seoGenerateResult.value = null
+  }
+}
+
+const generateAllSeo = async () => {
+  // eslint-disable-next-line no-alert
+  if (!confirm('Заполнить пустые slug, meta title и meta description для всех товаров?')) return
+  seoGenerateLoading.value = true
+  seoGenerateResult.value = null
+  seoGenerateDialog.value = true
+  try {
+    seoGenerateResult.value = await $api('/admin/products/seo/generate-all', { method: 'POST' })
+    await fetchProducts()
+  } catch (error) {
+    console.error('Ошибка автогенерации SEO:', error)
+    seoGenerateResult.value = {
+      errors: [error?.data?.message || error?.message || 'Ошибка автогенерации'],
+    }
+  } finally {
+    seoGenerateLoading.value = false
+  }
+}
+
+const seoGenerateHasErrors = computed(() =>
+  Boolean(seoGenerateResult.value?.errors?.length),
+)
 
 const exportToExcel = async () => {
   try {
@@ -559,6 +655,44 @@ const updateVariantQty = async (item, newQty) => {
             Экспорт
           </VBtn>
 
+          <input
+            ref="seoImportInputRef"
+            type="file"
+            accept=".csv,text/csv"
+            class="d-none"
+            @change="importSeoCsv"
+          >
+          <VBtn
+            v-if="$can('manage', 'EcommerceProductSEO')"
+            variant="tonal"
+            color="secondary"
+            prepend-icon="tabler-file-download"
+            :loading="seoExportLoading"
+            @click="exportSeoCsv"
+          >
+            Экспорт CSV
+          </VBtn>
+          <VBtn
+            v-if="$can('manage', 'EcommerceProductSEO')"
+            variant="tonal"
+            color="primary"
+            prepend-icon="tabler-file-import"
+            :loading="seoImportLoading"
+            @click="triggerSeoImport"
+          >
+            Импорт CSV
+          </VBtn>
+          <VBtn
+            v-if="$can('manage', 'EcommerceProductSEO')"
+            variant="tonal"
+            color="warning"
+            prepend-icon="tabler-wand"
+            :loading="seoGenerateLoading"
+            @click="generateAllSeo"
+          >
+            SEO: заполнить пустые
+          </VBtn>
+
           <!-- 👉 Add Product button -->
           <VBtn
             color="primary"
@@ -570,6 +704,27 @@ const updateVariantQty = async (item, newQty) => {
           </VBtn>
         </div>
       </div>
+
+      <VAlert
+        v-if="seoImportResult"
+        type="info"
+        variant="tonal"
+        class="mx-6 mt-4"
+        closable
+        @click:close="seoImportResult = null"
+      >
+        SEO импорт: обновлено {{ seoImportResult.updated ?? 0 }},
+        пропущено {{ seoImportResult.skipped ?? 0 }}.
+        <template v-if="seoImportResult.errors?.length">
+          <div
+            v-for="(err, idx) in seoImportResult.errors.slice(0, 5)"
+            :key="idx"
+            class="text-caption mt-1"
+          >
+            {{ err }}
+          </div>
+        </template>
+      </VAlert>
 
       <VDivider class="mt-4" />
 
@@ -585,6 +740,21 @@ const updateVariantQty = async (item, newQty) => {
         class="text-no-wrap"
         @update:options="updateOptions"
       >
+        <!-- SEO status -->
+        <template #item.seo="{ item }">
+          <VTooltip location="top">
+            <template #activator="{ props: tipProps }">
+              <VIcon
+                v-bind="tipProps"
+                :icon="seoListStatusMeta(resolveSeoListStatus(item)).icon"
+                :color="seoListStatusMeta(resolveSeoListStatus(item)).color"
+                size="22"
+              />
+            </template>
+            {{ seoListStatusMeta(resolveSeoListStatus(item)).label }}
+          </VTooltip>
+        </template>
+
         <!-- variant selector -->
         <template #item.variant="{ item }">
           <AppSelect
@@ -787,6 +957,104 @@ const updateVariantQty = async (item, newQty) => {
         </template>
       </VDataTableServer>
     </VCard>
+
+    <!-- F-4: прогресс и результат массовой генерации SEO -->
+    <VDialog
+      v-model="seoGenerateDialog"
+      max-width="480"
+      persistent
+      @click:outside="!seoGenerateLoading && closeSeoGenerateDialog()"
+    >
+      <VCard>
+        <VCardTitle class="text-h6">
+          Массовая генерация SEO
+        </VCardTitle>
+        <VCardText>
+          <div
+            v-if="seoGenerateLoading"
+            class="text-center py-6"
+          >
+            <VProgressCircular
+              indeterminate
+              color="primary"
+              size="48"
+              class="mb-4"
+            />
+            <p class="text-body-2 mb-0">
+              Заполняем пустые slug, meta title и description…
+            </p>
+          </div>
+          <template v-else-if="seoGenerateResult">
+            <VAlert
+              v-if="seoGenerateHasErrors"
+              type="error"
+              variant="tonal"
+              class="mb-4"
+            >
+              <div
+                v-for="(err, idx) in seoGenerateResult.errors"
+                :key="idx"
+              >
+                {{ err }}
+              </div>
+            </VAlert>
+            <template v-else>
+              <p class="text-body-1 mb-3">
+                Готово. Обновлено товаров:
+                <strong>{{ seoGenerateResult.productsUpdated ?? 0 }}</strong>
+              </p>
+              <VList density="compact">
+                <VListItem>
+                  <template #prepend>
+                    <VIcon
+                      icon="tabler-link"
+                      size="20"
+                    />
+                  </template>
+                  <VListItemTitle>Slug</VListItemTitle>
+                  <VListItemSubtitle>{{ seoGenerateResult.slugsGenerated ?? 0 }} заполнено</VListItemSubtitle>
+                </VListItem>
+                <VListItem>
+                  <template #prepend>
+                    <VIcon
+                      icon="tabler-heading"
+                      size="20"
+                    />
+                  </template>
+                  <VListItemTitle>Meta Title</VListItemTitle>
+                  <VListItemSubtitle>{{ seoGenerateResult.metaTitlesGenerated ?? 0 }} заполнено</VListItemSubtitle>
+                </VListItem>
+                <VListItem>
+                  <template #prepend>
+                    <VIcon
+                      icon="tabler-align-left"
+                      size="20"
+                    />
+                  </template>
+                  <VListItemTitle>Meta Description</VListItemTitle>
+                  <VListItemSubtitle>{{ seoGenerateResult.metaDescriptionsGenerated ?? 0 }} заполнено</VListItemSubtitle>
+                </VListItem>
+              </VList>
+              <p
+                v-if="(seoGenerateResult.productsUpdated ?? 0) === 0"
+                class="text-caption text-medium-emphasis mt-2 mb-0"
+              >
+                Пустых полей не найдено — все товары уже с SEO.
+              </p>
+            </template>
+          </template>
+        </VCardText>
+        <VCardActions>
+          <VSpacer />
+          <VBtn
+            :disabled="seoGenerateLoading"
+            @click="closeSeoGenerateDialog"
+          >
+            Закрыть
+          </VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
   </div>
 </template>
 

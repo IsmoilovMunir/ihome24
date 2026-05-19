@@ -31,6 +31,7 @@ export default [
             subject: 'Ecommerce',
             children: [
               { title: 'Список', to: 'apps-ecommerce-order-list', action: 'manage', subject: 'Ecommerce' },
+              { title: 'Предварительные', to: 'apps-ecommerce-order-preliminary', action: 'manage', subject: 'Ecommerce' },
               { title: 'Завершённые', to: 'apps-ecommerce-order-completed', action: 'manage', subject: 'Ecommerce' },
               // Детали должны открываться из списка конкретного заказа
             ],
@@ -41,7 +42,14 @@ export default [
             subject: 'Ecommerce',
             children: [
               { title: 'Список', to: 'apps-ecommerce-customer-list', action: 'manage', subject: 'Ecommerce' },
-              // Детали должны открываться из списка конкретного клиента
+            ],
+          },
+          {
+            title: 'Заявки',
+            action: 'manage',
+            subject: 'Ecommerce',
+            children: [
+              { title: 'Список', to: 'apps-ecommerce-wholesale-lead-list', action: 'manage', subject: 'Ecommerce' },
             ],
           },
           {

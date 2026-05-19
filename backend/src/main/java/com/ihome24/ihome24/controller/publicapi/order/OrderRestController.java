@@ -61,9 +61,10 @@ public class OrderRestController {
             @RequestParam(defaultValue = "10") Integer itemsPerPage,
             @RequestParam(required = false) String sortBy,
             @RequestParam(required = false) String orderBy,
-            @RequestParam(required = false) Boolean completed) {
+            @RequestParam(required = false) Boolean completed,
+            @RequestParam(required = false) Boolean preliminary) {
 
-        OrderListResponse response = orderService.getOrders(q, page, itemsPerPage, sortBy, orderBy, completed);
+        OrderListResponse response = orderService.getOrders(q, page, itemsPerPage, sortBy, orderBy, completed, preliminary);
         return ResponseEntity.ok(response);
     }
 

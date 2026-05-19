@@ -16,14 +16,18 @@ const PersonalOrders = () => import('../pages/PersonalOrders.vue')
 const PersonalPlaceholder = () => import('../pages/PersonalPlaceholder.vue')
 const OrderTracking = () => import('../pages/OrderTracking.vue')
 
+const SITE_TITLE = 'iHome24 — товары для дома оптом и в розницу'
+const SITE_DESCRIPTION =
+  'Оптовые и розничные продажи товаров для дома. Юрлица и физлица. Доставка.'
+
 const routes = [
   {
     path: '/',
     name: 'Home',
     component: Home,
     meta: {
-      title: 'iHome24 - Интернет-магазин товаров для дома',
-      description: 'iHome24 - интернет-магазин товаров для дома и офиса. Каталог, выгодные цены, доставка.',
+      title: SITE_TITLE,
+      description: SITE_DESCRIPTION,
       robots: 'index, follow',
     },
   },
@@ -32,8 +36,8 @@ const routes = [
     name: 'Products',
     component: Products,
     meta: {
-      title: 'Каталог товаров - iHome24',
-      description: 'Каталог товаров iHome24: товары для дома и офиса с актуальными ценами и наличием.',
+      title: SITE_TITLE,
+      description: SITE_DESCRIPTION,
       robots: 'index, follow',
     },
   },
@@ -43,8 +47,8 @@ const routes = [
     name: 'ProductsCategory3',
     component: Products,
     meta: {
-      title: 'Каталог товаров - iHome24',
-      description: 'Категории каталога iHome24: подбор товаров для дома и офиса.',
+      title: SITE_TITLE,
+      description: SITE_DESCRIPTION,
       robots: 'index, follow',
     },
   },
@@ -53,8 +57,8 @@ const routes = [
     name: 'ProductsCategory2',
     component: Products,
     meta: {
-      title: 'Каталог товаров - iHome24',
-      description: 'Категории каталога iHome24: подбор товаров для дома и офиса.',
+      title: SITE_TITLE,
+      description: SITE_DESCRIPTION,
       robots: 'index, follow',
     },
   },
@@ -63,8 +67,8 @@ const routes = [
     name: 'ProductsCategory1',
     component: Products,
     meta: {
-      title: 'Каталог товаров - iHome24',
-      description: 'Категории каталога iHome24: подбор товаров для дома и офиса.',
+      title: SITE_TITLE,
+      description: SITE_DESCRIPTION,
       robots: 'index, follow',
     },
   },
@@ -73,8 +77,7 @@ const routes = [
     name: 'ProductDetail',
     component: ProductDetail,
     meta: {
-      title: 'Карточка товара - iHome24',
-      description: 'Подробная информация о товаре, характеристики, наличие и цена в iHome24.',
+      seoManagedByComponent: true,
       robots: 'index, follow',
     },
   },
@@ -175,8 +178,8 @@ const router = createRouter({
 
 const SEO_DEFAULTS = {
   siteUrl: import.meta.env.VITE_SITE_URL || 'https://ihome24.ru',
-  title: 'iHome24 - Интернет-магазин',
-  description: 'iHome24 - интернет-магазин товаров для дома и офиса.',
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
   robots: 'index, follow',
 }
 
@@ -222,6 +225,8 @@ function absoluteCanonical(to) {
 }
 
 router.afterEach((to) => {
+  if (to.meta?.seoManagedByComponent) return
+
   const title = to.meta?.title || SEO_DEFAULTS.title
   const description = to.meta?.description || SEO_DEFAULTS.description
   const robots = to.meta?.robots || SEO_DEFAULTS.robots

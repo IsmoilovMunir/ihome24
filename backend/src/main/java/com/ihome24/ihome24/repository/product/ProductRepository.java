@@ -18,6 +18,15 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     boolean existsBySku(String sku);
 
+    Optional<Product> findBySlug(String slug);
+
+    boolean existsBySlug(String slug);
+
+    boolean existsBySlugAndIdNot(String slug, Long id);
+
+    @Query("SELECT p FROM Product p LEFT JOIN FETCH p.category c LEFT JOIN FETCH c.parent LEFT JOIN FETCH p.images WHERE p.slug = :slug")
+    Optional<Product> findBySlugWithImages(@Param("slug") String slug);
+
     Optional<Product> findByBarcode(String barcode);
 
     boolean existsByBarcode(String barcode);
@@ -47,7 +56,6 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category c LEFT JOIN FETCH c.parent LEFT JOIN FETCH p.images WHERE p.isActive = true ORDER BY p.createdAt DESC")
     List<Product> findByIsActiveTrue();
 
-    /** Активные товары, которые есть в наличии: stockQuantity IS NULL (не отслеживается) или stockQuantity > 0 */
     @Query("SELECT DISTINCT p FROM Product p LEFT JOIN FETCH p.category c LEFT JOIN FETCH c.parent LEFT JOIN FETCH p.images WHERE p.isActive = true AND (p.stockQuantity IS NULL OR p.stockQuantity > 0) ORDER BY p.createdAt DESC")
     List<Product> findByIsActiveTrueAndInStock();
 

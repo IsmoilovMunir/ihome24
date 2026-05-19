@@ -367,6 +367,97 @@ public class EmailService {
         }
     }
 
+    /**
+     * Письмо с реквизитами для оплаты по расчётному счёту (юр. лицо).
+     */
+    public void sendOrderBankTransferConfirmation(
+            String toEmail,
+            String customerName,
+            Long orderNumber,
+            String totalAmount,
+            List<OrderItemLine> orderLines,
+            String buyerCompany,
+            String buyerInn,
+            String buyerKpp,
+            com.ihome24.ihome24.dto.response.company.PaymentDetailsResponse seller) {
+        if (mailUsername == null || mailUsername.isEmpty()) {
+            log.warn("Email не настроен — письмо по счёту для заказа #{} не отправлено", orderNumber);
+            return;
+        }
+        try {
+            String name = customerName != null && !customerName.isBlank() ? customerName : "клиент";
+            String total = totalAmount != null && !totalAmount.isBlank() ? totalAmount : "—";
+            String purpose = "Оплата заказа №" + orderNumber + " на сайте ihome24.ru";
+
+            String linesStr = orderLines != null && !orderLines.isEmpty()
+                    ? orderLines.stream()
+                            .map(line -> String.format("%s × %d — %s ₽", line.getProductName(), line.getQuantity(), line.getPrice()))
+                            .collect(Collectors.joining("\n"))
+                    : "—";
+
+            String sellerBlock = formatSellerBankBlock(seller);
+            String buyerBlock = String.format(
+                    "Плательщик: %s\nИНН: %s%s",
+                    buyerCompany != null ? buyerCompany : "—",
+                    buyerInn != null ? buyerInn : "—",
+                    buyerKpp != null && !buyerKpp.isBlank() ? "\nКПП: " + buyerKpp : "");
+
+            String plainText = String.format(
+                    "Здравствуйте, %s!\n\nВаш заказ №%s принят.\nИтого к оплате: %s\n\nСостав заказа:\n%s\n\n"
+                            + "Оплата по расчётному счёту:\n%s\n\n%s\n\nНазначение платежа:\n%s\n\n"
+                            + "После оплаты менеджер подтвердит заказ и свяжется с вами.\n\nС уважением,\niHome24 — ihome24.ru",
+                    name, orderNumber, total, linesStr, sellerBlock, buyerBlock, purpose);
+
+            String html = "<!DOCTYPE html><html><head><meta charset=\"UTF-8\"></head><body style=\"font-family:Arial,sans-serif;color:#333;\">"
+                    + "<div style=\"max-width:560px;margin:24px auto;background:#fff;border-radius:12px;padding:24px;\">"
+                    + "<h1 style=\"font-size:20px;\">Заказ №" + orderNumber + " — оплата по счёту</h1>"
+                    + "<p>Здравствуйте, <strong>" + escapeHtml(name) + "</strong>!</p>"
+                    + "<p>Заказ принят. Итого к оплате: <strong>" + escapeHtml(total) + "</strong></p>"
+                    + "<pre style=\"background:#f8fafc;padding:12px;border-radius:8px;white-space:pre-wrap;font-size:13px;\">" + escapeHtml(linesStr) + "</pre>"
+                    + "<h2 style=\"font-size:16px;margin-top:20px;\">Реквизиты получателя</h2>"
+                    + "<pre style=\"background:#eff6ff;padding:12px;border-radius:8px;white-space:pre-wrap;font-size:13px;\">" + escapeHtml(sellerBlock) + "</pre>"
+                    + "<h2 style=\"font-size:16px;\">Данные плательщика</h2>"
+                    + "<pre style=\"background:#f8fafc;padding:12px;border-radius:8px;white-space:pre-wrap;font-size:13px;\">" + escapeHtml(buyerBlock) + "</pre>"
+                    + "<p><strong>Назначение платежа:</strong><br>" + escapeHtml(purpose) + "</p>"
+                    + "<p style=\"color:#64748b;font-size:14px;\">После поступления оплаты менеджер подтвердит заказ.</p>"
+                    + "</div></body></html>";
+
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
+            helper.setFrom(mailUsername, "iHome24");
+            helper.setTo(toEmail);
+            helper.setSubject("Заказ №" + orderNumber + " — реквизиты для оплаты — iHome24");
+            helper.setText(plainText, html);
+            mailSender.send(mimeMessage);
+            log.info("Письмо с реквизитами для заказа #{} отправлено на {}", orderNumber, toEmail);
+        } catch (Exception e) {
+            log.error("Не удалось отправить письмо с реквизитами для заказа #{}: {}", orderNumber, e.getMessage());
+            logSmtpPortHint(e);
+        }
+    }
+
+    private static String formatSellerBankBlock(com.ihome24.ihome24.dto.response.company.PaymentDetailsResponse seller) {
+        if (seller == null) {
+            return "Реквизиты уточняйте у менеджера.";
+        }
+        StringBuilder sb = new StringBuilder();
+        appendLine(sb, "Получатель", seller.getName());
+        appendLine(sb, "ИНН", seller.getInn());
+        appendLine(sb, "КПП", seller.getKpp());
+        appendLine(sb, "Банк", seller.getBankName());
+        appendLine(sb, "БИК", seller.getBik());
+        appendLine(sb, "Р/с", seller.getBankAccount());
+        appendLine(sb, "К/с", seller.getCorrespondentAccount());
+        return sb.toString().trim();
+    }
+
+    private static void appendLine(StringBuilder sb, String label, String value) {
+        if (value != null && !value.isBlank()) {
+            if (!sb.isEmpty()) sb.append('\n');
+            sb.append(label).append(": ").append(value);
+        }
+    }
+
     private static String escapeHtml(String s) {
         if (s == null) return "";
         return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
@@ -410,6 +501,51 @@ public class EmailService {
         } catch (Exception e) {
             log.error("Не удалось отправить уведомление о статусе заказа #{}: {}", orderNumber, e.getMessage());
             logSmtpPortHint(e);
+        }
+    }
+
+    /**
+     * Уведомление менеджеру о заявке с оптовой страницы.
+     * @return true если письмо отправлено
+     */
+    public boolean sendWholesaleLead(String toEmail, String name, String phone, String inn, String message) {
+        if (toEmail == null || toEmail.isBlank()) {
+            log.warn("Wholesale email is not configured");
+            return false;
+        }
+        if (mailUsername == null || mailUsername.isEmpty()) {
+            log.warn("Email не настроен — заявка оптового клиента не отправлена на {}", toEmail);
+            return false;
+        }
+
+        try {
+            String safeName = name != null && !name.isBlank() ? name : "—";
+            String safePhone = phone != null && !phone.isBlank() ? phone : "—";
+            String safeInn = inn != null && !inn.isBlank() ? inn : "—";
+            String safeMessage = message != null && !message.isBlank() ? message : "—";
+
+            String plainText = String.format(
+                    "Новая заявка с страницы «Оптовым клиентам»\n\n"
+                            + "Имя/компания: %s\n"
+                            + "Телефон: %s\n"
+                            + "ИНН: %s\n\n"
+                            + "Комментарий:\n%s",
+                    safeName, safePhone, safeInn, safeMessage);
+
+            String fromEmail = appEmailFrom != null && !appEmailFrom.isBlank() ? appEmailFrom : mailUsername;
+
+            SimpleMailMessage mail = new SimpleMailMessage();
+            mail.setFrom(fromEmail);
+            mail.setTo(toEmail);
+            mail.setSubject("Заявка: оптовым клиентам iHome24");
+            mail.setText(plainText);
+            mailSender.send(mail);
+            log.info("Wholesale lead email sent to {}", toEmail);
+            return true;
+        } catch (Exception e) {
+            log.error("Failed to send wholesale lead email: {}", e.getMessage());
+            logSmtpPortHint(e);
+            return false;
         }
     }
 }

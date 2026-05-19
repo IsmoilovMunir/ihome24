@@ -17,7 +17,7 @@ export function categoryPathSegment(category) {
  * @param {Array} categories
  * @returns {Array}
  */
-function getCategoryChain(category, categories) {
+export function getCategoryChain(category, categories) {
   if (!category?.id || !categories?.length) return []
   const chain = []
   let c = category

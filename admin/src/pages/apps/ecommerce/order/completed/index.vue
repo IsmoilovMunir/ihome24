@@ -219,7 +219,7 @@ const deleteOrder = async id => {
             </VAvatar>
             <div class="d-flex flex-column">
               <div class="text-body-1 font-weight-medium">
-                {{ item.customer }}
+                <OrderCustomerLink :item="item" />
               </div>
               <div class="text-body-2">
                 {{ item.email }}
@@ -260,6 +260,10 @@ const deleteOrder = async id => {
               :src="paypal"
               height="18"
             >
+            <span
+              v-else-if="item.method === 'invoice'"
+              class="text-body-1"
+            >По счёту</span>
             <span
               v-else
               class="text-body-1"

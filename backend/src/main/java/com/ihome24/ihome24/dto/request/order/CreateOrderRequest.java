@@ -35,13 +35,27 @@ public class CreateOrderRequest {
     private String pickupAddress;
 
     @NotBlank(message = "Способ оплаты обязателен")
-    private String paymentMethod; // "cash" etc.
+    private String paymentMethod; // "cash" | "invoice"
 
     private String comment;
+
+    /** Для оплаты по расчётному счёту (юр. лицо) */
+    private String companyName;
+    private String companyInn;
+    private String companyKpp;
+    private String companyAddress;
+    private String companyOgrn;
+    private String companyOkpo;
+    private String companyCorrAccount;
+    private String companyBik;
+    private String companySettlementAccount;
 
     @NotEmpty(message = "Корзина не может быть пустой")
     @Valid
     private List<OrderItemRequest> items;
+
+    /** Если оформление начиналось как предварительный заказ */
+    private Long preliminaryOrderId;
 
     @Data
     @NoArgsConstructor

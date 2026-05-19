@@ -1,0 +1,257 @@
+<template>
+  <div class="product-tile rounded-lg overflow-hidden relative">
+    <router-link :to="productPath(product)">
+      <div class="product-card-image-container w-full h-[410px] relative flex items-center justify-center overflow-hidden group rounded-xl" style="background-color: var(--product-tile-background);">
+        <img
+          v-if="imageUrl"
+          :src="imageUrl"
+          :srcset="imageSrcSet || undefined"
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+          :alt="product.name"
+          loading="lazy"
+          decoding="async"
+          class="w-[90%] h-[90%] object-contain transition-transform duration-300 ease-in-out group-hover:scale-[1.20]"
+        />
+        <div
+          v-else
+          class="w-full h-full flex items-center justify-center"
+          style="background-color: var(--product-tile-background);"
+        >
+          <svg
+            class="w-16 h-16 text-gray-300"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+        </div>
+        
+        <!-- Бейдж "Хит продаж" -->
+        <div
+          v-if="product.isFeatured"
+          class="absolute top-2 left-2 bg-primary-600 text-white px-2 py-1 rounded text-xs font-semibold z-10"
+        >
+          Хит продаж
+        </div>
+      </div>
+    </router-link>
+    
+    <!-- Кнопка "В корзину" или иконка корзины (вне router-link, чтобы не открывать товар) -->
+    <div class="absolute top-2 right-2 z-20">
+      <!-- Количество +/− в корзине, если товар уже добавлен -->
+      <div
+        v-if="isInCart"
+        class="bg-[#F37021] rounded-md flex items-center z-20 overflow-hidden"
+      >
+        <button
+          type="button"
+          @click.stop="decreaseQuantity"
+          class="w-8 h-8 flex items-center justify-center text-white hover:bg-[#E0651D] transition-colors text-lg"
+        >
+          −
+        </button>
+        <button
+          type="button"
+          @click.stop="goToCart"
+          class="px-2 min-w-[2rem] h-8 flex items-center justify-center text-white text-sm font-semibold hover:bg-[#E0651D] transition-colors"
+        >
+          {{ cartQuantity }}
+        </button>
+        <button
+          type="button"
+          @click.stop="increaseQuantity"
+          class="w-8 h-8 flex items-center justify-center text-white hover:bg-[#E0651D] transition-colors text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          :disabled="cartQuantity >= maxQuantity"
+        >
+          +
+        </button>
+      </div>
+      
+      <!-- Кнопка "В корзину", если товара нет в корзине -->
+      <button
+        v-else
+        @click.stop="addToCart"
+        :disabled="!isAvailable"
+        class="bg-[#F37021] text-white px-3 py-1.5 rounded-md hover:bg-[#E0651D] disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors text-sm font-semibold z-20"
+      >
+        {{ isAvailable ? 'В корзину' : 'Нет' }}
+      </button>
+    </div>
+    
+    <!-- Текст внизу картинки -->
+    <div class="px-0 py-0 mt-4" style="background-color: var(--siteBg);">
+      <router-link :to="productPath(product)">
+        <h3 class="text-sm mb-0 hover:opacity-90 transition-opacity pl-0 product-name" style="color: var(--product-tile-title-color);">
+          {{ product.name }}
+        </h3>
+      </router-link>
+      
+      <div class="flex items-center justify-between px-0">
+        <div class="flex items-center space-x-2">
+          <span class="text-sm product-price" style="color: var(--product-tile-price-color);">
+            {{ formatPrice(maxDiscountUnitPrice ?? product.price) }}
+          </span>
+          <span
+            v-if="product.oldPrice && product.oldPrice > product.price"
+            class="text-sm line-through opacity-70 product-price"
+            style="color: var(--product-tile-price-color);"
+          >
+            {{ formatPrice(product.oldPrice) }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useCartStore } from '~/stores/cart'
+import { fileApi } from '~/utils/api'
+import { productPath } from '~/utils/productUrl'
+import { getDefaultVariant, normalizeProductId, resolveCartVariant } from '~/utils/cartVariant'
+import { useSettingsStore } from '~/stores/settings'
+
+const props = defineProps({
+  product: {
+    type: Object,
+    required: true,
+  },
+})
+
+const router = useRouter()
+const cartStore = useCartStore()
+const settingsStore = useSettingsStore()
+
+onMounted(() => {
+  settingsStore.fetchPriceTiers()
+})
+
+const imageUrl = computed(() => {
+  // Проверяем imageUrl
+  if (props.product.imageUrl) {
+    return fileApi.getImageUrlBySize(props.product.imageUrl, 'small')
+  }
+  
+  // Проверяем images массив (в ProductImageResponse поле называется imageUrl, не url!)
+  if (props.product.images && props.product.images.length > 0) {
+    const img = props.product.images[0]
+    // Проверяем разные возможные поля (imageUrl - правильное поле из ProductImageResponse)
+    const imgUrl = img.imageUrl || img.url || (typeof img === 'string' ? img : null)
+    if (imgUrl) {
+      return fileApi.getImageUrlBySize(imgUrl, 'small')
+    }
+  }
+  return null
+})
+
+const imageSrcSet = computed(() => {
+  if (props.product.imageUrl) return fileApi.getImageSrcSet(props.product.imageUrl)
+  if (props.product.images && props.product.images.length > 0) {
+    const img = props.product.images[0]
+    const imgUrl = img.imageUrl || img.url || (typeof img === 'string' ? img : null)
+    if (imgUrl) return fileApi.getImageSrcSet(imgUrl)
+  }
+  return null
+})
+
+const isAvailable = computed(() => {
+  return props.product.isActive && 
+         (props.product.stockQuantity === null || props.product.stockQuantity > 0)
+})
+
+const cardVariantKey = computed(() => resolveCartVariant(props.product).variantKey)
+
+const isInCart = computed(() => {
+  const pid = normalizeProductId(props.product.id)
+  const vk = cardVariantKey.value ?? null
+  return cartStore.items.some(item =>
+    normalizeProductId(item.product.id) === pid && (item.variantKey ?? null) === vk,
+  )
+})
+
+const cartQuantity = computed(() => {
+  const pid = normalizeProductId(props.product.id)
+  const vk = cardVariantKey.value ?? null
+  const item = cartStore.items.find(item =>
+    normalizeProductId(item.product.id) === pid && (item.variantKey ?? null) === vk,
+  )
+  return item?.quantity ?? 0
+})
+
+const maxQuantity = computed(() => {
+  const variant = getDefaultVariant(props.product)
+  if (typeof variant?.stock?.quantity === 'number') return variant.stock.quantity
+  if (props.product.stockQuantity == null) return 999
+  return props.product.stockQuantity
+})
+
+// Цена за единицу с учётом максимальной возможной скидки (по самому выгодному уровню)
+const maxDiscountUnitPrice = computed(() => {
+  const basePrice = props.product?.price
+  if (!basePrice || basePrice <= 0) return null
+
+  const tiers = settingsStore.tiersForCalculation
+  if (!tiers?.length) return basePrice
+
+  const best = [...tiers].sort((a, b) => Number(b.discountPercent ?? 0) - Number(a.discountPercent ?? 0))[0]
+  if (!best || !best.discountPercent) return basePrice
+
+  const discount = Number(best.discountPercent) / 100
+  return Math.round(basePrice * (1 - discount) * 100) / 100
+})
+
+const decreaseQuantity = () => {
+  if (cartQuantity.value > 1) {
+    cartStore.updateQuantity(props.product.id, cartQuantity.value - 1, cardVariantKey.value)
+  } else {
+    cartStore.removeFromCart(props.product.id, cardVariantKey.value)
+  }
+}
+
+const increaseQuantity = () => {
+  if (cartQuantity.value < maxQuantity.value) {
+    cartStore.updateQuantity(props.product.id, cartQuantity.value + 1, cardVariantKey.value)
+  }
+}
+
+const formatPrice = (price) => {
+  if (!price) return '0 ₽'
+  return new Intl.NumberFormat('ru-RU', {
+    style: 'currency',
+    currency: 'RUB',
+    minimumFractionDigits: 0,
+  }).format(price)
+}
+
+const addToCart = () => {
+  if (isAvailable.value) {
+    cartStore.addToCart(props.product, 1, getDefaultVariant(props.product))
+  }
+}
+
+const goToCart = () => {
+  router.push('/cart')
+}
+</script>
+
+<style scoped>
+.product-name,
+.product-price {
+  font-family: "helvetica", sans-serif;
+  font-weight: 400;
+}
+
+@media (max-width: 640px) {
+  .product-card-image-container {
+    height: 266px !important; /* 410px - 15% - 15% - 10% = 266px */
+  }
+}
+</style>

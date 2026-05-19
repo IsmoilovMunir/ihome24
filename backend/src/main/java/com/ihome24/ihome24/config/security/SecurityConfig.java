@@ -42,13 +42,14 @@ public class SecurityConfig {
                 )
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/sitemap.xml", "/sitemap-static.xml", "/sitemap-categories.xml", "/sitemap-products.xml", "/h2-console/**").permitAll()
+                        .requestMatchers("/", "/robots.txt", "/sitemap.xml", "/sitemap-static.xml", "/sitemap-categories.xml", "/sitemap-products.xml", "/h2-console/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll() // Разрешаем доступ к actuator endpoints для мониторинга
                         .requestMatchers("/api/publicapi/**").permitAll() // Разрешаем публичные API endpoints (регистрация и т.д.)
                         .requestMatchers("/api/auth/**").permitAll() // Разрешаем аутентификацию
                         .requestMatchers("/api/apps/**").permitAll() // Orders, admin - permit for frontend checkout and admin
                         .requestMatchers("/api/files/**", "/api/avatars/**").permitAll() // Публичный доступ к файлам и аватарам
                         .requestMatchers("/api/products", "/api/products/**").permitAll() // Публичный доступ к продуктам
+                        .requestMatchers("/api/checkout", "/api/checkout/**").permitAll() // Лиды и гость при оформлении
                         .requestMatchers("/api/cart", "/api/cart/**").permitAll() // Валидация корзины
                         .requestMatchers("/api/categories", "/api/categories/**").permitAll() // Публичный доступ к категориям
                         .requestMatchers("/api/geo", "/api/geo/**").permitAll() // Геолокация по IP
@@ -87,10 +88,12 @@ public class SecurityConfig {
         } else {
             // Значения по умолчанию для разработки
             allowedOrigins = List.of(
-                "http://localhost:5173", 
+                "http://localhost:5173",
                 "http://localhost:3000",
+                "http://localhost:3010",
                 "http://admin:5173",
                 "http://frontend:3000",
+                "http://frontend-nuxt:3000",
                 // Production defaults (admin -> api)
                 "https://admin.ihome24.ru",
                 "https://api.ihome24.ru",
@@ -101,6 +104,11 @@ public class SecurityConfig {
         }
         
         configuration.setAllowedOrigins(allowedOrigins);
+        // Nuxt dev (3010) и другие локальные порты без правки списка каждый раз
+        configuration.setAllowedOriginPatterns(List.of(
+                "http://localhost:*",
+                "http://127.0.0.1:*"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
