@@ -63,3 +63,5 @@ databaseChangeLog:
       file: db/changelog/changeset/orders_V006__company_extra_fields.sql
   - include:
       file: db/changelog/changeset/orders_V007__company_bank_fields.sql
+  - include:
+      file: db/changelog/changeset/products_V011__ensure_slug_column.sql
