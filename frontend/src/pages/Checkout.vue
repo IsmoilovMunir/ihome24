@@ -384,7 +384,10 @@ const cartStore = useCartStore()
 const authStore = useAuthStore()
 const settingsStore = useSettingsStore()
 
-const YANDEX_MAPS_API_KEY = import.meta.env.VITE_YANDEX_MAPS_API_KEY || ''
+/** Ключ из frontend/.env (dev) или зашит при сборке (prod). Пробелы по краям обрезаем. */
+function getYandexMapsApiKey() {
+  return String(import.meta.env.VITE_YANDEX_MAPS_API_KEY ?? '').trim()
+}
 const MOSCOW_CENTER = [37.6173, 55.7558]
 const DEFAULT_ZOOM = 12
 
@@ -472,7 +475,7 @@ function loadScript(src) {
 
 /** Обратное геокодирование: координаты → адрес (Yandex Geocoder API) */
 async function reverseGeocode(lon, lat) {
-  const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${encodeURIComponent(YANDEX_MAPS_API_KEY)}&geocode=${lon},${lat}&format=json`
+  const url = `https://geocode-maps.yandex.ru/1.x/?apikey=${encodeURIComponent(getYandexMapsApiKey())}&geocode=${lon},${lat}&format=json`
   const res = await fetch(url)
   if (!res.ok) throw new Error('Не удалось определить адрес')
   const data = await res.json()
@@ -517,14 +520,17 @@ function addMarkerAt(ymaps3, lng, lat, onDragEndCallback) {
 
 async function loadYandexAndInitMap() {
   if (!mapContainerRef.value) return
-  if (!YANDEX_MAPS_API_KEY) {
-    mapLoadError.value = 'Добавьте VITE_YANDEX_MAPS_API_KEY в .env для отображения карты'
+  const apiKey = getYandexMapsApiKey()
+  if (!apiKey) {
+    mapLoadError.value = import.meta.env.DEV
+      ? 'В каталоге frontend/ в файле .env задайте VITE_YANDEX_MAPS_API_KEY=… и полностью перезапустите npm run dev (Vite подхватывает .env только при старте dev-сервера).'
+      : 'Карта недоступна: в .env.prod задайте VITE_YANDEX_MAPS_API_KEY или YANDEX_MAPS_API_KEY, затем пересоберите frontend (docker compose -f docker-compose.prod.yml --env-file .env.prod build --no-cache frontend && … up -d frontend).'
     mapLocationLoading.value = false
     return
   }
   try {
     if (!yandexScriptLoaded) {
-      await loadScript(`https://api-maps.yandex.ru/v3/?apikey=${YANDEX_MAPS_API_KEY}&lang=ru_RU`)
+      await loadScript(`https://api-maps.yandex.ru/v3/?apikey=${apiKey}&lang=ru_RU`)
       yandexScriptLoaded = true
     }
 

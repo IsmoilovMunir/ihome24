@@ -168,6 +168,8 @@ services:
         NUXT_PUBLIC_API_BASE: ${FRONTEND_API_BASE_URL:-}
         NUXT_PUBLIC_SITE_URL: ${NUXT_PUBLIC_SITE_URL:-https://ihome24.ru}
         NUXT_API_BASE_SERVER: http://backend:8080
+        # Один .env.prod: либо VITE_YANDEX_MAPS_API_KEY=..., либо YANDEX_MAPS_API_KEY=... (без префикса VITE_)
+        VITE_YANDEX_MAPS_API_KEY: ${VITE_YANDEX_MAPS_API_KEY:-${YANDEX_MAPS_API_KEY:-}}
     container_name: ihome24-frontend-prod
     environment:
       NUXT_PUBLIC_API_BASE: ${FRONTEND_API_BASE_URL:-}
