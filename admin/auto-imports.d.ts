@@ -9,6 +9,21 @@ declare global {
   const $api: typeof import('./src/utils/api.js')['$api']
   const COOKIE_MAX_AGE_1_YEAR: typeof import('./src/utils/constants.js')['COOKIE_MAX_AGE_1_YEAR']
   const EffectScope: typeof import('vue')['EffectScope']
+  const MAX_SLUG_LENGTH: typeof import('./src/utils/productSeo.js')['MAX_SLUG_LENGTH']
+  const META_DESCRIPTION_MAX: typeof import('./src/utils/productSeo.js')['META_DESCRIPTION_MAX']
+  const META_DESCRIPTION_RECOMMENDED_MAX: typeof import('./src/utils/productSeo.js')['META_DESCRIPTION_RECOMMENDED_MAX']
+  const META_DESCRIPTION_RECOMMENDED_MIN: typeof import('./src/utils/productSeo.js')['META_DESCRIPTION_RECOMMENDED_MIN']
+  const META_DESCRIPTION_YELLOW_MAX: typeof import('./src/utils/productSeo.js')['META_DESCRIPTION_YELLOW_MAX']
+  const META_TITLE_MAX: typeof import('./src/utils/productSeo.js')['META_TITLE_MAX']
+  const META_TITLE_RECOMMENDED_MAX: typeof import('./src/utils/productSeo.js')['META_TITLE_RECOMMENDED_MAX']
+  const META_TITLE_RECOMMENDED_MIN: typeof import('./src/utils/productSeo.js')['META_TITLE_RECOMMENDED_MIN']
+  const META_TITLE_YELLOW_MAX: typeof import('./src/utils/productSeo.js')['META_TITLE_YELLOW_MAX']
+  const SEO_FIELD_HINTS: typeof import('./src/utils/productSeo.js')['SEO_FIELD_HINTS']
+  const SEO_LIST_STATUS_META: typeof import('./src/utils/productSeo.js')['SEO_LIST_STATUS_META']
+  const YANDEX_SNIPPET_DESC_DESKTOP: typeof import('./src/utils/productSeo.js')['YANDEX_SNIPPET_DESC_DESKTOP']
+  const YANDEX_SNIPPET_DESC_MOBILE: typeof import('./src/utils/productSeo.js')['YANDEX_SNIPPET_DESC_MOBILE']
+  const YANDEX_SNIPPET_TITLE_DESKTOP: typeof import('./src/utils/productSeo.js')['YANDEX_SNIPPET_TITLE_DESKTOP']
+  const YANDEX_SNIPPET_TITLE_MOBILE: typeof import('./src/utils/productSeo.js')['YANDEX_SNIPPET_TITLE_MOBILE']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const alphaDashValidator: typeof import('./src/@core/utils/validators.js')['alphaDashValidator']
   const alphaValidator: typeof import('./src/@core/utils/validators.js')['alphaValidator']
@@ -16,12 +31,15 @@ declare global {
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
   const avatarText: typeof import('./src/@core/utils/formatters.js')['avatarText']
   const betweenValidator: typeof import('./src/@core/utils/validators.js')['betweenValidator']
+  const buildProductPageUrl: typeof import('./src/utils/productSeo.js')['buildProductPageUrl']
+  const buildProductPreviewUrl: typeof import('./src/utils/productSeo.js')['buildProductPreviewUrl']
   const computed: typeof import('vue')['computed']
   const computedAsync: typeof import('@vueuse/core')['computedAsync']
   const computedEager: typeof import('@vueuse/core')['computedEager']
   const computedInject: typeof import('@vueuse/core')['computedInject']
   const computedWithControl: typeof import('@vueuse/core')['computedWithControl']
   const confirmedValidator: typeof import('./src/@core/utils/validators.js')['confirmedValidator']
+  const containsCyrillic: typeof import('./src/utils/productSeo.js')['containsCyrillic']
   const controlledComputed: typeof import('@vueuse/core')['controlledComputed']
   const controlledRef: typeof import('@vueuse/core')['controlledRef']
   const createApp: typeof import('vue')['createApp']
@@ -40,6 +58,8 @@ declare global {
   const customRef: typeof import('vue')['customRef']
   const debouncedRef: typeof import('@vueuse/core')['debouncedRef']
   const debouncedWatch: typeof import('@vueuse/core')['debouncedWatch']
+  const defaultMetaDescription: typeof import('./src/utils/productSeo.js')['defaultMetaDescription']
+  const defaultMetaTitle: typeof import('./src/utils/productSeo.js')['defaultMetaTitle']
   const defineAsyncComponent: typeof import('vue')['defineAsyncComponent']
   const defineComponent: typeof import('vue')['defineComponent']
   const definePage: typeof import('unplugin-vue-router/runtime')['definePage']
@@ -50,9 +70,13 @@ declare global {
   const extendRef: typeof import('@vueuse/core')['extendRef']
   const formatDate: typeof import('./src/@core/utils/formatters.js')['formatDate']
   const formatDateToMonthShort: typeof import('./src/@core/utils/formatters.js')['formatDateToMonthShort']
+  const formatPriceForMeta: typeof import('./src/utils/productSeo.js')['formatPriceForMeta']
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
+  const getMetaDescriptionLengthStatus: typeof import('./src/utils/productSeo.js')['getMetaDescriptionLengthStatus']
+  const getMetaTitleLengthStatus: typeof import('./src/utils/productSeo.js')['getMetaTitleLengthStatus']
+  const getProductSeoListStatus: typeof import('./src/utils/productSeo.js')['getProductSeoListStatus']
   const h: typeof import('vue')['h']
   const hexToRgb: typeof import('./src/@core/utils/colorConverter.js')['hexToRgb']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
@@ -69,6 +93,7 @@ declare global {
   const isReadonly: typeof import('vue')['isReadonly']
   const isRef: typeof import('vue')['isRef']
   const isToday: typeof import('./src/@core/utils/helpers.js')['isToday']
+  const isValidSlugFormat: typeof import('./src/utils/productSeo.js')['isValidSlugFormat']
   const kFormatter: typeof import('./src/@core/utils/formatters.js')['kFormatter']
   const lengthValidator: typeof import('./src/@core/utils/validators.js')['lengthValidator']
   const logicAnd: typeof import('@vueuse/math')['logicAnd']
@@ -134,6 +159,7 @@ declare global {
   const shallowReactive: typeof import('vue')['shallowReactive']
   const shallowReadonly: typeof import('vue')['shallowReadonly']
   const shallowRef: typeof import('vue')['shallowRef']
+  const slugifyProductName: typeof import('./src/utils/productSeo.js')['slugifyProductName']
   const storeToRefs: typeof import('pinia')['storeToRefs']
   const syncRef: typeof import('@vueuse/core')['syncRef']
   const syncRefs: typeof import('@vueuse/core')['syncRefs']
@@ -146,6 +172,7 @@ declare global {
   const toRefs: typeof import('vue')['toRefs']
   const toValue: typeof import('vue')['toValue']
   const triggerRef: typeof import('vue')['triggerRef']
+  const truncateSerpText: typeof import('./src/utils/productSeo.js')['truncateSerpText']
   const tryOnBeforeMount: typeof import('@vueuse/core')['tryOnBeforeMount']
   const tryOnBeforeUnmount: typeof import('@vueuse/core')['tryOnBeforeUnmount']
   const tryOnMounted: typeof import('@vueuse/core')['tryOnMounted']
@@ -371,6 +398,21 @@ declare module 'vue' {
     readonly $api: UnwrapRef<typeof import('./src/utils/api.js')['$api']>
     readonly COOKIE_MAX_AGE_1_YEAR: UnwrapRef<typeof import('./src/utils/constants.js')['COOKIE_MAX_AGE_1_YEAR']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly MAX_SLUG_LENGTH: UnwrapRef<typeof import('./src/utils/productSeo.js')['MAX_SLUG_LENGTH']>
+    readonly META_DESCRIPTION_MAX: UnwrapRef<typeof import('./src/utils/productSeo.js')['META_DESCRIPTION_MAX']>
+    readonly META_DESCRIPTION_RECOMMENDED_MAX: UnwrapRef<typeof import('./src/utils/productSeo.js')['META_DESCRIPTION_RECOMMENDED_MAX']>
+    readonly META_DESCRIPTION_RECOMMENDED_MIN: UnwrapRef<typeof import('./src/utils/productSeo.js')['META_DESCRIPTION_RECOMMENDED_MIN']>
+    readonly META_DESCRIPTION_YELLOW_MAX: UnwrapRef<typeof import('./src/utils/productSeo.js')['META_DESCRIPTION_YELLOW_MAX']>
+    readonly META_TITLE_MAX: UnwrapRef<typeof import('./src/utils/productSeo.js')['META_TITLE_MAX']>
+    readonly META_TITLE_RECOMMENDED_MAX: UnwrapRef<typeof import('./src/utils/productSeo.js')['META_TITLE_RECOMMENDED_MAX']>
+    readonly META_TITLE_RECOMMENDED_MIN: UnwrapRef<typeof import('./src/utils/productSeo.js')['META_TITLE_RECOMMENDED_MIN']>
+    readonly META_TITLE_YELLOW_MAX: UnwrapRef<typeof import('./src/utils/productSeo.js')['META_TITLE_YELLOW_MAX']>
+    readonly SEO_FIELD_HINTS: UnwrapRef<typeof import('./src/utils/productSeo.js')['SEO_FIELD_HINTS']>
+    readonly SEO_LIST_STATUS_META: UnwrapRef<typeof import('./src/utils/productSeo.js')['SEO_LIST_STATUS_META']>
+    readonly YANDEX_SNIPPET_DESC_DESKTOP: UnwrapRef<typeof import('./src/utils/productSeo.js')['YANDEX_SNIPPET_DESC_DESKTOP']>
+    readonly YANDEX_SNIPPET_DESC_MOBILE: UnwrapRef<typeof import('./src/utils/productSeo.js')['YANDEX_SNIPPET_DESC_MOBILE']>
+    readonly YANDEX_SNIPPET_TITLE_DESKTOP: UnwrapRef<typeof import('./src/utils/productSeo.js')['YANDEX_SNIPPET_TITLE_DESKTOP']>
+    readonly YANDEX_SNIPPET_TITLE_MOBILE: UnwrapRef<typeof import('./src/utils/productSeo.js')['YANDEX_SNIPPET_TITLE_MOBILE']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly alphaDashValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['alphaDashValidator']>
     readonly alphaValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['alphaValidator']>
@@ -378,12 +420,15 @@ declare module 'vue' {
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
     readonly avatarText: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['avatarText']>
     readonly betweenValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['betweenValidator']>
+    readonly buildProductPageUrl: UnwrapRef<typeof import('./src/utils/productSeo.js')['buildProductPageUrl']>
+    readonly buildProductPreviewUrl: UnwrapRef<typeof import('./src/utils/productSeo.js')['buildProductPreviewUrl']>
     readonly computed: UnwrapRef<typeof import('vue')['computed']>
     readonly computedAsync: UnwrapRef<typeof import('@vueuse/core')['computedAsync']>
     readonly computedEager: UnwrapRef<typeof import('@vueuse/core')['computedEager']>
     readonly computedInject: UnwrapRef<typeof import('@vueuse/core')['computedInject']>
     readonly computedWithControl: UnwrapRef<typeof import('@vueuse/core')['computedWithControl']>
     readonly confirmedValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['confirmedValidator']>
+    readonly containsCyrillic: UnwrapRef<typeof import('./src/utils/productSeo.js')['containsCyrillic']>
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
@@ -402,6 +447,8 @@ declare module 'vue' {
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
     readonly debouncedWatch: UnwrapRef<typeof import('@vueuse/core')['debouncedWatch']>
+    readonly defaultMetaDescription: UnwrapRef<typeof import('./src/utils/productSeo.js')['defaultMetaDescription']>
+    readonly defaultMetaTitle: UnwrapRef<typeof import('./src/utils/productSeo.js')['defaultMetaTitle']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly definePage: UnwrapRef<typeof import('unplugin-vue-router/runtime')['definePage']>
@@ -412,9 +459,13 @@ declare module 'vue' {
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
     readonly formatDate: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['formatDate']>
     readonly formatDateToMonthShort: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['formatDateToMonthShort']>
+    readonly formatPriceForMeta: UnwrapRef<typeof import('./src/utils/productSeo.js')['formatPriceForMeta']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
+    readonly getMetaDescriptionLengthStatus: UnwrapRef<typeof import('./src/utils/productSeo.js')['getMetaDescriptionLengthStatus']>
+    readonly getMetaTitleLengthStatus: UnwrapRef<typeof import('./src/utils/productSeo.js')['getMetaTitleLengthStatus']>
+    readonly getProductSeoListStatus: UnwrapRef<typeof import('./src/utils/productSeo.js')['getProductSeoListStatus']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hexToRgb: UnwrapRef<typeof import('./src/@core/utils/colorConverter.js')['hexToRgb']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
@@ -431,6 +482,7 @@ declare module 'vue' {
     readonly isReadonly: UnwrapRef<typeof import('vue')['isReadonly']>
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isToday: UnwrapRef<typeof import('./src/@core/utils/helpers.js')['isToday']>
+    readonly isValidSlugFormat: UnwrapRef<typeof import('./src/utils/productSeo.js')['isValidSlugFormat']>
     readonly kFormatter: UnwrapRef<typeof import('./src/@core/utils/formatters.js')['kFormatter']>
     readonly lengthValidator: UnwrapRef<typeof import('./src/@core/utils/validators.js')['lengthValidator']>
     readonly logicAnd: UnwrapRef<typeof import('@vueuse/math')['logicAnd']>
@@ -496,6 +548,7 @@ declare module 'vue' {
     readonly shallowReactive: UnwrapRef<typeof import('vue')['shallowReactive']>
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
+    readonly slugifyProductName: UnwrapRef<typeof import('./src/utils/productSeo.js')['slugifyProductName']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
     readonly syncRef: UnwrapRef<typeof import('@vueuse/core')['syncRef']>
     readonly syncRefs: UnwrapRef<typeof import('@vueuse/core')['syncRefs']>
@@ -508,6 +561,7 @@ declare module 'vue' {
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
+    readonly truncateSerpText: UnwrapRef<typeof import('./src/utils/productSeo.js')['truncateSerpText']>
     readonly tryOnBeforeMount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeMount']>
     readonly tryOnBeforeUnmount: UnwrapRef<typeof import('@vueuse/core')['tryOnBeforeUnmount']>
     readonly tryOnMounted: UnwrapRef<typeof import('@vueuse/core')['tryOnMounted']>
