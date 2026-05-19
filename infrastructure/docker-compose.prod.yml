@@ -118,6 +118,7 @@ services:
       APP_EMAIL_FROM: ${APP_EMAIL_FROM:-}
       # Resend API (если SMTP блокируется хостингом — письма через HTTPS)
       RESEND_API_KEY: ${RESEND_API_KEY:-}
+      DADATA_API_KEY: ${DADATA_API_KEY:-}
       APP_WHOLESALE_EMAIL: ${APP_WHOLESALE_EMAIL:-opt@ihome24.ru}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}

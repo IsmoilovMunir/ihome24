@@ -42,7 +42,7 @@ public class DadataPartyService {
         apiKey = resolveApiKey();
         if (apiKey == null || apiKey.isBlank()) {
             log.warn("DADATA_API_KEY не задан — поиск организаций в checkout отключён. "
-                    + "Добавьте ключ в backend/.env и перезапустите backend.");
+                    + "Локально: backend/.env; prod: .env.prod + environment в docker-compose.prod.yml.");
         } else {
             log.info("DaData: ключ загружен ({}…), подсказки по организациям включены",
                     apiKey.substring(0, Math.min(8, apiKey.length())));
@@ -79,7 +79,7 @@ public class DadataPartyService {
             return CompanySuggestResponse.builder()
                     .enabled(false)
                     .suggestions(List.of())
-                    .message("Не настроен DADATA_API_KEY. Добавьте ключ в backend/.env и перезапустите сервер.")
+                    .message("Не настроен DADATA_API_KEY. Локально: backend/.env. Prod: infrastructure/.env.prod и DADATA_API_KEY в docker-compose.prod.yml → перезапуск backend.")
                     .build();
         }
         String q = query != null ? query.trim() : "";
