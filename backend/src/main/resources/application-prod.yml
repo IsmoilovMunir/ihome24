@@ -47,7 +47,7 @@ spring:
   # Liquibase (Spring Boot 4: spring-boot-starter-liquibase в pom.xml)
   liquibase:
     enabled: true
-    change-log: classpath:db/changelog/db.changelog-master.xml
+    change-log: classpath:db/changelog/db.changelog-master.yaml
     drop-first: false  # НИКОГДА не устанавливайте в true в продакшене!
 
   # Security settings
