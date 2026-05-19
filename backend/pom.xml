@@ -82,9 +82,10 @@
 			<scope>runtime</scope>
 		</dependency>
 
+		<!-- Spring Boot 4: нужен starter, иначе LiquibaseAutoConfiguration не подключается -->
 		<dependency>
-			<groupId>org.liquibase</groupId>
-			<artifactId>liquibase-core</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-liquibase</artifactId>
 		</dependency>
 
 		<dependency>

@@ -44,9 +44,9 @@ spring:
     console:
       enabled: false
 
-  # Использовать Liquibase для миграций
+  # Liquibase (Spring Boot 4: spring-boot-starter-liquibase в pom.xml)
   liquibase:
-    enabled: ${LIQUIBASE_ENABLED:true}
+    enabled: true
     change-log: classpath:db/changelog/db.changelog-master.xml
     drop-first: false  # НИКОГДА не устанавливайте в true в продакшене!
 
