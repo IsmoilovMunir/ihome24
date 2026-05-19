@@ -29,14 +29,15 @@ DB_PASS="${SPRING_DATASOURCE_PASSWORD:?Задайте SPRING_DATASOURCE_PASSWORD
 
 echo "Liquibase changelog-sync → postgres:5432/$DB_NAME (network: $NETWORK)"
 
+# Не монтировать в /liquibase — перезапишет entrypoint образа
 docker run --rm \
   --network "$NETWORK" \
-  -v "$REPO_ROOT/backend/src/main/resources:/liquibase" \
+  -v "$REPO_ROOT/backend/src/main/resources:/work" \
   liquibase/liquibase:4.29 \
   --url="jdbc:postgresql://postgres:5432/${DB_NAME}" \
   --username="$DB_USER" \
   --password="$DB_PASS" \
-  --searchPath=/liquibase \
+  --searchPath=/work \
   --changeLogFile=db/changelog/db.changelog-master.yaml \
   changelog-sync
 
