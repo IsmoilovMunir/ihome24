@@ -74,6 +74,10 @@ public class CheckoutRestController {
                     : "fullName";
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("errors", Map.of(field, new String[]{e.getMessage()})));
+        } catch (Exception e) {
+            log.error("Checkout lead failed: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "Не удалось сохранить данные. Попробуйте позже."));
         }
     }
 
