@@ -24,6 +24,7 @@ public class WholesaleLeadService {
     /** SMTP на VPS часто долго таймаутит — не блокируем HTTP, если Telegram уже ушёл. */
     private static final ExecutorService EMAIL_EXECUTOR = Executors.newCachedThreadPool();
     private static final int EMAIL_WAIT_SECONDS = 12;
+    private static final int TELEGRAM_WAIT_SECONDS = 12;
 
     private final EmailService emailService;
     private final TelegramBotService telegramBotService;
@@ -53,11 +54,14 @@ public class WholesaleLeadService {
 
         String telegramText = formatTelegramMessage(name, phone, inn, message);
 
-        // Сначала Telegram (быстро); почту — с лимитом времени, чтобы не висеть на SMTP
-        boolean telegramSent = sendTelegramSafe(telegramText);
-        boolean emailSent = telegramSent
-                ? scheduleEmailInBackground(name, phone, inn, message)
-                : sendEmailWithTimeout(name, phone, inn, message);
+        boolean emailSent = sendEmailWithTimeout(name, phone, inn, message);
+        boolean telegramSent;
+        if (emailSent) {
+            scheduleTelegramInBackground(telegramText);
+            telegramSent = false;
+        } else {
+            telegramSent = sendTelegramWithTimeout(telegramText);
+        }
 
         if (!emailSent && !telegramSent) {
             log.error("Wholesale lead failed on all channels (email + telegram)");
@@ -76,9 +80,12 @@ public class WholesaleLeadService {
         return new Result(true, emailSent, telegramSent);
     }
 
-    /** Telegram уже ушёл — письмо в фоне, API отвечает сразу. */
-    private boolean scheduleEmailInBackground(String name, String phone, String inn, String message) {
-        EMAIL_EXECUTOR.execute(() -> sendEmailSafe(name, phone, inn, message));
+    /** Не блокируем HTTP ожиданием Telegram (таймауты сети до api.telegram.org). */
+    private boolean scheduleTelegramInBackground(String text) {
+        if (!telegramBotService.isConfigured()) {
+            return false;
+        }
+        EMAIL_EXECUTOR.execute(() -> sendTelegramSafe(text));
         return false;
     }
 
@@ -101,6 +108,23 @@ public class WholesaleLeadService {
             return emailService.sendWholesaleLead(wholesaleEmail, name, phone, inn, message);
         } catch (Exception e) {
             log.warn("Wholesale email channel error: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    private boolean sendTelegramWithTimeout(String text) {
+        if (!telegramBotService.isConfigured()) {
+            return false;
+        }
+        try {
+            return EMAIL_EXECUTOR
+                    .submit(() -> sendTelegramSafe(text))
+                    .get(TELEGRAM_WAIT_SECONDS, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            log.warn("Wholesale telegram timed out after {}s", TELEGRAM_WAIT_SECONDS);
+            return false;
+        } catch (Exception e) {
+            log.warn("Wholesale telegram channel error: {}", e.getMessage());
             return false;
         }
     }

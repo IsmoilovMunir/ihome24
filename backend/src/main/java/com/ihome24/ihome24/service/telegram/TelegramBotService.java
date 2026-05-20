@@ -1,13 +1,16 @@
 package com.ihome24.ihome24.service.telegram;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +29,22 @@ public class TelegramBotService {
     @Value("${app.telegram.chat-id:}")
     private String chatId;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    /** Иначе при блокировке api.telegram.org на VPS запросы висят минутами. */
+    @Value("${app.telegram.connect-timeout-ms:5000}")
+    private int connectTimeoutMs;
+
+    @Value("${app.telegram.read-timeout-ms:10000}")
+    private int readTimeoutMs;
+
+    private RestTemplate restTemplate;
+
+    @PostConstruct
+    void initRestTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofMillis(connectTimeoutMs));
+        factory.setReadTimeout(Duration.ofMillis(readTimeoutMs));
+        restTemplate = new RestTemplate(factory);
+    }
 
     public boolean isConfigured() {
         return botToken != null && !botToken.isBlank();
