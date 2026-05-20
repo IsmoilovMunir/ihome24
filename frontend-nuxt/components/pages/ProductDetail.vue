@@ -1113,6 +1113,8 @@ watch(
     const original = mainImageUrlOriginal.value
     displayedMainImageUrl.value = fast || ''
     if (!fast) return
+    // new Image() — только в браузере; при SSR иначе ReferenceError: Image is not defined
+    if (!import.meta.client) return
     const idx = selectedImageIndex.value
     const tryLarge = large && large !== fast
     const tryOriginal = original && original !== fast && original !== large
