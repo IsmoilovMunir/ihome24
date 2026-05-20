@@ -11,10 +11,19 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class WholesaleLeadService {
+
+    /** SMTP на VPS часто долго таймаутит — не блокируем HTTP, если Telegram уже ушёл. */
+    private static final ExecutorService EMAIL_EXECUTOR = Executors.newCachedThreadPool();
+    private static final int EMAIL_WAIT_SECONDS = 12;
 
     private final EmailService emailService;
     private final TelegramBotService telegramBotService;
@@ -44,8 +53,11 @@ public class WholesaleLeadService {
 
         String telegramText = formatTelegramMessage(name, phone, inn, message);
 
-        boolean emailSent = sendEmailSafe(name, phone, inn, message);
+        // Сначала Telegram (быстро); почту — с лимитом времени, чтобы не висеть на SMTP
         boolean telegramSent = sendTelegramSafe(telegramText);
+        boolean emailSent = telegramSent
+                ? scheduleEmailInBackground(name, phone, inn, message)
+                : sendEmailWithTimeout(name, phone, inn, message);
 
         if (!emailSent && !telegramSent) {
             log.error("Wholesale lead failed on all channels (email + telegram)");
@@ -62,6 +74,26 @@ public class WholesaleLeadService {
         }
 
         return new Result(true, emailSent, telegramSent);
+    }
+
+    /** Telegram уже ушёл — письмо в фоне, API отвечает сразу. */
+    private boolean scheduleEmailInBackground(String name, String phone, String inn, String message) {
+        EMAIL_EXECUTOR.execute(() -> sendEmailSafe(name, phone, inn, message));
+        return false;
+    }
+
+    private boolean sendEmailWithTimeout(String name, String phone, String inn, String message) {
+        try {
+            return EMAIL_EXECUTOR
+                    .submit(() -> sendEmailSafe(name, phone, inn, message))
+                    .get(EMAIL_WAIT_SECONDS, TimeUnit.SECONDS);
+        } catch (TimeoutException e) {
+            log.warn("Wholesale email timed out after {}s", EMAIL_WAIT_SECONDS);
+            return false;
+        } catch (Exception e) {
+            log.warn("Wholesale email channel error: {}", e.getMessage());
+            return false;
+        }
     }
 
     private boolean sendEmailSafe(String name, String phone, String inn, String message) {
