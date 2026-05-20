@@ -80,6 +80,9 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     container_name: ihome24-backend-prod
+    # Секреты (MAIL_*, TELEGRAM_*, DADATA_*, JWT…) — из .env.prod без пустых override в environment
+    env_file:
+      - .env.prod
     environment:
       SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
@@ -105,27 +108,7 @@ services:
       SHOW_SQL: ${SHOW_SQL:-false}
       SERVER_PORT: 8080
       SPRING_LIQUIBASE_ENABLED: "true"
-      # Email: по умолчанию порт 587 (STARTTLS). Если 465 даёт timeout — оставьте 587.
-      MAIL_HOST: ${MAIL_HOST:-smtp.timeweb.ru}
-      MAIL_PORT: ${MAIL_PORT:-587}
-      MAIL_USERNAME: ${MAIL_USERNAME:-}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
-      MAIL_SMTP_SSL_ENABLE: ${MAIL_SMTP_SSL_ENABLE:-false}
-      MAIL_STARTTLS: ${MAIL_STARTTLS:-true}
-      MAIL_SMTP_SSL_TRUST: ${MAIL_SMTP_SSL_TRUST:-smtp.timeweb.ru}
-      MAIL_CONNECTION_TIMEOUT: ${MAIL_CONNECTION_TIMEOUT:-20000}
-      MAIL_TIMEOUT: ${MAIL_TIMEOUT:-20000}
-      APP_EMAIL_FROM: ${APP_EMAIL_FROM:-}
-      # Resend API (если SMTP блокируется хостингом — письма через HTTPS)
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
-      DADATA_API_KEY: ${DADATA_API_KEY:-}
-      APP_WHOLESALE_EMAIL: ${APP_WHOLESALE_EMAIL:-opt@ihome24.ru}
-      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
-      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
-      TELEGRAM_POLLING_ENABLED: ${TELEGRAM_POLLING_ENABLED:-false}
-      TELEGRAM_WEBHOOK_URL: ${TELEGRAM_WEBHOOK_URL:-}
-      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
-      TELEGRAM_ALLOWED_CHAT_IDS: ${TELEGRAM_ALLOWED_CHAT_IDS:-}
+      # MAIL_*, TELEGRAM_*, DADATA_*, RESEND_*, APP_EMAIL_FROM, APP_WHOLESALE_EMAIL — только из env_file (.env.prod)
     # Пробрасываем порт только на localhost для nginx reverse proxy
     ports:
       - "127.0.0.1:8080:8080"
