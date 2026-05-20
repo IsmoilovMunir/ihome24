@@ -1,7 +1,7 @@
 <script setup>
 /**
  * Catch-all для несуществующих URL (/f, /random-path, …).
- * Без throw createError — иначе в dev показывается Nuxt error overlay.
+ * Маршруты /account, /cart, … объявлены отдельными pages/* — сюда не попадают.
  */
 definePageMeta({ layout: false })
 

@@ -82,7 +82,8 @@ export default defineNuxtConfig({
     '/login': { ssr: false },
     '/register': { ssr: false },
     '/search': { ssr: true },
-    '/account/**': { ssr: false },
+    '/account': { ssr: true },
+    '/account/**': { ssr: true },
     '/personal/**': { ssr: false },
   },
 
