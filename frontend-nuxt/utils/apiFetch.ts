@@ -13,6 +13,22 @@ export function resolveApiBase(config: {
   return ''
 }
 
+/**
+ * Base для URL файлов/картинок в HTML (src, og:image).
+ * Никогда не использует apiBaseServer (http://backend:8080) — браузер его не откроет.
+ */
+export function resolvePublicApiBase(config: {
+  public: { apiBase: string }
+}): string {
+  const pub = String(config.public.apiBase || '').trim()
+  if (pub) return pub.replace(/\/$/, '')
+  if (import.meta.client && typeof window !== 'undefined') {
+    return window.location.origin
+  }
+  // SSR: относительные /api/files/... резолвятся от origin сайта (nginx → backend)
+  return ''
+}
+
 /** Путь всегда начинается с /api */
 export function normalizeApiPath(path: string): string {
   if (/^https?:\/\//i.test(path)) return path

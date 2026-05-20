@@ -1,17 +1,16 @@
-import { resolveApiBase } from '~/utils/apiFetch'
+import { resolveApiBase, resolvePublicApiBase } from '~/utils/apiFetch'
 
-/** @deprecated Предпочтительно useApi() / $apiFetch */
-export function useApiBase() {
+/** Base для $fileApi (картинки в HTML). Не использует Docker-internal backend:8080. */
+export function useFileApiBase() {
   const config = useRuntimeConfig()
-  const base = resolveApiBase({
-    apiBaseServer: String(config.apiBaseServer || ''),
+  return resolvePublicApiBase({
     public: { apiBase: String(config.public.apiBase || '') },
   })
-  if (base) return base
-  if (import.meta.client && typeof window !== 'undefined') {
-    return window.location.origin
-  }
-  return 'http://localhost:8080'
+}
+
+/** @deprecated Предпочтительно useApi() / $apiFetch; для файлов — useFileApiBase() */
+export function useApiBase() {
+  return useFileApiBase()
 }
 
 export function useSiteUrl() {

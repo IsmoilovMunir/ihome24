@@ -36,8 +36,9 @@ export function createApiClient(baseURL: string): AxiosInstance {
   return api
 }
 
-export function createApiServices(baseURL: string) {
-  const api = createApiClient(baseURL)
+export function createApiServices(apiBaseURL: string, fileBaseURL?: string) {
+  const api = createApiClient(apiBaseURL)
+  const filesBase = fileBaseURL ?? apiBaseURL
 
   const fileApi = {
     getFileUrl: (filePath: string | null | undefined) => {
@@ -48,13 +49,15 @@ export function createApiServices(baseURL: string) {
       if (filePath.startsWith('local:')) {
         let userId = filePath.substring(5).replace(/^:+/, '')
         if (!userId) return null
-        return `${baseURL}/api/avatars/${userId}`
+        const avatarsPrefix = filesBase ? `${filesBase}/api/avatars/` : '/api/avatars/'
+        return `${avatarsPrefix}${userId}`
       }
       let path = filePath
       if (path.startsWith('/api/files/')) path = path.substring('/api/files/'.length)
       if (path.startsWith('api/files/')) path = path.substring('api/files/'.length)
       if (path.startsWith('/')) path = path.substring(1)
-      return `${baseURL}/api/files/${path}`
+      const prefix = filesBase ? `${filesBase}/api/files/` : '/api/files/'
+      return `${prefix}${path}`
     },
     getImageUrlLarge: (filePath: string) => {
       const base = fileApi.getFileUrl(filePath)
